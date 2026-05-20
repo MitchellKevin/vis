@@ -2,19 +2,20 @@
    DATA
    ========================================================= */
 const visData = [
-  { naam: 'Blankvoorn', count: 1240, color: '#7ec8e3', weight: 0.3,  shape: 'round', diepte: 'mid',   habitat: 'open' },
-  { naam: 'Brasem',     count: 980,  color: '#5aafcf', weight: 1.8,  shape: 'round', diepte: 'bodem', habitat: 'zand' },
-  { naam: 'Baars',      count: 740,  color: '#4a9ab8', weight: 0.6,  shape: 'baars', diepte: 'mid',   habitat: 'open' },
-  { naam: 'Snoekbaars', count: 510,  color: '#3a8aa8', weight: 2.4,  shape: 'pred',  diepte: 'mid',   habitat: 'open' },
-  { naam: 'Paling',     count: 390,  color: '#2a7a98', weight: 0.5,  shape: 'long',  diepte: 'bodem', habitat: 'steen' },
-  { naam: 'Kolblei',    count: 320,  color: '#f4c560', weight: 0.4,  shape: 'round', diepte: 'mid',   habitat: 'zand' },
-  { naam: 'Alver',      count: 280,  color: '#e8b85a', weight: 0.08, shape: 'tiny',  diepte: 'top',   habitat: 'oppervlak' },
-  { naam: 'Ruisvoorn',  count: 190,  color: '#5a8a3f', weight: 0.35, shape: 'round', diepte: 'top',   habitat: 'riet' },
-  { naam: 'Snoek',      count: 95,   color: '#ff7849', weight: 3.2,  shape: 'pred',  diepte: 'mid',   habitat: 'riet' },
-  { naam: 'Winde',      count: 62,   color: '#c8a96e', weight: 0.8,  shape: 'baars', diepte: 'mid',   habitat: 'stroom' },
-  { naam: 'Meerval',    count: 14,   color: '#9b6bae', weight: 12.0, shape: 'long',  diepte: 'bodem', habitat: 'steen' }
+  { naam: 'Blankvoorn', count: 0, color: '#7ec8e3', weight: 0.3,  shape: 'round', diepte: 'mid',   habitat: 'open' },
+  { naam: 'Brasem',     count: 0, color: '#5aafcf', weight: 1.8,  shape: 'round', diepte: 'bodem', habitat: 'zand' },
+  { naam: 'Baars',      count: 0, color: '#4a9ab8', weight: 0.6,  shape: 'baars', diepte: 'mid',   habitat: 'open' },
+  { naam: 'Snoekbaars', count: 0, color: '#3a8aa8', weight: 2.4,  shape: 'pred',  diepte: 'mid',   habitat: 'open' },
+  { naam: 'Paling',     count: 0, color: '#2a7a98', weight: 0.5,  shape: 'long',  diepte: 'bodem', habitat: 'steen' },
+  { naam: 'Kolblei',    count: 0, color: '#f4c560', weight: 0.4,  shape: 'round', diepte: 'mid',   habitat: 'zand' },
+  { naam: 'Alver',      count: 0, color: '#e8b85a', weight: 0.08, shape: 'tiny',  diepte: 'top',   habitat: 'oppervlak' },
+  { naam: 'Ruisvoorn',  count: 0, color: '#5a8a3f', weight: 0.35, shape: 'round', diepte: 'top',   habitat: 'riet' },
+  { naam: 'Snoek',      count: 0, color: '#ff7849', weight: 3.2,  shape: 'pred',  diepte: 'mid',   habitat: 'riet' },
+  { naam: 'Winde',      count: 0, color: '#c8a96e', weight: 0.8,  shape: 'baars', diepte: 'mid',   habitat: 'stroom' },
+  { naam: 'Meerval',    count: 0, color: '#9b6bae', weight: 12.0, shape: 'long',  diepte: 'bodem', habitat: 'steen' },
+  { naam: 'Karper',     count: 0, color: '#a07850', weight: 2.5,  shape: 'round', diepte: 'bodem', habitat: 'zand' },
 ];
-const TOTAL = visData.reduce((s, v) => s + v.count, 0);
+let TOTAL = 0;
 const MONTHS = ['mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov'];
 const MONTH_FULL = ['Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November'];
 const FIRST_OBS = {
@@ -39,22 +40,13 @@ function generateMonthly(total) {
   const peak = [0.06, 0.22, 0.28, 0.16, 0.10, 0.06, 0.05, 0.04, 0.03];
   return peak.map(p => Math.round(p * total * (0.92 + rng() * 0.16)));
 }
-visData.forEach(v => { v.monthly = generateMonthly(v.count); });
 
 /* Daily counts (365 days starting Jan 1) */
-function generateDaily(total) {
-  const daily = new Array(365).fill(0);
-  const peakDay = 110;
-  const sigma = 35;
-  for (let i = 0; i < 365; i++) {
-    if (i < 60 || i > 305) { daily[i] = 0; continue; }
-    const g = Math.exp(-((i - peakDay) ** 2) / (2 * sigma * sigma));
-    daily[i] = g * total * (0.7 + rng() * 0.6);
-  }
-  const sum = daily.reduce((a, b) => a + b, 0);
-  return daily.map(v => Math.round(v / sum * total));
-}
-const dailyTotals = generateDaily(TOTAL);
+let dailyTotals = new Array(365).fill(0);
+
+/* Week data — gevuld vanuit vis-data.json */
+let weekHours     = [];   // 216 waarden: 9 dagen × 24 uur
+let weekDayLabels = [];   // ["30 apr", "1 mei", ...]
 
 /* Util */
 const $ = (s, p = document) => p.querySelector(s);
@@ -248,9 +240,10 @@ chapterInit['ch-dive'] = (el) => {
   update();
 };
 
+/*
 /* =========================================================
    CHAPTER 1 — BELL + ORBITS
-   ========================================================= */
+   ========================================================= * /
 chapterInit['ch-bell'] = (el) => {
   const orbits = $('#bellOrbits');
   const button = $('#bellButton');
@@ -354,7 +347,7 @@ chapterInit['ch-bell'] = (el) => {
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); endHold(); }
   });
 
-  /* Pause when offscreen */
+  /* Pause when offscreen * /
   const pauseObs = new IntersectionObserver(([entry]) => {
     running = entry.isIntersecting;
     if (running && !reduceMotion) {
@@ -368,9 +361,11 @@ chapterInit['ch-bell'] = (el) => {
   pauseObs.observe(stage);
 };
 
+*/
+/*
 /* =========================================================
    CHAPTER 2 — SWIM RACE
-   ========================================================= */
+   ========================================================= * /
 chapterInit['ch-race'] = (el) => {
   const lanes = $('#raceLanes');
   const max = Math.max(...visData.map(v => v.count));
@@ -422,7 +417,7 @@ chapterInit['ch-race'] = (el) => {
     });
     lane.addEventListener('mouseleave', () => hideTooltip());
   });
-  /* Trigger width transition */
+  /* Trigger width transition * /
   requestAnimationFrame(() => {
     $$('.race-progress', lanes).forEach((p, i) => {
       setTimeout(() => { p.style.width = p.dataset.width + '%'; }, i * 110);
@@ -430,9 +425,11 @@ chapterInit['ch-race'] = (el) => {
   });
 };
 
+*/
+/*
 /* =========================================================
    CHAPTER 3 — SLUIS (vertical sankey-style flow)
-   ========================================================= */
+   ========================================================= * /
 chapterInit['ch-sluis'] = (el) => {
   const host = $('#sluisStage');
   const W = 720, H = 960;
@@ -577,9 +574,11 @@ chapterInit['ch-sluis'] = (el) => {
   }
 };
 
+*/
+/*
 /* =========================================================
    CHAPTER 4 — SEASONAL CLOCK
-   ========================================================= */
+   ========================================================= * /
 chapterInit['ch-clock'] = (el) => {
   const host = $('#clockStage');
   const legend = $('#clockLegend');
@@ -751,9 +750,11 @@ chapterInit['ch-clock'] = (el) => {
   });
 };
 
+*/
+/*
 /* =========================================================
    CHAPTER 5 — DEPTH STRATA
-   ========================================================= */
+   ========================================================= * /
 chapterInit['ch-strata'] = (el) => {
   const layers = { top: $('#strataTop'), mid: $('#strataMid'), bodem: $('#strataBottom') };
   Object.keys(layers).forEach(depth => {
@@ -782,6 +783,7 @@ chapterInit['ch-strata'] = (el) => {
   });
 };
 
+*/
 /* =========================================================
    CHAPTER 6 — AQUARIUM (canvas, flocking-ish)
    ========================================================= */
@@ -1068,9 +1070,10 @@ chapterInit['ch-aquarium'] = (el) => {
   obs.observe(canvas);
 };
 
+/*
 /* =========================================================
    CHAPTER 7 — FLOW (canvas stream)
-   ========================================================= */
+   ========================================================= * /
 chapterInit['ch-flow'] = (el) => {
   const canvas = $('#flowCanvas');
   const ctx = canvas.getContext('2d');
@@ -1176,8 +1179,9 @@ chapterInit['ch-flow'] = (el) => {
   obs.observe(canvas);
 };
 
+*/
 /* =========================================================
-   CHAPTER 8 — RING CALENDAR (365 dots)
+   CHAPTER 8 — WEEK RING (9 dagen × 24 uur = 216 stippen)
    ========================================================= */
 chapterInit['ch-ring'] = (el) => {
   const host = $('#ringStage');
@@ -1185,95 +1189,98 @@ chapterInit['ch-ring'] = (el) => {
   const cx = W/2, cy = H/2;
   const svg = d3.select(host).append('svg').attr('viewBox', `0 0 ${W} ${H}`);
 
+  const DAYS  = weekDayLabels.length || 9;
+  const SLOTS = DAYS * 24;            // 216 uur-stippen
+  const data  = weekHours.length ? weekHours : new Array(SLOTS).fill(0);
+  const maxV  = Math.max(...data, 1);
   const innerR = 130;
   const outerR = 290;
-  const maxV = Math.max(...dailyTotals);
-  const monthStart = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-  const months = ['JAN','FEB','MRT','APR','MEI','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
 
-  // Month labels
-  months.forEach((m, i) => {
-    const a = (monthStart[i] / 365) * Math.PI * 2 + (15 / 365) * Math.PI * 2 - Math.PI/2;
-    const lr = outerR + 22;
-    const lx = cx + Math.cos(a) * lr;
-    const ly = cy + Math.sin(a) * lr;
-    svg.append('text').attr('x', lx).attr('y', ly + 4)
+  // Dag-scheidingslijnen + labels
+  for (let d = 0; d < DAYS; d++) {
+    const aDivider = (d / DAYS) * Math.PI * 2 - Math.PI / 2;
+    svg.append('line')
+      .attr('x1', cx + Math.cos(aDivider) * (innerR - 10))
+      .attr('y1', cy + Math.sin(aDivider) * (innerR - 10))
+      .attr('x2', cx + Math.cos(aDivider) * (outerR + 10))
+      .attr('y2', cy + Math.sin(aDivider) * (outerR + 10))
+      .attr('stroke', 'rgba(126,200,227,0.15)').attr('stroke-dasharray', '3 4');
+
+    const aLabel = ((d + 0.5) / DAYS) * Math.PI * 2 - Math.PI / 2;
+    const lr = outerR + 24;
+    svg.append('text')
+      .attr('x', cx + Math.cos(aLabel) * lr)
+      .attr('y', cy + Math.sin(aLabel) * lr + 4)
       .attr('text-anchor', 'middle')
       .attr('font-family', 'DM Mono, monospace')
-      .attr('font-size', 11)
-      .attr('letter-spacing', '0.15em')
-      .attr('fill', (i >= 2 && i <= 6) ? '#f4c560' : '#7ec8e3')
-      .attr('opacity', (i >= 2 && i <= 6) ? 0.9 : 0.55)
-      .text(m);
-  });
-
-  // Month dividers
-  months.forEach((_, i) => {
-    const a = (monthStart[i] / 365) * Math.PI * 2 - Math.PI/2;
-    svg.append('line')
-      .attr('x1', cx + Math.cos(a) * (innerR - 10))
-      .attr('y1', cy + Math.sin(a) * (innerR - 10))
-      .attr('x2', cx + Math.cos(a) * (outerR + 10))
-      .attr('y2', cy + Math.sin(a) * (outerR + 10))
-      .attr('stroke', 'rgba(126,200,227,0.08)');
-  });
-
-  // Center text
-  svg.append('text').attr('x', cx).attr('y', cy - 12).attr('text-anchor', 'middle')
-    .attr('font-family', 'Fraunces, serif').attr('font-style', 'italic').attr('font-size', 38)
-    .attr('fill', '#7ec8e3').text(fmt(TOTAL));
-  svg.append('text').attr('x', cx).attr('y', cy + 12).attr('text-anchor', 'middle')
-    .attr('font-family', 'DM Mono, monospace').attr('font-size', 11).attr('letter-spacing', '0.18em')
-    .attr('fill', '#7ec8e3').attr('opacity', 0.65).text('TOTAAL BELDRUKKEN');
-
-  // Date helper
-  function dayToDateString(d) {
-    const base = new Date(2026, 0, 1);
-    base.setDate(base.getDate() + d);
-    const dd = String(base.getDate()).padStart(2, '0');
-    const monthNames = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-    return `${dd} ${monthNames[base.getMonth()]}`;
+      .attr('font-size', 10)
+      .attr('letter-spacing', '0.12em')
+      .attr('fill', d >= 1 && d <= 7 ? '#f4c560' : '#7ec8e3')
+      .attr('opacity', 0.85)
+      .text((weekDayLabels[d] || '').toUpperCase());
   }
 
-  // Dots
+  // Dag-nacht ring (binnenzijde): grijze band voor nachturen 21-05
+  for (let d = 0; d < DAYS; d++) {
+    const nightStart = (d * 24 + 21) / SLOTS * Math.PI * 2 - Math.PI / 2;
+    const nightEnd   = (d * 24 + 29) / SLOTS * Math.PI * 2 - Math.PI / 2; // +8 uur = 05:00
+    const arc = d3.arc()
+      .innerRadius(innerR - 8).outerRadius(innerR)
+      .startAngle(nightStart).endAngle(nightEnd);
+    svg.append('path').attr('d', arc()).attr('transform', `translate(${cx},${cy})`)
+      .attr('fill', 'rgba(126,200,227,0.06)');
+  }
+
+  // Middelste tekst
+  svg.append('text').attr('x', cx).attr('y', cy - 14).attr('text-anchor', 'middle')
+    .attr('font-family', 'Fraunces, serif').attr('font-style', 'italic').attr('font-size', 34)
+    .attr('fill', '#7ec8e3').text(fmt(TOTAL));
+  svg.append('text').attr('x', cx).attr('y', cy + 10).attr('text-anchor', 'middle')
+    .attr('font-family', 'DM Mono, monospace').attr('font-size', 9).attr('letter-spacing', '0.18em')
+    .attr('fill', '#7ec8e3').attr('opacity', 0.6).text('BELROEPEN');
+  svg.append('text').attr('x', cx).attr('y', cy + 26).attr('text-anchor', 'middle')
+    .attr('font-family', 'DM Mono, monospace').attr('font-size', 9).attr('letter-spacing', '0.12em')
+    .attr('fill', '#f4c560').attr('opacity', 0.7).text('30 APR – 8 MEI 2026');
+
+  // Uur-stippen
   const dots = svg.append('g');
-  for (let d = 0; d < 365; d++) {
-    const a = (d / 365) * Math.PI * 2 - Math.PI/2;
-    const norm = dailyTotals[d] / maxV;
-    const r = innerR + 50 + norm * (outerR - innerR - 60);
-    const px = cx + Math.cos(a) * r;
-    const py = cy + Math.sin(a) * r;
-    const radius = 1.4 + norm * 6;
-    const opacity = 0.18 + norm * 0.8;
-    const color = norm > 0.6 ? '#f4c560' : norm > 0.25 ? '#7ec8e3' : '#4a9ab8';
+  for (let i = 0; i < SLOTS; i++) {
+    const cnt  = data[i] || 0;
+    const norm = cnt / maxV;
+    const a    = (i / SLOTS) * Math.PI * 2 - Math.PI / 2;
+    const r    = innerR + 14 + norm * (outerR - innerR - 20);
+    const px   = cx + Math.cos(a) * r;
+    const py   = cy + Math.sin(a) * r;
+    const radius  = 1.2 + norm * 5.5;
+    const opacity = cnt > 0 ? 0.25 + norm * 0.75 : 0.08;
+    const color   = norm > 0.65 ? '#f4c560' : norm > 0.25 ? '#7ec8e3' : '#4a9ab8';
+
     const dot = dots.append('circle')
       .attr('class', 'ring-dot')
       .attr('cx', px).attr('cy', py).attr('r', 0)
       .attr('fill', color).attr('opacity', opacity)
-      .attr('data-day', d)
-      .attr('tabindex', dailyTotals[d] > 0 ? 0 : -1);
-    dot.transition().delay(d * 4).duration(300).attr('r', radius);
+      .attr('tabindex', cnt > 0 ? 0 : -1);
+    dot.transition().delay(i * 2).duration(250).attr('r', radius);
 
-    if (dailyTotals[d] > 0) {
-      const dateStr = dayToDateString(d);
-      const cnt = dailyTotals[d];
-      dot.on('mouseenter', (e) => {
-        showTooltip(`<strong>${dateStr}</strong>${fmt(cnt)} ${cnt === 1 ? 'belroep' : 'belroepen'}`, e.clientX, e.clientY);
-      }).on('mousemove', (e) => {
-        showTooltip(`<strong>${dateStr}</strong>${fmt(cnt)} ${cnt === 1 ? 'belroep' : 'belroepen'}`, e.clientX, e.clientY);
-      }).on('mouseleave', () => hideTooltip())
-        .on('focus', () => {
-          const node = dot.node();
-          const bbox = node.getBoundingClientRect();
-          showTooltip(`<strong>${dateStr}</strong>${fmt(cnt)} ${cnt === 1 ? 'belroep' : 'belroepen'}`, bbox.left + bbox.width/2, bbox.top);
-        })
-        .on('blur', () => hideTooltip());
+    if (cnt > 0) {
+      const dayIdx  = Math.floor(i / 24);
+      const hour    = i % 24;
+      const label   = weekDayLabels[dayIdx] || '';
+      const tooltip = `<strong>${label} ${String(hour).padStart(2,'0')}:00</strong>${fmt(cnt)} belroepen`;
+      dot.on('mouseenter', (e) => showTooltip(tooltip, e.clientX, e.clientY))
+         .on('mousemove',  (e) => showTooltip(tooltip, e.clientX, e.clientY))
+         .on('mouseleave', () => hideTooltip())
+         .on('focus', () => {
+           const bb = dot.node().getBoundingClientRect();
+           showTooltip(tooltip, bb.left + bb.width / 2, bb.top);
+         })
+         .on('blur', () => hideTooltip());
     }
   }
 
-  // Inner ring
-  svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', innerR + 40)
-    .attr('fill', 'none').attr('stroke', 'rgba(126,200,227,0.1)').attr('stroke-dasharray', '2 5');
+  // Binnenring
+  svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', innerR + 8)
+    .attr('fill', 'none').attr('stroke', 'rgba(126,200,227,0.08)').attr('stroke-dasharray', '2 5');
 };
 
 /* =========================================================
@@ -1403,9 +1410,10 @@ chapterInit['ch-radar'] = (el) => {
   obs.observe(host);
 };
 
+/*
 /* =========================================================
    CHAPTER 10 — HABITAT LANDSCAPE
-   ========================================================= */
+   ========================================================= * /
 chapterInit['ch-habitat'] = (el) => {
   const host = $('#habitatStage');
   const tip = $('#habitatTooltip');
@@ -1536,6 +1544,7 @@ chapterInit['ch-habitat'] = (el) => {
   });
 };
 
+*/
 /* =========================================================
    CHAPTER 11 — NET (bubble pack by weight × count)
    ========================================================= */
@@ -1758,18 +1767,54 @@ chapterInit['ch-journal'] = (el) => {
 };
 
 /* =========================================================
-   OBSERVE ALL CHAPTERS
+   BOOT — laad echte data, start daarna alle hoofdstukken
    ========================================================= */
-$$('.chapter').forEach(c => sectionObserver.observe(c));
+async function boot() {
+  try {
+    const res  = await fetch('json/vis-data.json');
+    const live = await res.json();
 
-/* Init bell total display */
-$('#bellTotalNumber').textContent = fmt(TOTAL);
-$('#bellCounter').textContent = `0 / ${fmt(TOTAL)} belroepen`;
-$('#aquariumCounter').textContent = `1 / ${fmt(TOTAL)}`;
+    /* Vul counts in vanuit de echte data */
+    Object.entries(live.species).forEach(([naam, count]) => {
+      const v = visData.find(d => d.naam === naam);
+      if (v) v.count = count;
+    });
 
-/* Build chapter navigation */
-buildChapterNav();
+    /* Herbereken totaal en maandverdeling */
+    TOTAL = visData.reduce((s, v) => s + v.count, 0);
+    visData.forEach(v => { v.monthly = generateMonthly(v.count); });
 
-/* Spawn bubbles after first paint */
-requestAnimationFrame(() => spawnBackgroundBubbles());
+    /* Zet echte dagcijfers in de kalender (rest blijft 0) */
+    Object.entries(live.daily).forEach(([doy, n]) => {
+      dailyTotals[+doy] = n;
+    });
+
+    /* Week-uurdata voor ringkalender */
+    if (live.weekHours)     weekHours     = live.weekHours;
+    if (live.weekDayLabels) weekDayLabels = live.weekDayLabels;
+
+  } catch (e) {
+    console.warn('vis-data.json niet geladen, gebruik gegenereerde data', e);
+    TOTAL = visData.reduce((s, v) => s + v.count, 0);
+    visData.forEach(v => { v.monthly = generateMonthly(v.count); });
+  }
+
+  /* Sorteer visData op count zodat grafieken kloppen */
+  visData.sort((a, b) => b.count - a.count);
+
+  /* Init statische teksten — elementen kunnen ontbreken als hun chapter uit staat */
+  const elBellTotal   = $('#bellTotalNumber');
+  const elBellCounter = $('#bellCounter');
+  const elAqCounter   = $('#aquariumCounter');
+  if (elBellTotal)   elBellTotal.textContent   = fmt(TOTAL);
+  if (elBellCounter) elBellCounter.textContent = `0 / ${fmt(TOTAL)} belroepen`;
+  if (elAqCounter)   elAqCounter.textContent   = `1 / ${fmt(TOTAL)}`;
+
+  /* Start hoofdstukobserver en navigatie */
+  $$('.chapter').forEach(c => sectionObserver.observe(c));
+  buildChapterNav();
+  requestAnimationFrame(() => spawnBackgroundBubbles());
+}
+
+boot();
 
