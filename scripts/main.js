@@ -44,9 +44,10 @@ function generateMonthly(total) {
 /* Daily counts (365 days starting Jan 1) */
 let dailyTotals = new Array(365).fill(0);
 
-/* Week data — gevuld vanuit vis-data.json */
-let weekHours     = [];   // 216 waarden: 9 dagen × 24 uur
-let weekDayLabels = [];   // ["30 apr", "1 mei", ...]
+/* Week/maand data — gevuld vanuit vis-data.json */
+let weekHours     = [];
+let weekDayLabels = [];
+let periodLabel   = '';
 
 /* Util */
 const $ = (s, p = document) => p.querySelector(s);
@@ -1240,7 +1241,7 @@ chapterInit['ch-ring'] = (el) => {
     .attr('fill', '#7ec8e3').attr('opacity', 0.6).text('BELROEPEN');
   svg.append('text').attr('x', cx).attr('y', cy + 26).attr('text-anchor', 'middle')
     .attr('font-family', 'DM Mono, monospace').attr('font-size', 9).attr('letter-spacing', '0.12em')
-    .attr('fill', '#f4c560').attr('opacity', 0.7).text('30 APR – 8 MEI 2026');
+    .attr('fill', '#f4c560').attr('opacity', 0.7).text(periodLabel || '18 APR – 18 MEI 2026');
 
   // Uur-stippen
   const dots = svg.append('g');
@@ -1789,9 +1790,10 @@ async function boot() {
       dailyTotals[+doy] = n;
     });
 
-    /* Week-uurdata voor ringkalender */
+    /* Week/maand-uurdata voor ringkalender */
     if (live.weekHours)     weekHours     = live.weekHours;
     if (live.weekDayLabels) weekDayLabels = live.weekDayLabels;
+    if (live.period?.label) periodLabel   = live.period.label.toUpperCase();
 
   } catch (e) {
     console.warn('vis-data.json niet geladen, gebruik gegenereerde data', e);
