@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fish Doorbell — World Map</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-title">
+      <h1>🐟 Fish Doorbell</h1>
+      <p class="subtitle">visdeurbel.nl — global visitor events</p>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Live data
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat" id="s-total">
+      <div class="stat-n" id="v-total">—</div>
+      <div class="stat-label">Total events</div>
+    </div>
+    <div class="stat" id="s-countries">
+      <div class="stat-n" id="v-countries">—</div>
+      <div class="stat-label">Countries</div>
+    </div>
+    <div class="stat" id="s-upload">
+      <div class="stat-n" id="v-upload">—</div>
+      <div class="stat-label">Fish uploaded</div>
+    </div>
+    <div class="stat" id="s-dismiss">
+      <div class="stat-n" id="v-dismiss">—</div>
+      <div class="stat-label">Dismissed</div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="map-area">
+      <div class="map-tabs">
+        <button class="map-tab active" data-mode="choropleth">Choropleth</button>
+        <button class="map-tab" data-mode="bubble">Bubble</button>
+        <button class="map-tab" data-mode="events">Event types</button>
+      </div>
+
+      <svg id="map-svg" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#4ecb71" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="#4ecb71" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <g id="countries-g"></g>
+        <g id="overlays-g"></g>
+      </svg>
+
+      <div class="tooltip" id="tooltip">
+        <div class="tooltip-name" id="tt-name">—</div>
+        <div class="tooltip-row"><span>Events</span><span id="tt-events">—</span></div>
+        <div class="tooltip-row"><span>Uploaded</span><span id="tt-up">—</span></div>
+        <div class="tooltip-row"><span>Dismissed</span><span id="tt-dis">—</span></div>
+        <div class="tooltip-row"><span>Top cities</span><span id="tt-cities">—</span></div>
+      </div>
+
+      <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-inner">
+          <div class="loading-fish">🐟</div>
+          <div class="loading-text">Loading event data…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">By country</div>
+        <div id="country-list"></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title">Legend</div>
+        <div class="event-legend">
+          <div class="legend-row"><div class="legend-dot" style="background:#4ecb71"></div>uploadedFish</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#e8844a"></div>dismissedUploading</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#1a2e20"></div>No data</div>
+        </div>
+      </div>
+      <div class="sidebar-title feed-header">Event feed</div>
+      <div class="event-feed" id="event-feed"></div>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
