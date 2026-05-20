@@ -1,99 +1,149 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fish Doorbell — World Map</title>
+  <title>Visdeurbel — Wereldkaart</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <header>
-    <div class="header-title">
-      <h1>🐟 Fish Doorbell</h1>
-      <p class="subtitle">visdeurbel.nl — global visitor events</p>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="nav-logo">🐟</span>
+      <span class="nav-name">Visdeurbel</span>
     </div>
-    <div class="live-badge">
-      <div class="live-dot"></div>
-      Live data
+    <div class="nav-links">
+      <a href="#">Over</a>
+      <a href="#">Waarom</a>
+      <a href="#">De vissen</a>
+      <a href="#">Community</a>
+      <a href="#">FAQ</a>
+      <a href="#" class="nav-lang">English</a>
     </div>
+  </nav>
+
+  <header class="page-header">
+    <div class="header-inner">
+      <p class="header-eyebrow">Wereldwijd data</p>
+      <h1>Waar kijken de <em>viskijkers</em> mee?</h1>
+      <p class="header-sub">Bezoekersdata van visdeurbel.nl — per land, per gebeurtenis, per maand.</p>
+    </div>
+    <div class="header-fish-deco" aria-hidden="true">🐠🐡🐟</div>
   </header>
 
+  <div class="period-bar">
+    <span class="period-label">Periode:</span>
+    <div class="period-toggle">
+      <button class="period-btn" data-period="week">Deze week</button>
+      <button class="period-btn active" data-period="maand">Deze maand</button>
+    </div>
+    <span class="period-loading" id="period-loading"></span>
+  </div>
+
   <div class="stats-bar">
-    <div class="stat" id="s-total">
+    <div class="stat-card">
       <div class="stat-n" id="v-total">—</div>
-      <div class="stat-label">Total events</div>
+      <div class="stat-label">Totaal events</div>
     </div>
-    <div class="stat" id="s-countries">
+    <div class="stat-card">
       <div class="stat-n" id="v-countries">—</div>
-      <div class="stat-label">Countries</div>
+      <div class="stat-label">Landen</div>
     </div>
-    <div class="stat" id="s-upload">
+    <div class="stat-card stat-card--green">
       <div class="stat-n" id="v-upload">—</div>
-      <div class="stat-label">Fish uploaded</div>
+      <div class="stat-label">Vis gespot 🐟</div>
     </div>
-    <div class="stat" id="s-dismiss">
+    <div class="stat-card stat-card--coral">
       <div class="stat-n" id="v-dismiss">—</div>
-      <div class="stat-label">Dismissed</div>
+      <div class="stat-label">Gesloten 👋</div>
     </div>
   </div>
 
-  <div class="main">
+  <div class="main-layout">
 
-    <div class="map-area">
+    <div class="map-panel">
       <div class="map-tabs">
         <button class="map-tab active" data-mode="choropleth">Choropleth</button>
-        <button class="map-tab" data-mode="bubble">Bubble</button>
-        <button class="map-tab" data-mode="events">Event types</button>
+        <button class="map-tab" data-mode="bubble">Bellen</button>
+        <button class="map-tab" data-mode="events">Soorten</button>
+        <button class="map-tab map-tab--reset" id="zoom-reset">⊙ Reset</button>
       </div>
+      <div class="zoom-hint">Slepen om te draaien · Scrollen om te zoomen · Klik op een land in de lijst</div>
 
-      <svg id="map-svg" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#4ecb71" stop-opacity="0.4" />
-            <stop offset="100%" stop-color="#4ecb71" stop-opacity="0" />
-          </radialGradient>
-        </defs>
+      <svg id="map-svg" viewBox="0 0 500 460" preserveAspectRatio="xMidYMid meet">
+        <defs></defs>
+        <g id="graticule-g"></g>
         <g id="countries-g"></g>
         <g id="overlays-g"></g>
       </svg>
 
       <div class="tooltip" id="tooltip">
         <div class="tooltip-name" id="tt-name">—</div>
-        <div class="tooltip-row"><span>Events</span><span id="tt-events">—</span></div>
-        <div class="tooltip-row"><span>Uploaded</span><span id="tt-up">—</span></div>
-        <div class="tooltip-row"><span>Dismissed</span><span id="tt-dis">—</span></div>
-        <div class="tooltip-row"><span>Top cities</span><span id="tt-cities">—</span></div>
+        <div class="tooltip-row">
+          <span>Totaal</span><span id="tt-events">—</span>
+        </div>
+        <div class="tooltip-row tooltip-row--green">
+          <span>🐟 Gespot</span><span id="tt-up">—</span>
+        </div>
+        <div class="tooltip-row tooltip-row--coral">
+          <span>👋 Gesloten</span><span id="tt-dis">—</span>
+        </div>
+        <div class="tooltip-row">
+          <span>Steden</span><span id="tt-cities">—</span>
+        </div>
       </div>
 
       <div id="loading-overlay" class="loading-overlay">
         <div class="loading-inner">
           <div class="loading-fish">🐟</div>
-          <div class="loading-text">Loading event data…</div>
+          <div class="loading-text">Data laden…</div>
         </div>
       </div>
     </div>
 
     <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-title">By country</div>
+      <div class="sidebar-block">
+        <h2 class="sidebar-heading">Per land</h2>
         <div id="country-list"></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-title">Legend</div>
-        <div class="event-legend">
-          <div class="legend-row"><div class="legend-dot" style="background:#4ecb71"></div>uploadedFish</div>
-          <div class="legend-row"><div class="legend-dot" style="background:#e8844a"></div>dismissedUploading</div>
-          <div class="legend-row"><div class="legend-dot" style="background:#1a2e20"></div>No data</div>
+
+      <div class="sidebar-block sidebar-block--legend">
+        <h2 class="sidebar-heading">Legenda</h2>
+        <div class="legend-list">
+          <div class="legend-item">
+            <span class="legend-pill legend-pill--green">🐟</span>
+            <span>uploadedFish</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-pill legend-pill--coral">👋</span>
+            <span>dismissedUploading</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-pill legend-pill--muted">·</span>
+            <span>Geen data</span>
+          </div>
         </div>
       </div>
-      <div class="sidebar-title feed-header">Event feed</div>
-      <div class="event-feed" id="event-feed"></div>
+
+      <div class="sidebar-block sidebar-block--feed">
+        <h2 class="sidebar-heading">Recente events</h2>
+        <div class="event-feed" id="event-feed"></div>
+      </div>
     </div>
 
   </div>
+
+  <footer class="page-footer">
+    <div class="footer-brand">
+      <span class="footer-logo">🐟</span>
+      <strong>Visdeurbel</strong>
+    </div>
+    <p class="footer-tagline">Druk op de Visdeurbel als je een vis ziet</p>
+    <p class="footer-copy">© 2026 Visdeurbel · visdeurbel@utrecht.nl</p>
+  </footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
