@@ -1,8 +1,10 @@
+// Data ophalen uit het JSON-bestand
 async function loadData() {
     const response = await fetch('../json/event-maand.json');
-    const lines = await response.text();
+    const text = await response.text();
 
-    const events = lines
+    // Elke regel is een los JSON-object
+    const events = text
         .trim()
         .split('\n')
         .map(line => JSON.parse(line));
@@ -10,13 +12,19 @@ async function loadData() {
     return events;
 }
 
+// Tel hoeveel vissen er per uur zijn
 function countPerHour(events) {
-    const hours = Array(24).fill(0).map(() => ({ total: 0, fish: 0 }));
+    // Voor elk uur bewaren we alleen het aantal vissen
+    const hours = Array.from({ length: 24 }, () => ({
+        fish: 0
+    }));
 
-    events.forEach(e => {
-        const hour = parseInt(e.created_at.split(' ')[1].split(':')[0]);
-        hours[hour].total++;
-        if (e.event_name === 'uploadedFish') {
+    events.forEach(event => {
+        // Haal het uur uit de datum/tijd
+        const hour = parseInt(event.created_at.split(' ')[1].split(':')[0]);
+
+        // Tel alleen vissen mee
+        if (event.event_name === 'uploadedFish') {
             hours[hour].fish++;
         }
     });
@@ -24,45 +32,38 @@ function countPerHour(events) {
     return hours;
 }
 
+// Maak de grafiek zichtbaar in de HTML
 function render(hourData) {
-    const maxTotal = Math.max(...hourData.map(h => h.total), 1);
     const barsEl = document.getElementById('bars');
-    const xaxisEl = document.getElementById('xaxis');
+    const maxFish = Math.max(...hourData.map(hour => hour.fish), 1);
 
+    // Eerst alles leegmaken
     barsEl.innerHTML = '';
-    xaxisEl.innerHTML = '';
 
-    hourData.forEach((data, hour) => {
-        const pct = data.total / maxTotal;
-        const barHeight = Math.round(pct * 240);
+    hourData.forEach((hourInfo, hour) => {
+        // Bereken de hoogte van de staaf
+        const height = Math.round((hourInfo.fish / maxFish) * 240);
 
+        // Maak een nieuw element voor deze kolom
         const col = document.createElement('div');
         col.className = 'bar-col';
 
-        const fishEmojis = Array(data.fish).fill('🐟').join('');
-        const barColor = data.fish > 0 ? '#0F6E56' : '#9FE1CB';
-
+        // Zet de HTML in de kolom
         col.innerHTML = `
-            ${data.total > 0 ? `<span class="bar-count">${data.total}</span>` : ''}
-            <div class="bar-fill" style="height: ${barHeight}px; background: ${barColor};">
-                ${data.fish > 0 ? `<div class="fish-row">${fishEmojis}</div>` : ''}
-            </div>
+            ${hourInfo.fish > 0 ? `<span class="bar-count">${String(hour).padStart(2, '0')}:00</span>` : ''}
+            <div class="bar-fill" style="height: ${height}px;"></div>
             <div class="tooltip">
-                ${String(hour).padStart(2, '0')}:00
-                — ${data.total} bezoeker${data.total !== 1 ? 's' : ''}
-                ${data.fish > 0 ? `· ${data.fish} vis${data.fish !== 1 ? 'sen' : ''}` : ''}
+                ${String(hour).padStart(2, '0')}:00, 
+                ${hourInfo.fish} vis${hourInfo.fish !== 1 ? 'sen' : ''}
             </div>
         `;
 
+        // Voeg de kolom toe aan de grafiek
         barsEl.appendChild(col);
-
-        const label = document.createElement('div');
-        label.className = 'x-label';
-        label.textContent = hour % 3 === 0 ? String(hour).padStart(2, '0') : '';
-        xaxisEl.appendChild(label);
     });
 }
 
+// Alles starten
 loadData()
     .then(events => {
         const hourData = countPerHour(events);
