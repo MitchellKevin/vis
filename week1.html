@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 1</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <style>
+      :root {
+        --bg-deep:    #01463c;
+        --bg-mid:     #015a4e;
+        --bg-shallow: #027060;
+        --foam:       #f8e7cd;
+        --sun:        #c0a8ff;
+        --water-mid:  #014a42;
+      }
+      html, body { background: #01463c; }
+      .lede { color: rgba(248,231,205,0.85); }
+      .fish-tooltip {
+        background: rgba(1,70,60,0.94);
+        border-color: rgba(248,231,205,0.3);
+      }
+      .fish-tooltip strong { color: var(--sun); }
+      .radar-detail-panel {
+        background: rgba(1,70,60,0.92);
+        border-color: rgba(248,231,205,0.25);
+      }
+      .radar-detail-panel strong { color: var(--sun); }
+      #ch-ring { background: #f8e7cd; }
+      #ch-ring h2, #ch-ring .eyebrow, #ch-ring .lede { color: #01463c; }
+    </style>
+</head>
+<body>
+  <div class="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
+     <!-- ============================ -->
+    <!-- Hoofdstuk 8: Ringkalender      -->
+    <!-- ============================ -->
+    <section id="ch-ring" class="chapter" aria-label="Hoofdstuk 8: Ringkalender">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Ringkalender</p>
+          <h2 class="reveal">Elk puntje is een dag.</h2>
+          <p class="lede reveal">Elke gloed is een hartslag van de sluis. Hoe groter en lichter, hoe meer vissen er die dag gemeld zijn.</p>
+        </div>
+
+        <div class="ring-stage" id="ringStage" aria-label="Cirkelvormige kalender van 365 dagen"></div>
+      </div>
+    </section>
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 9: Radar             -->
+    <!-- ============================ -->
+    <section id="ch-radar" class="chapter" aria-label="Hoofdstuk 9: Visradar">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Sonar</p>
+          <h2 class="reveal">Wat zwemt er onder de sluis?</h2>
+          <p class="lede reveal">We zien meer dan je denkt. De radar tikt door — en bij elke draai licht weer een soort op.</p>
+        </div>
+
+        <div class="radar-stage" id="radarStage" aria-label="Radar met opflitsende vissoorten">
+          <div class="radar-detail-panel" id="radarDetail" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+<script src="scripts/week1.js"></script>
+</body>
+</html>
