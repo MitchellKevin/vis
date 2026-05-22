@@ -8,9 +8,15 @@
   --spacing: 3em;
 }
 
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url(../fonts/BricolageGrotesque.ttf);
+}
+
 body {
   color: #01463C;
   background-color: #F8E7CD;
+  font-family: 'Bricolage Grotesque' ,sans-serif;
 }
 main {
   margin: 2em;
