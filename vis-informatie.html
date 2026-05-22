@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vis Informatie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="vis-informatie.css" />
+  </head>
+  <body>
+    <div class="carousel">
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+      <article class="slide">
+        <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+        <div class="fish-badge"><span class="badge-dot"></span>Snoekbaars</div>
+      </article>
+    </div>
+
+    <!-- &#8592; en &#8594; zijn HTML character entities voor ← en → (pijltjes).
+         Dit zorgt voor correcte weergave in alle browsers, ongeacht bestandsencoding.
+         Bron: https://developer.mozilla.org/en-US/docs/Glossary/Character_reference -->
+    <nav class="nav">
+      <button class="nav-btn nav-prev">&#8592;</button>
+      <button class="nav-btn nav-next">&#8594;</button>
+    </nav>
+
+    <div class="modal-overlay">
+      <div class="modal">
+        <!-- &#215; is de HTML character entity voor × (kruisje/sluitknop).
+             Bron: https://developer.mozilla.org/en-US/docs/Glossary/Character_reference -->
+        <button class="modal-close">&#215;</button>
+        <div class="modal-content">
+          <div class="fish-col">
+            <div class="fish-stage">
+              <img src="assets/snoekbaars.svg" alt="Snoekbaars" />
+              <img class="fish-accessory acc-hat" src="assets/hat-svgrepo-com.svg" alt="" aria-hidden="true" />
+            </div>
+            <div class="dress-grid">
+              <button class="acc-item" data-acc="hat" title="Hoed">
+                <img src="assets/hat-svgrepo-com.svg" alt="Hoed" />
+              </button>
+              <button class="acc-item locked" disabled title="Binnenkort">
+                <span>?</span>
+              </button>
+              <button class="acc-item locked" disabled title="Binnenkort">
+                <span>?</span>
+              </button>
+              <button class="acc-item locked" disabled title="Binnenkort">
+                <span>?</span>
+              </button>
+            </div>
+          </div>
+          <div class="modal-info">
+            <h2>Snoekbaars</h2>
+            <p class="modal-latin">Sander lucioperca</p>
+            <span class="modal-badge">2.847 waarnemingen</span>
+            <p class="modal-desc">
+              Een slanke, snelle roofvis herkenbaar aan zachte donkere strepen
+              langs het lichaam. De snoekbaars is nachtactief en migreert in het
+              voorjaar naar paaigronden. Zeer geliefd bij sportvissers.
+            </p>
+            <dl class="modal-details">
+              <div>
+                <dt>Lengte</dt>
+                <dd>40–100 cm</dd>
+              </div>
+              <div>
+                <dt>Gewicht</dt>
+                <dd>tot 15 kg</dd>
+              </div>
+              <div>
+                <dt>Habitat</dt>
+                <dd>Meren, grote rivieren</dd>
+              </div>
+            </dl>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="vis-informatie.js"></script>
+  </body>
+</html>
