@@ -84,7 +84,7 @@ const graticuleG     = d3.select('#graticule-g');
 const loadingOverlay = document.getElementById('loading-overlay');
 
 // ── Globe size ───────────────────────────────────
-const W = 500, H = 460, R = 200;
+const W = 370, H = 340, R = 145;
 
 // ── Projection (Orthographic = globe) ────────────
 const projection = d3.geoOrthographic()
@@ -218,14 +218,27 @@ function redraw() {
   // Countries
   countriesG.selectAll('path').attr('d', pathGen);
 
-  // Overlays (bubbles/pies) — reproject from stored [lon,lat]
+  // Shine and outline follow the sphere
+  d3.select('#globe-shine').attr('d', pathGen({ type: 'Sphere' }));
+  d3.select('#globe-outline').attr('d', pathGen({ type: 'Sphere' }));
+
+  // Overlays — reproject from stored [lon,lat]
   overlaysG.selectAll('.overlay-group').each(function() {
-    const g      = d3.select(this);
-    const lon    = +g.attr('data-lon');
-    const lat    = +g.attr('data-lat');
-    const coords = projection([lon, lat]);
-    // Hide if on back of globe
+    const g   = d3.select(this);
+    const lon = +g.attr('data-lon');
+    const lat = +g.attr('data-lat');
     const visible = isVisible(lon, lat);
+
+    // Flow lines: re-path them via pathGen
+    if (g.classed('flow-line')) {
+      g.attr('opacity', visible ? 0.55 : 0);
+      const line = { type: 'LineString', coordinates: [[lon, lat], UTRECHT] };
+      g.attr('d', pathGen(line));
+      return;
+    }
+
+    // All other overlays: translate to projected point
+    const coords = projection([lon, lat]);
     g.attr('opacity', visible ? 1 : 0);
     if (coords) g.attr('transform', `translate(${coords[0]},${coords[1]})`);
   });
@@ -247,6 +260,30 @@ async function loadData() {
   return text.trim().split('\n').map(l => JSON.parse(l));
 }
 
+// ── Normalise raw OS / browser strings ──────────────
+function normalizeOS(raw) {
+  const s = (raw || '').toLowerCase();
+  if (s.includes('windows'))   return 'Windows';
+  if (s.includes('mac'))       return 'macOS';
+  if (s.includes('ios'))       return 'iOS';
+  if (s.includes('android'))   return 'Android';
+  if (s.includes('linux'))     return 'Linux';
+  if (s.includes('chrome os')) return 'Chrome OS';
+  return 'Overig';
+}
+
+function normalizeBrowser(raw) {
+  const s = (raw || '').toLowerCase();
+  if (s.includes('edge'))            return 'Edge';
+  if (s.includes('chrome'))         return 'Chrome';
+  if (s.includes('firefox'))        return 'Firefox';
+  if (s.includes('safari') && !s.includes('chrome')) return 'Safari';
+  if (s.includes('ios'))            return 'Safari';
+  if (s.includes('samsung'))        return 'Samsung';
+  if (s.includes('opera'))          return 'Opera';
+  return 'Overig';
+}
+
 function aggregate(events) {
   const map = {};
   events.forEach(ev => {
@@ -254,32 +291,161 @@ function aggregate(events) {
     const numId = ALPHA2_TO_NUMERIC[code]; if (!numId) return;
     if (!map[numId]) map[numId] = {
       numId, code, name: COUNTRY_NAMES[code] || code,
-      events: 0, uploaded: 0, dismissed: 0, cities: {},
+      events: 0, uploaded: 0, dismissed: 0,
+      cities: {}, fish: {}, hours: [],
+      mobile: 0, desktop: 0,
+      os: {}, browser: {},
     };
     const c = map[numId];
     c.events++;
     if (ev.event_name === 'uploadedFish')       c.uploaded++;
     if (ev.event_name === 'dismissedUploading') c.dismissed++;
     if (ev.city) c.cities[ev.city] = (c.cities[ev.city] || 0) + 1;
+
+    // Device
+    const dev = (ev.device || '').toLowerCase();
+    if (dev === 'mobile' || dev === 'tablet') c.mobile++;
+    else if (dev === 'laptop' || dev === 'desktop') c.desktop++;
+
+    // Fish species from referrer_query
+    const fishMatch = (ev.referrer_query || '').match(/fish=([^&]+)/);
+    if (fishMatch) {
+      const f = decodeURIComponent(fishMatch[1]);
+      c.fish[f] = (c.fish[f] || 0) + 1;
+    }
+
+    // Hour of day from created_at
+    if (ev.created_at) {
+      const h = parseInt(ev.created_at.slice(11, 13), 10);
+      if (!isNaN(h)) c.hours.push(h);
+    }
+
+    // OS
+    if (ev.os) {
+      const os = normalizeOS(ev.os);
+      c.os[os] = (c.os[os] || 0) + 1;
+    }
+
+    // Browser
+    if (ev.browser) {
+      const br = normalizeBrowser(ev.browser);
+      c.browser[br] = (c.browser[br] || 0) + 1;
+    }
   });
+
   Object.values(map).forEach(c => {
     c.topCities = Object.entries(c.cities)
       .sort((a,b) => b[1]-a[1]).slice(0,3).map(([city]) => city).join(', ');
+    // topX: first entry that is not 'unknown' / 'Overig', fall back to first entry
+    const UNKNOWN_VALS = ['unknown', 'Unknown', 'onbekend', 'Onbekend', 'Overig'];
+    const firstKnown = (obj) => {
+      const sorted = Object.entries(obj).sort((a,b) => b[1]-a[1]);
+      return (sorted.find(([k]) => !UNKNOWN_VALS.includes(k)) || sorted[0])?.[0] || null;
+    };
+    c.topFish    = firstKnown(c.fish);
+    c.topOS      = firstKnown(c.os);
+    c.topBrowser = firstKnown(c.browser);
+    c.avgHour = c.hours.length
+      ? Math.round(c.hours.reduce((a,b) => a+b, 0) / c.hours.length)
+      : null;
   });
   return map;
 }
 
 // ── Tooltip ──────────────────────────────────────
+const FISH_COLORS = {
+  'Baars':'#2196F3','Brasem':'#FF9800','Karper':'#9C27B0',
+  'Snoekbaars':'#F44336','Paling':'#795548','unknown':'#9E9E9E',
+};
+
+function tooltipRows(c) {
+  const n  = v => Number(v).toLocaleString('nl-NL');
+  const pct = (a, b) => b > 0 ? ` (${Math.round(a/b*100)}%)` : '';
+  const row = (label, val, color='') =>
+    `<div class="tt-row">${color ? `<span class="tt-dot" style="background:${color}"></span>` : ''}<span class="tt-label">${label}</span><span class="tt-val">${val}</span></div>`;
+
+  const base = row('Bezoeken', n(c.events));
+
+  if (currentMode === 'choropleth' || currentMode === 'bubble' || currentMode === 'flows') {
+    return base
+      + row('🐟 Gespot',   n(c.uploaded)  + pct(c.uploaded,  c.events), C.green)
+      + row('👋 Gesloten', n(c.dismissed) + pct(c.dismissed, c.events), C.coral)
+      + row('Steden', c.topCities || '—');
+  }
+
+  if (currentMode === 'uploadrate' || currentMode === 'pies') {
+    const upPct  = c.events > 0 ? Math.round(c.uploaded  / c.events * 100) : 0;
+    const disPct = c.events > 0 ? Math.round(c.dismissed / c.events * 100) : 0;
+    return base
+      + row('🐟 Gespot',   `${n(c.uploaded)} — ${upPct}%`,   C.green)
+      + row('👋 Gesloten', `${n(c.dismissed)} — ${disPct}%`, C.coral);
+  }
+
+  if (currentMode === 'device') {
+    const other = c.events - c.mobile - c.desktop;
+    return base
+      + row('💻 Desktop/laptop', n(c.desktop) + pct(c.desktop, c.events), '#F5A623')
+      + row('📱 Mobiel/tablet',  n(c.mobile)  + pct(c.mobile,  c.events), '#7B4FBF')
+      + (other > 0 ? row('❓ Overig', n(other) + pct(other, c.events), C.green) : '');
+  }
+
+  if (currentMode === 'fish') {
+    const fishEntries = Object.entries(c.fish).sort((a,b) => b[1]-a[1]).slice(0,5);
+    if (!fishEntries.length) return base + row('Vis', 'Geen data');
+    return base + fishEntries.map(([name, count]) =>
+      row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#607D8B')
+    ).join('');
+  }
+
+  if (currentMode === 'time') {
+    const hourLabel = h => {
+      if (h === null) return '—';
+      if (h < 6)  return `${h}:00 — Nacht 🌙`;
+      if (h < 12) return `${h}:00 — Ochtend 🌅`;
+      if (h < 18) return `${h}:00 — Middag ☀️`;
+      return `${h}:00 — Avond 🌆`;
+    };
+    const buckets = { nacht: 0, ochtend: 0, middag: 0, avond: 0 };
+    (c.hours || []).forEach(h => {
+      if (h < 6) buckets.nacht++;
+      else if (h < 12) buckets.ochtend++;
+      else if (h < 18) buckets.middag++;
+      else buckets.avond++;
+    });
+    return base
+      + row('⏰ Gem. tijdstip', hourLabel(c.avgHour))
+      + row('🌙 Nacht (0–6u)',    n(buckets.nacht)   + pct(buckets.nacht,   c.events), '#5C35A8')
+      + row('🌅 Ochtend (6–12u)', n(buckets.ochtend) + pct(buckets.ochtend, c.events), '#F5C842')
+      + row('☀️ Middag (12–18u)', n(buckets.middag)  + pct(buckets.middag,  c.events), '#E8896A')
+      + row('🌆 Avond (18–24u)',  n(buckets.avond)   + pct(buckets.avond,   c.events), '#3A7D44');
+  }
+
+  if (currentMode === 'os') {
+    const entries = Object.entries(c.os || {}).sort((a,b) => b[1]-a[1]);
+    if (!entries.length) return base + row('OS', 'Geen data');
+    return base + entries.map(([name, count]) =>
+      row(name, n(count) + pct(count, c.events), OS_COLORS[name] || '#B0BEC5')
+    ).join('');
+  }
+
+  if (currentMode === 'browser') {
+    const entries = Object.entries(c.browser || {}).sort((a,b) => b[1]-a[1]);
+    if (!entries.length) return base + row('Browser', 'Geen data');
+    return base + entries.map(([name, count]) =>
+      row(name, n(count) + pct(count, c.events), BROWSER_COLORS[name] || '#B0BEC5')
+    ).join('');
+  }
+
+  return base;
+}
+
 function showTooltip(c, event) {
-  document.getElementById('tt-name').textContent   = `${flag(c.code)} ${c.name}`;
-  document.getElementById('tt-events').textContent = c.events.toLocaleString('nl-NL');
-  document.getElementById('tt-up').textContent     = c.uploaded.toLocaleString('nl-NL');
-  document.getElementById('tt-dis').textContent    = c.dismissed.toLocaleString('nl-NL');
-  document.getElementById('tt-cities').textContent = c.topCities || '—';
+  document.getElementById('tt-name').innerHTML = `${flag(c.code)} ${c.name}`;
+  document.getElementById('tt-body').innerHTML = tooltipRows(c);
   const rect = svgEl.getBoundingClientRect();
   const px   = event.clientX - rect.left;
   const py   = event.clientY - rect.top;
-  tooltip.style.left = Math.min(px + 14, rect.width - 210) + 'px';
+  tooltip.style.left = Math.min(px + 14, rect.width - 230) + 'px';
   tooltip.style.top  = Math.max(py - 10, 0) + 'px';
   tooltip.classList.add('visible');
 }
@@ -397,94 +563,333 @@ function buildEventFeed() {
   });
 }
 
-// ── Renders ──────────────────────────────────────
+// ── Legend helper ────────────────────────────────
+function setLegend(html) {
+  const el = document.getElementById('map-legend');
+  if (!html) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = html;
+}
+
+// ── Helper: place overlay group ──────────────────
+function overlayGroup(lon, lat, c) {
+  const [cx, cy] = projection([lon, lat]) || [W/2, H/2];
+  return overlaysG.append('g')
+    .attr('class', 'overlay-group')
+    .attr('data-lon', lon).attr('data-lat', lat)
+    .attr('transform', `translate(${cx},${cy})`)
+    .attr('opacity', isVisible(lon, lat) ? 1 : 0)
+    .on('mouseover', ev => { stopAutoRotate(); showTooltip(c, ev); })
+    .on('mouseleave', hideTooltip);
+}
+
+// ── 1. Choropleth: total visits ───────────────────
 function renderChoropleth() {
   colorScale.domain([1, maxEvents]);
   countriesG.selectAll('path')
     .attr('fill', d => { const c = countryData[d.id]; return c ? colorScale(c.events) : C.land; });
   overlaysG.selectAll('*').remove();
+  setLegend(`
+    <div class="map-legend-title">Bezoeken</div>
+    <div class="map-legend-gradient" style="background:linear-gradient(to right,#C8E6D0,#1B4332)"></div>
+    <div class="map-legend-gradient-labels"><span>Weinig</span><span>Veel</span></div>
+  `);
 }
 
+// ── 2. Bubble: total visits ───────────────────────
 function renderBubble() {
   countriesG.selectAll('path').attr('fill', C.land);
   overlaysG.selectAll('*').remove();
   const rScale = d3.scaleSqrt([0, maxEvents], [0, 22]);
+  setLegend(`<div class="map-legend-title">Bellen = bezoeken</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#3A7D44;border-radius:50%"></div>Groter = meer</div>`);
 
   Object.values(countryData).forEach(c => {
     const coords = CENTROIDS[c.code]; if (!coords) return;
     const [lon, lat] = coords;
-    const [cx, cy]   = projection([lon, lat]) || [0, 0];
-    const r          = rScale(c.events);
-    const visible    = isVisible(lon, lat);
-
-    const g = overlaysG.append('g')
-      .attr('class', 'overlay-group')
-      .attr('data-lon', lon).attr('data-lat', lat)
-      .attr('transform', `translate(${cx},${cy})`)
-      .attr('opacity', visible ? 1 : 0);
-
-    g.append('circle').attr('r', r * 2)
-      .attr('fill', C.green).attr('fill-opacity', 0.08);
-
-    g.append('circle').attr('r', r)
-      .attr('fill', C.green).attr('fill-opacity', 0.25)
-      .attr('stroke', C.green).attr('stroke-width', 1.5)
-      .on('mouseover', ev => { stopAutoRotate(); showTooltip(c, ev); })
-      .on('mouseleave', hideTooltip);
-
-    if (r > 6) {
-      g.append('text').attr('y', 4).attr('text-anchor', 'middle')
-        .attr('fill', C.greenDark)
-        .attr('font-size', Math.max(8, Math.min(12, r * 0.55)) + 'px')
-        .attr('font-family', 'DM Sans, sans-serif').attr('font-weight', '600')
-        .attr('pointer-events', 'none')
-        .text(c.events.toLocaleString('nl-NL'));
-    }
+    const r = rScale(c.events);
+    const g = overlayGroup(lon, lat, c);
+    g.append('circle').attr('r', r * 2).attr('fill', C.green).attr('fill-opacity', 0.08);
+    g.append('circle').attr('r', r).attr('fill', C.green).attr('fill-opacity', 0.25)
+      .attr('stroke', C.green).attr('stroke-width', 1.5);
+    if (r > 6) g.append('text').attr('y', 4).attr('text-anchor', 'middle')
+      .attr('fill', C.greenDark)
+      .attr('font-size', Math.max(8, Math.min(12, r * 0.55)) + 'px')
+      .attr('font-family', 'DM Sans, sans-serif').attr('font-weight', '600')
+      .attr('pointer-events', 'none').text(c.events.toLocaleString('nl-NL'));
   });
 }
 
-function renderEvents() {
+// ── 3. Upload rate: green=high upload, red=high dismiss ──
+function renderUploadRate() {
+  const rateScale = d3.scaleSequential(d3.interpolateRdYlGn).domain([0, 1]);
+  countriesG.selectAll('path').attr('fill', d => {
+    const c = countryData[d.id];
+    if (!c || c.events === 0) return C.land;
+    return rateScale(c.uploaded / c.events);
+  });
+  overlaysG.selectAll('*').remove();
+  setLegend(`
+    <div class="map-legend-title">Upload ratio</div>
+    <div class="map-legend-gradient" style="background:linear-gradient(to right,#d73027,#ffffbf,#1a9850)"></div>
+    <div class="map-legend-gradient-labels"><span>Gesloten</span><span>Gespot</span></div>
+  `);
+}
+
+// ── 4. Pies: upload vs dismiss ────────────────────
+function renderPies() {
   countriesG.selectAll('path').attr('fill', C.land);
   overlaysG.selectAll('*').remove();
   const rScale = d3.scaleSqrt([0, maxEvents], [0, 18]);
-  const arc    = d3.arc().innerRadius(0);
+  const arc = d3.arc().innerRadius(0);
+  setLegend(`<div class="map-legend-title">Taarten</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#3A7D44"></div>Gespot</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#E8896A"></div>Gesloten</div>`);
 
   Object.values(countryData).forEach(c => {
     const coords = CENTROIDS[c.code]; if (!coords) return;
     const [lon, lat] = coords;
-    const [cx, cy]   = projection([lon, lat]) || [0, 0];
-    const r          = Math.max(6, rScale(c.events));
-    const visible    = isVisible(lon, lat);
+    const r = Math.max(6, rScale(c.events));
     arc.outerRadius(r);
-
     const total = c.uploaded + c.dismissed; if (!total) return;
     const tau = 2 * Math.PI, startA = -Math.PI / 2;
     const midA = startA + (c.uploaded / total) * tau;
-
-    const g = overlaysG.append('g')
-      .attr('class', 'overlay-group')
-      .attr('data-lon', lon).attr('data-lat', lat)
-      .attr('transform', `translate(${cx},${cy})`)
-      .attr('opacity', visible ? 1 : 0);
-
-    if (c.uploaded > 0) g.append('path')
-      .datum({ startAngle: startA, endAngle: midA }).attr('d', arc)
-      .attr('fill', C.green).attr('fill-opacity', 0.9)
-      .on('mouseover', ev => { stopAutoRotate(); showTooltip(c, ev); })
-      .on('mouseleave', hideTooltip);
-
-    if (c.dismissed > 0) g.append('path')
-      .datum({ startAngle: midA, endAngle: startA + tau }).attr('d', arc)
-      .attr('fill', C.coral).attr('fill-opacity', 0.9)
-      .on('mouseover', ev => { stopAutoRotate(); showTooltip(c, ev); })
-      .on('mouseleave', hideTooltip);
+    const g = overlayGroup(lon, lat, c);
+    if (c.uploaded > 0) g.append('path').datum({ startAngle: startA, endAngle: midA })
+      .attr('d', arc).attr('fill', C.green).attr('fill-opacity', 0.9);
+    if (c.dismissed > 0) g.append('path').datum({ startAngle: midA, endAngle: startA + tau })
+      .attr('d', arc).attr('fill', C.coral).attr('fill-opacity', 0.9);
   });
 }
 
+// ── 5. Flow lines: arcs from each country to Utrecht ──
+const UTRECHT = [5.1214, 52.0908];
+function renderFlows() {
+  countriesG.selectAll('path').attr('fill', C.land);
+  overlaysG.selectAll('*').remove();
+  const wScale = d3.scaleSqrt([0, maxEvents], [0.5, 4]);
+  setLegend(`<div class="map-legend-title">Lijnen naar Utrecht</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#3A7D44;height:3px;border-radius:2px"></div>Dikker = meer</div>`);
+
+  Object.values(countryData).forEach(c => {
+    const coords = CENTROIDS[c.code]; if (!coords) return;
+    const [lon, lat] = coords;
+    // Don't draw a line from Utrecht to Utrecht
+    if (Math.abs(lon - UTRECHT[0]) < 2 && Math.abs(lat - UTRECHT[1]) < 2) return;
+
+    const line = { type: 'LineString', coordinates: [[lon, lat], UTRECHT] };
+    const visible = isVisible(lon, lat) || isVisible(UTRECHT[0], UTRECHT[1]);
+    if (!visible) return;
+
+    overlaysG.append('path')
+      .attr('class', 'overlay-group flow-line')
+      .attr('data-lon', lon).attr('data-lat', lat)
+      .attr('d', pathGen(line))
+      .attr('fill', 'none')
+      .attr('stroke', C.green)
+      .attr('stroke-width', wScale(c.events))
+      .attr('stroke-opacity', 0.55)
+      .attr('stroke-linecap', 'round')
+      .on('mouseover', ev => { stopAutoRotate(); showTooltip(c, ev); })
+      .on('mouseleave', hideTooltip);
+
+    // Dot at origin country
+    const [cx, cy] = projection([lon, lat]) || [0, 0];
+    overlaysG.append('circle')
+      .attr('class', 'overlay-group')
+      .attr('data-lon', lon).attr('data-lat', lat)
+      .attr('cx', cx).attr('cy', cy)
+      .attr('r', 3).attr('fill', C.green).attr('fill-opacity', 0.8)
+      .attr('pointer-events', 'none');
+  });
+
+  // Utrecht destination dot
+  const [ux, uy] = projection(UTRECHT) || [0, 0];
+  overlaysG.append('circle')
+    .attr('cx', ux).attr('cy', uy).attr('r', 5)
+    .attr('fill', C.coral).attr('stroke', C.greenDark).attr('stroke-width', 1.5)
+    .attr('pointer-events', 'none');
+  overlaysG.append('text')
+    .attr('x', ux).attr('y', uy - 8).attr('text-anchor', 'middle')
+    .attr('fill', C.greenDark).attr('font-size', '9px').attr('font-weight', '700')
+    .attr('font-family', 'DM Sans, sans-serif').attr('pointer-events', 'none')
+    .text('Utrecht');
+}
+
+// ── 6. Device split: mobile vs desktop ───────────
+function renderDevice() {
+  countriesG.selectAll('path').attr('fill', C.land);
+  overlaysG.selectAll('*').remove();
+  const rScale = d3.scaleSqrt([0, maxEvents], [0, 18]);
+  const arc = d3.arc().innerRadius(0);
+  const MOBILE_COLOR  = '#7B4FBF';  // purple
+  const DESKTOP_COLOR = '#F5A623';  // amber
+  const OTHER_COLOR   = '#3A7D44';
+  setLegend(`<div class="map-legend-title">Apparaat</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#F5A623"></div>Desktop/laptop</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#7B4FBF"></div>Mobiel/tablet</div>`);
+
+  Object.values(countryData).forEach(c => {
+    const coords = CENTROIDS[c.code]; if (!coords) return;
+    const [lon, lat] = coords;
+    const r = Math.max(6, rScale(c.events));
+    arc.outerRadius(r);
+    const total   = c.events; if (!total) return;
+    const mobile  = c.mobile  || 0;
+    const desktop = c.desktop || 0;
+    const other   = total - mobile - desktop;
+    const tau = 2 * Math.PI, s = -Math.PI / 2;
+    const m1 = s + (desktop / total) * tau;
+    const m2 = m1 + (mobile  / total) * tau;
+    const g = overlayGroup(lon, lat, c);
+    if (desktop > 0) g.append('path').datum({ startAngle: s,  endAngle: m1 }).attr('d', arc).attr('fill', DESKTOP_COLOR).attr('fill-opacity', 0.88);
+    if (mobile  > 0) g.append('path').datum({ startAngle: m1, endAngle: m2 }).attr('d', arc).attr('fill', MOBILE_COLOR).attr('fill-opacity', 0.88);
+    if (other   > 0) g.append('path').datum({ startAngle: m2, endAngle: s + tau }).attr('d', arc).attr('fill', OTHER_COLOR).attr('fill-opacity', 0.88);
+  });
+}
+
+// ── 7. Fish species: top fish per country ─────────
+function renderFish() {
+  const rateScale = v => FISH_COLORS[v] || '#607D8B';
+
+  countriesG.selectAll('path').attr('fill', d => {
+    const c = countryData[d.id];
+    if (!c || !c.topFish) return C.land;
+    return rateScale(c.topFish);
+  });
+  overlaysG.selectAll('*').remove();
+
+  const legendItems = Object.entries(FISH_COLORS)
+    .map(([k,v]) => `<div class="map-legend-row"><div class="map-legend-swatch" style="background:${v}"></div>${k}</div>`).join('');
+  setLegend(`<div class="map-legend-title">Meest geziene vis</div>${legendItems}`);
+}
+
+// ── 8. Time of day: when is each country most active ──
+function renderTime() {
+  // Colour by average hour: midnight=purple, morning=yellow, noon=orange, evening=blue
+  const hourColor = h => {
+    if (h === null) return C.land;
+    if (h < 6)  return '#5C35A8';   // night   — purple
+    if (h < 12) return '#F5C842';   // morning — yellow
+    if (h < 18) return '#E8896A';   // afternoon — coral
+    return '#3A7D44';               // evening — green
+  };
+
+  countriesG.selectAll('path').attr('fill', d => {
+    const c = countryData[d.id];
+    return c ? hourColor(c.avgHour) : C.land;
+  });
+  overlaysG.selectAll('*').remove();
+  setLegend(`<div class="map-legend-title">Actief tijdstip</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#5C35A8"></div>Nacht (0–6u)</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#F5C842"></div>Ochtend (6–12u)</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#E8896A"></div>Middag (12–18u)</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#3A7D44"></div>Avond (18–24u)</div>`);
+}
+
+// ── 9. OS: top OS per country ─────────────────────
+const OS_COLORS = {
+  'Windows':   '#0078D4',
+  'macOS':     '#999999',
+  'iOS':       '#A2AAAD',
+  'Android':   '#3DDC84',
+  'Linux':     '#E95420',
+  'Chrome OS': '#FBBC04',
+  'Overig':    '#B0BEC5',
+};
+
+function renderOS() {
+  countriesG.selectAll('path').attr('fill', d => {
+    const c = countryData[d.id];
+    if (!c || !c.topOS) return C.land;
+    return OS_COLORS[c.topOS] || '#B0BEC5';
+  });
+  overlaysG.selectAll('*').remove();
+  const legendItems = Object.entries(OS_COLORS)
+    .map(([k,v]) => `<div class="map-legend-row"><div class="map-legend-swatch" style="background:${v}"></div>${k}</div>`).join('');
+  setLegend(`<div class="map-legend-title">Meest gebruikt OS</div>${legendItems}`);
+}
+
+// ── 10. Browser: top browser per country ──────────
+const BROWSER_COLORS = {
+  'Chrome':  '#4285F4',
+  'Safari':  '#006CFF',
+  'Edge':    '#0078D4',
+  'Firefox': '#FF7139',
+  'Samsung': '#1428A0',
+  'Opera':   '#FF1B2D',
+  'Overig':  '#B0BEC5',
+};
+
+function renderBrowser() {
+  countriesG.selectAll('path').attr('fill', d => {
+    const c = countryData[d.id];
+    if (!c || !c.topBrowser) return C.land;
+    return BROWSER_COLORS[c.topBrowser] || '#B0BEC5';
+  });
+  overlaysG.selectAll('*').remove();
+  const legendItems = Object.entries(BROWSER_COLORS)
+    .map(([k,v]) => `<div class="map-legend-row"><div class="map-legend-swatch" style="background:${v}"></div>${k}</div>`).join('');
+  setLegend(`<div class="map-legend-title">Meest gebruikt browser</div>${legendItems}`);
+}
+
+// ── Get the correct fill for a country in the current mode ──
+function getCountryFill(d) {
+  const c = countryData[d.id];
+
+  if (currentMode === 'choropleth') {
+    if (!c) return C.land;
+    colorScale.domain([1, maxEvents]);
+    return colorScale(c.events);
+  }
+
+  if (currentMode === 'uploadrate') {
+    if (!c || c.events === 0) return C.land;
+    return d3.scaleSequential(d3.interpolateRdYlGn).domain([0, 1])(c.uploaded / c.events);
+  }
+
+  if (currentMode === 'fish') {
+    if (!c || !c.topFish) return C.land;
+    return FISH_COLORS[c.topFish] || '#607D8B';
+  }
+
+  if (currentMode === 'time') {
+    if (!c || c.avgHour === null) return C.land;
+    const h = c.avgHour;
+    if (h < 6)  return '#5C35A8';
+    if (h < 12) return '#F5C842';
+    if (h < 18) return '#E8896A';
+    return '#3A7D44';
+  }
+
+  if (currentMode === 'os') {
+    if (!c || !c.topOS) return C.land;
+    return OS_COLORS[c.topOS] || '#B0BEC5';
+  }
+
+  if (currentMode === 'browser') {
+    if (!c || !c.topBrowser) return C.land;
+    return BROWSER_COLORS[c.topBrowser] || '#B0BEC5';
+  }
+
+  // bubble, pies, flows, device — country base is plain land colour
+  return C.land;
+}
+
 function render() {
-  if (currentMode === 'choropleth') renderChoropleth();
-  else if (currentMode === 'bubble') renderBubble();
-  else renderEvents();
+  const modes = {
+    choropleth: renderChoropleth,
+    bubble:     renderBubble,
+    uploadrate: renderUploadRate,
+    pies:       renderPies,
+    flows:      renderFlows,
+    device:     renderDevice,
+    fish:       renderFish,
+    time:       renderTime,
+    os:         renderOS,
+    browser:    renderBrowser,
+  };
+  (modes[currentMode] || renderChoropleth)();
   redraw();
 }
 
@@ -550,18 +955,17 @@ async function init() {
       .on('mouseover', function(event, d) {
         const c = countryData[d.id];
         if (c) { stopAutoRotate(); showTooltip(c, event); }
-        d3.select(this).attr('fill', d => {
-          const cd = countryData[d.id];
-          return cd ? C.landHover : C.landHover;
-        });
+        // Read the current fill and darken it
+        const current = d3.select(this).attr('fill') || C.land;
+        try {
+          const darker = d3.color(current).darker(0.5).toString();
+          d3.select(this).attr('fill', darker);
+        } catch(e) {}
       })
       .on('mouseleave', function(event, d) {
         hideTooltip();
-        d3.select(this).attr('fill', d => {
-          const c = countryData[d.id];
-          if (currentMode === 'choropleth' && c) return colorScale(c.events);
-          return C.land;
-        });
+        // Restore the correct fill for the active mode
+        d3.select(this).attr('fill', d => getCountryFill(d));
       });
 
     // Shine overlay

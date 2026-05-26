@@ -257,7 +257,7 @@ h1 em {
   grid-template-columns: 1fr 300px;
   gap: 0;
   padding: 0 2.5rem 2.5rem;
-  min-height: calc(100vh - 320px);
+  height: calc(100vh - 280px); max-height: 520px;
 }
 
 /* ── Map panel ── */
@@ -329,7 +329,7 @@ h1 em {
 #map-svg {
   width: 100%;
   height: 100%;
-  min-height: 420px;
+  min-height: 360px;
   display: block;
   cursor: grab;
 }
@@ -668,4 +668,99 @@ h1 em {
   .navbar      { padding: 0 1rem; }
   .nav-links   { display: none; }
   .page-header { padding: 2rem 1rem; }
+}
+
+/* ── Country list scroll ── */
+#country-list {
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ── Map tabs wrap for many tabs ── */
+.map-tabs {
+  flex-wrap: wrap;
+  max-width: calc(100% - 1rem);
+}
+
+/* ── Map legend ── */
+.map-legend {
+  position: absolute;
+  bottom: 2rem;
+  right: 1rem;
+  background: rgba(255,255,255,0.92);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 10px;
+  z-index: 10;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  min-width: 120px;
+}
+
+.map-legend-title {
+  font-weight: 700;
+  color: var(--green-dark);
+  margin-bottom: 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.map-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+  color: var(--text-mid);
+}
+
+.map-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.map-legend-gradient {
+  width: 80px;
+  height: 8px;
+  border-radius: 4px;
+  margin: 4px 0 2px;
+}
+
+.map-legend-gradient-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+/* ── Tooltip dynamic rows ── */
+.tt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 11px;
+}
+
+.tt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tt-label {
+  flex: 1;
+  color: var(--text-muted);
+}
+
+.tt-val {
+  font-weight: 600;
+  color: var(--text-dark);
+  text-align: right;
 }
