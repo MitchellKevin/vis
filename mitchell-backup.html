@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visdeurbel — Vangstdata 2026</title>
+  <meta name="description" content="Een duik onder water: de vangstdata van de Visdeurbel in Utrecht, in twaalf datavisualisaties. Druk op de bel, kijk mee, leer de vissen kennen." />
+  <meta name="theme-color" content="#051321" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Visdeurbel — Vangstdata 2026" />
+  <meta property="og:description" content="Twaalf datavisualisaties van de Utrechtse visdeurbel. Onder de Weerdsluis ligt een wereld die maar weinig mensen zien." />
+  <meta property="og:image" content="https://visdeurbel.nl/og-2026.jpg" />
+  <meta property="og:locale" content="nl_NL" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Visdeurbel — Vangstdata 2026" />
+  <meta name="twitter:description" content="Twaalf datavisualisaties van de Utrechtse visdeurbel." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="styles/style.css" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,700&family=DM+Mono:wght@300;400;500&display=swap" />
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12"></script>
+
+</head>
+<body>
+  <a href="#main" class="skip-link">Spring naar de inhoud</a>
+
+  <nav class="chapter-nav" id="chapterNav" aria-label="Hoofdstuk navigatie">
+    <ul></ul>
+  </nav>
+
+  <div class="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
+
+  <div class="atmosphere" aria-hidden="true">
+    <div class="caustics"></div>
+    <svg class="bubbles-bg" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <radialGradient id="bubbleGrad" cx="35%" cy="30%">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.5)" />
+          <stop offset="60%" stop-color="rgba(126,200,227,0.05)" />
+          <stop offset="100%" stop-color="rgba(126,200,227,0)" />
+        </radialGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <!-- ============================ -->
+  <!-- SVG SYMBOL LIBRARY            -->
+  <!-- ============================ -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <!-- Round fish (brasem/blankvoorn/kolblei/ruisvoorn) -->
+      <symbol id="fish-round" viewBox="-50 -20 100 40">
+        <path d="M -36 0 Q -42 -14, -22 -16 Q 18 -18, 30 -5 L 44 -14 Q 48 0 44 14 L 30 5 Q 18 18, -22 16 Q -42 14, -36 0 Z" fill="currentColor"/>
+        <path d="M 12 -10 Q 16 -8, 18 -3 Q 14 -2, 12 -10 Z" fill="currentColor" opacity="0.65"/>
+        <circle cx="20" cy="-5" r="2" fill="#051321"/>
+        <circle cx="20.7" cy="-5.6" r="0.6" fill="#fff"/>
+      </symbol>
+
+      <!-- Baars (perch-like, sharp dorsal fin) -->
+      <symbol id="fish-baars" viewBox="-50 -20 100 40">
+        <path d="M -34 0 Q -40 -10, -18 -13 L -8 -16 L 2 -13 Q 18 -14, 28 -4 L 44 -12 Q 48 0 44 12 L 28 4 Q 18 14, 2 13 L -8 16 L -18 13 Q -40 10, -34 0 Z" fill="currentColor"/>
+        <path d="M -10 -13 L -4 -3 L 4 -3 L 0 -14 Z" fill="currentColor" opacity="0.55"/>
+        <circle cx="22" cy="-4" r="1.8" fill="#051321"/>
+        <circle cx="22.6" cy="-4.6" r="0.5" fill="#fff"/>
+        <path d="M 8 0 L 24 -2 L 24 2 Z" fill="rgba(0,0,0,0.15)"/>
+      </symbol>
+
+      <!-- Predator (snoek/snoekbaars - elongated with jaws) -->
+      <symbol id="fish-pred" viewBox="-50 -16 100 32">
+        <path d="M -32 0 Q -38 -8, -18 -10 Q 8 -12, 26 -5 L 32 -6 L 36 -2 L 42 -10 L 46 0 L 42 10 L 36 2 L 32 6 L 26 5 Q 8 12, -18 10 Q -38 8, -32 0 Z" fill="currentColor"/>
+        <path d="M 4 -9 L 10 -2 L 18 -2 L 12 -10 Z" fill="currentColor" opacity="0.55"/>
+        <circle cx="22" cy="-3" r="1.6" fill="#051321"/>
+        <circle cx="22.5" cy="-3.5" r="0.4" fill="#fff"/>
+        <path d="M 28 1 L 33 0 L 28 -1 Z" fill="#051321" opacity="0.4"/>
+      </symbol>
+
+      <!-- Long fish (paling/meerval) -->
+      <symbol id="fish-long" viewBox="-60 -10 120 20">
+        <path d="M -50 0 Q -56 -4, -40 -6 Q 0 -8, 28 -5 L 38 -3 L 50 -5 L 52 0 L 50 5 L 38 3 L 28 5 Q 0 8, -40 6 Q -56 4, -50 0 Z" fill="currentColor"/>
+        <circle cx="32" cy="-2" r="1.2" fill="#051321"/>
+      </symbol>
+
+      <!-- Tiny fish (alver) -->
+      <symbol id="fish-tiny" viewBox="-30 -10 60 20">
+        <path d="M -22 0 Q -26 -5, -10 -6 Q 12 -7, 22 -3 L 28 -8 L 26 0 L 28 8 L 22 3 Q 12 7, -10 6 Q -26 5, -22 0 Z" fill="currentColor"/>
+        <circle cx="16" cy="-2.5" r="1" fill="#051321"/>
+      </symbol>
+
+      <!-- Vintage etching fish (for journal) - more detailed line-art -->
+      <symbol id="fish-etch-round" viewBox="-50 -22 100 44">
+        <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round">
+          <path d="M -36 0 Q -42 -16, -20 -18 Q 20 -20, 32 -6 L 44 -16 Q 50 0 44 16 L 32 6 Q 20 20, -20 18 Q -42 16, -36 0 Z"/>
+          <path d="M -36 0 Q -25 -3, -10 -2"/>
+          <path d="M 10 -12 Q 16 -10, 18 -3"/>
+          <path d="M -28 4 Q -20 6, -10 6"/>
+          <circle cx="22" cy="-5" r="2.2"/>
+          <circle cx="22" cy="-5" r="0.6" fill="currentColor"/>
+        </g>
+        <g fill="currentColor" stroke="none" opacity="0.55">
+          <circle cx="-18" cy="-2" r="0.6"/>
+          <circle cx="-8" cy="-6" r="0.6"/>
+          <circle cx="2" cy="-8" r="0.6"/>
+          <circle cx="-22" cy="6" r="0.6"/>
+          <circle cx="-8" cy="8" r="0.6"/>
+          <circle cx="6" cy="6" r="0.6"/>
+        </g>
+      </symbol>
+
+      <symbol id="fish-etch-baars" viewBox="-50 -22 100 44">
+        <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round">
+          <path d="M -34 0 Q -40 -11, -18 -14 L -8 -18 L 2 -14 Q 18 -16, 28 -5 L 44 -14 Q 50 0 44 14 L 28 5 Q 18 16, 2 14 L -8 18 L -18 14 Q -40 11, -34 0 Z"/>
+          <path d="M -12 -14 L -4 -3 L 4 -3 L 0 -14"/>
+          <path d="M -10 14 Q -4 6, 4 6 L 0 14"/>
+          <circle cx="22" cy="-4" r="2"/>
+          <circle cx="22" cy="-4" r="0.5" fill="currentColor"/>
+        </g>
+        <g stroke="currentColor" stroke-width="0.7" fill="none" opacity="0.6">
+          <path d="M -20 -4 L 18 -2"/>
+          <path d="M -20 0 L 18 2"/>
+          <path d="M -20 4 L 18 6"/>
+        </g>
+      </symbol>
+
+      <symbol id="fish-etch-pred" viewBox="-50 -18 100 36">
+        <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round">
+          <path d="M -32 0 Q -38 -8, -18 -11 Q 8 -13, 26 -6 L 34 -7 L 38 -3 L 44 -12 L 48 0 L 44 12 L 38 3 L 34 7 L 26 6 Q 8 13, -18 11 Q -38 8, -32 0 Z"/>
+          <path d="M 4 -10 L 12 -2 L 20 -2 L 14 -11"/>
+          <path d="M 28 1 L 35 0 L 28 -1"/>
+          <circle cx="22" cy="-4" r="1.8"/>
+          <circle cx="22" cy="-4" r="0.5" fill="currentColor"/>
+        </g>
+        <g fill="currentColor" stroke="none" opacity="0.6">
+          <circle cx="-14" cy="-2" r="0.7"/>
+          <circle cx="-2" cy="-5" r="0.7"/>
+          <circle cx="-20" cy="4" r="0.7"/>
+          <circle cx="-6" cy="6" r="0.7"/>
+          <circle cx="8" cy="4" r="0.7"/>
+        </g>
+      </symbol>
+
+      <symbol id="fish-etch-long" viewBox="-60 -12 120 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round">
+          <path d="M -50 0 Q -56 -4, -40 -7 Q 0 -9, 28 -6 L 38 -3 L 50 -6 L 54 0 L 50 6 L 38 3 L 28 6 Q 0 9, -40 7 Q -56 4, -50 0 Z"/>
+          <path d="M -45 0 L 35 0" stroke-dasharray="3 3" opacity="0.5"/>
+          <circle cx="32" cy="-2.5" r="1.4"/>
+        </g>
+      </symbol>
+
+      <symbol id="fish-etch-tiny" viewBox="-30 -10 60 20">
+        <g fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round">
+          <path d="M -22 0 Q -26 -5, -10 -7 Q 12 -8, 22 -3 L 28 -8 L 26 0 L 28 8 L 22 3 Q 12 8, -10 7 Q -26 5, -22 0 Z"/>
+          <circle cx="16" cy="-2.5" r="1.2"/>
+        </g>
+      </symbol>
+
+      <!-- Bubble -->
+      <symbol id="bubble" viewBox="-10 -10 20 20">
+        <circle cx="0" cy="0" r="8" fill="rgba(126,200,227,0.18)" stroke="rgba(255,255,255,0.3)" stroke-width="0.6"/>
+        <circle cx="-3" cy="-3" r="2.5" fill="rgba(255,255,255,0.5)"/>
+      </symbol>
+
+      <!-- Reusable gradient for sluice water -->
+      <linearGradient id="sluis-water" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0d2e4f"/>
+        <stop offset="100%" stop-color="#051321"/>
+      </linearGradient>
+
+      <linearGradient id="ray" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(244,197,96,0.25)"/>
+        <stop offset="100%" stop-color="rgba(244,197,96,0)"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <main id="main">
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 0: De duik          -->
+    <!-- ============================ -->
+    <section id="ch-dive" class="chapter" aria-label="Hoofdstuk 0: De duik">
+      <div class="dive-stage" id="diveStage">
+        <div class="dive-sky" id="diveSky"></div>
+
+        <svg class="dive-skyline" id="diveSkyline" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+          <!-- Distant rooftops -->
+          <g fill="rgba(20, 20, 35, 0.7)">
+            <rect x="0" y="160" width="1440" height="60"/>
+            <polygon points="60,160 90,130 120,160"/>
+            <polygon points="140,160 180,120 220,160"/>
+            <polygon points="240,160 270,135 300,160"/>
+            <rect x="340" y="140" width="40" height="20"/>
+            <polygon points="400,160 430,130 460,160"/>
+            <polygon points="490,160 520,135 550,160"/>
+            <polygon points="1100,160 1140,125 1180,160"/>
+            <polygon points="1210,160 1240,135 1270,160"/>
+            <polygon points="1300,160 1330,128 1360,160"/>
+          </g>
+          <!-- Domtoren (Utrecht's iconic tower) -->
+          <g fill="rgba(15, 15, 30, 0.85)">
+            <rect x="690" y="22" width="60" height="142"/>
+            <polygon points="690,22 720,2 750,22"/>
+            <rect x="700" y="48" width="8" height="14" fill="rgba(244,197,96,0.6)"/>
+            <rect x="732" y="48" width="8" height="14" fill="rgba(244,197,96,0.6)"/>
+            <rect x="700" y="78" width="8" height="14" fill="rgba(244,197,96,0.5)"/>
+            <rect x="732" y="78" width="8" height="14" fill="rgba(244,197,96,0.5)"/>
+            <rect x="700" y="108" width="8" height="14" fill="rgba(244,197,96,0.4)"/>
+            <rect x="732" y="108" width="8" height="14" fill="rgba(244,197,96,0.4)"/>
+            <rect x="715" y="0" width="10" height="22"/>
+          </g>
+          <!-- Sluis silhouettes -->
+          <g fill="rgba(10, 10, 20, 0.7)">
+            <rect x="850" y="135" width="80" height="35"/>
+            <rect x="852" y="120" width="6" height="15"/>
+            <rect x="918" y="120" width="6" height="15"/>
+            <polygon points="850,135 870,128 870,135"/>
+            <polygon points="930,135 910,128 910,135"/>
+          </g>
+          <g fill="rgba(10, 10, 20, 0.7)">
+            <rect x="450" y="145" width="120" height="20"/>
+            <rect x="452" y="138" width="4" height="8"/>
+            <rect x="566" y="138" width="4" height="8"/>
+          </g>
+        </svg>
+
+        <div class="dive-water-surface" id="diveWaterSurface"></div>
+
+        <div class="dive-underwater" id="diveUnderwater">
+          <svg class="dive-rays" id="diveRays" preserveAspectRatio="none" viewBox="0 0 1000 1000">
+            <polygon points="100,0 80,1000 180,1000 220,0" fill="url(#ray)"/>
+            <polygon points="400,0 380,1000 480,1000 520,0" fill="url(#ray)" opacity="0.6"/>
+            <polygon points="780,0 760,1000 860,1000 900,0" fill="url(#ray)" opacity="0.7"/>
+          </svg>
+        </div>
+
+        <div class="dive-title">
+          <p class="eyebrow reveal">Visdeurbel — Vangstdata 2026</p>
+          <h1 class="reveal" id="diveHeadline">Onder de Weerdsluis ligt een wereld die maar weinig mensen zien.</h1>
+          <p class="lede reveal">Dit voorjaar drukten duizenden mensen op een digitale bel. Telkens werd de sluis geopend en zwommen er vissen door. Scroll mee, en duik onder.</p>
+        </div>
+
+        <div class="dive-cue" aria-hidden="true">Scroll om te duiken ↓</div>
+      </div>
+    </section>
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 1: De Visdeurbel-knop -->
+    <!-- ============================ -->
+    <!-- <section id="ch-bell" class="chapter" aria-label="Hoofdstuk 1: De Visdeurbel-knop">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 1 — De bel</p>
+          <h2 class="reveal">Druk op de bel.</h2>
+          <p class="lede reveal">Doe wat duizenden anderen dit jaar al deden — <span class="num" id="bellTotalNumber">4.821</span> keer in totaal.</p>
+        </div>
+
+        <div class="bell-stage" id="bellStage">
+          <div class="bell-orbits" id="bellOrbits"></div>
+          <button class="bell-button" id="bellButton" aria-label="Druk op de visdeurbel">
+            <span class="bell-button-inner">
+              BEL
+              <span>druk hier</span>
+            </span>
+          </button>
+          <div class="bell-counter" aria-live="polite" id="bellCounter">0 / 4.821 belroepen</div>
+        </div>
+      </div>
+    </section> -->
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 2: Zwemrace          -->
+    <!-- ============================ -->
+    <!-- <section id="ch-race" class="chapter" aria-label="Hoofdstuk 2: De zwemrace">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 2 — Zwemrace</p>
+          <h2 class="reveal">Welke vis kwam het vaakst langs?</h2>
+          <p class="lede reveal">Elke baan toont één soort. Hoe verder de vis zwemt, hoe vaker hij dit voorjaar is gezien.</p>
+        </div>
+
+        <div class="race-lanes" id="raceLanes"></div>
+      </div>
+    </section> -->
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 3: Sluis-doorgang    -->
+    <!-- ============================ -->
+    <!-- <section id="ch-sluis" class="chapter" aria-label="Hoofdstuk 3: De sluis-doorgang">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 3 — De doorgang</p>
+          <h2 class="reveal">Zonder de Visdeurbel zouden ze hier vast komen te zitten.</h2>
+          <p class="lede reveal">Dwars door de Weerdsluis stroomt elke soort als een lint omhoog. Dikker lint, vaker gezien.</p>
+        </div>
+
+        <div class="sluis-stage" id="sluisStage" aria-label="Doorsnede van de Weerdsluis met visstromen">
+        </div>
+      </div>
+    </section> -->
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 4: Seizoensklok      -->
+    <!-- ============================ -->
+    <!-- <section id="ch-clock" class="chapter" aria-label="Hoofdstuk 4: De seizoensklok">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 4 — De klok</p>
+          <h2 class="reveal">Vistrek heeft een ritme.</h2>
+          <p class="lede reveal">En dat ritme piekt in april en mei. Dan paaien de vissen — en zoeken ze rustig water.</p>
+        </div>
+
+        <div class="clock-stage" id="clockStage" aria-label="Radiale grafiek per maand"></div>
+
+        <div class="clock-legend" id="clockLegend"></div>
+      </div>
+    </section> -->
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 5: Diepte-strata    -->
+    <!-- ============================ -->
+    <!-- <section id="ch-strata" class="chapter" aria-label="Hoofdstuk 5: Dieptelagen">
+      <div class="strata-stage">
+        <div class="strata-layer strata-top" data-depth="top">
+          <div class="strata-info reveal">
+            <div class="strata-depth">Bovenlaag — 0 tot 1 m</div>
+            <div class="strata-name">Glinsterend dak</div>
+            <p class="strata-list">Alver, Ruisvoorn</p>
+          </div>
+          <div class="strata-fish-pool" id="strataTop"></div>
+        </div>
+        <div class="strata-layer strata-mid" data-depth="mid">
+          <div class="strata-info reveal">
+            <div class="strata-depth">Middenlaag — 1 tot 3 m</div>
+            <div class="strata-name">Het zwemveld</div>
+            <p class="strata-list">Baars, Snoek, Snoekbaars, Winde, Kolblei</p>
+          </div>
+          <div class="strata-fish-pool" id="strataMid"></div>
+        </div>
+        <div class="strata-layer strata-bottom" data-depth="bodem">
+          <div class="strata-info reveal">
+            <div class="strata-depth">Bodem — 3 tot 5 m</div>
+            <div class="strata-name">Donkere modder</div>
+            <p class="strata-list">Brasem, Paling, Meerval</p>
+          </div>
+          <div class="strata-fish-pool" id="strataBottom"></div>
+        </div>
+      </div>
+      <div class="chapter-text" style="margin-top: 2rem; max-width: 520px;">
+        <h2 class="reveal" style="font-size: clamp(1.6rem, 3vw, 2.4rem);">Elke vis heeft zijn eigen verdieping in de waterkolom.</h2>
+      </div>
+    </section> -->
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 6: Aquarium          -->
+    <!-- ============================ -->
+    <section id="ch-aquarium" class="chapter" aria-label="Hoofdstuk 6: Het aquarium">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 6 — Kijkglas</p>
+          <h2 class="reveal">Dit is hoe 4.821 waarnemingen er ongeveer uitzien.</h2>
+          <p class="lede reveal">Niet allemaal tegelijk natuurlijk. We laten een steekproef zien — vissen met hun eigen koers, eigen tempo, eigen verhaal.</p>
+        </div>
+
+        <div class="aquarium-frame">
+          <canvas id="aquariumCanvas" aria-label="Een steekproef van vissen die rondzwemmen"></canvas>
+          <div class="aquarium-counter" aria-live="polite" id="aquariumCounter">1 / 4 821</div>
+        </div>
+
+        <div class="aquarium-filters" id="aquariumFilters" role="group" aria-label="Filter vissoorten in het aquarium"></div>
+        <p style="text-align:center; font-family: var(--mono); font-size: 0.72rem; color: var(--foam); opacity: 0.55; margin-top: 0.8rem; letter-spacing: 0.06em;">
+          Tip — klik in het aquarium om de vissen te laten schrikken.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 7: Stroming          -->
+    <!-- ============================ -->
+    <!-- <section id="ch-flow" class="chapter" aria-label="Hoofdstuk 7: Stroming">
+      <div class="chapter-inner" style="text-align: center;">
+        <p class="eyebrow reveal">Hoofdstuk 7 — Stroming</p>
+        <h2 class="reveal">Een continue stroom richting de paaigronden.</h2>
+        <p class="lede reveal" style="margin: 0 auto;">Van west naar oost, elke vis een eigen golf. Samen één rivier richting de Kromme Rijn.</p>
+      </div>
+
+      <div class="flow-stage">
+        <canvas id="flowCanvas" aria-label="Vissen die als een stroom van links naar rechts zwemmen"></canvas>
+      </div>
+    </section> -->
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 8: Ringkalender      -->
+    <!-- ============================ -->
+    <section id="ch-ring" class="chapter" aria-label="Hoofdstuk 8: Ringkalender">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 8 — Ringkalender</p>
+          <h2 class="reveal">Elk puntje is een dag.</h2>
+          <p class="lede reveal">Elke gloed is een hartslag van de sluis. Hoe groter en lichter, hoe meer vissen er die dag gemeld zijn.</p>
+        </div>
+
+        <div class="ring-stage" id="ringStage" aria-label="Cirkelvormige kalender van 365 dagen"></div>
+      </div>
+    </section>
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 9: Radar             -->
+    <!-- ============================ -->
+    <section id="ch-radar" class="chapter" aria-label="Hoofdstuk 9: Visradar">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 9 — Sonar</p>
+          <h2 class="reveal">Wat zwemt er onder de sluis?</h2>
+          <p class="lede reveal">We zien meer dan je denkt. De radar tikt door — en bij elke draai licht weer een soort op.</p>
+        </div>
+
+        <div class="radar-stage" id="radarStage" aria-label="Radar met opflitsende vissoorten">
+          <div class="radar-detail-panel" id="radarDetail" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 10: Habitat          -->
+    <!-- ============================ -->
+    <!-- <section id="ch-habitat" class="chapter" aria-label="Hoofdstuk 10: Onderwaterlandschap">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 10 — Onderwaterhuis</p>
+          <h2 class="reveal">Een sluis is niet zomaar water. Het is een huis.</h2>
+          <p class="lede reveal">Tussen het riet, onder de stenen, op de zandbodem — overal woont wel iemand. Beweeg over een plek om te ontdekken wie.</p>
+        </div>
+
+        <div class="habitat-stage" id="habitatStage" aria-label="Onderwaterlandschap met habitat-zones">
+        </div>
+        <div class="habitat-tooltip" id="habitatTooltip" role="status" aria-live="polite"></div>
+      </div>
+    </section> -->
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 11: Hengel-vangst    -->
+    <!-- ============================ -->
+    <section id="ch-net" class="chapter" aria-label="Hoofdstuk 11: De hengel-vangst">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 11 — Het net</p>
+          <h2 class="reveal">Als we ze allemaal in één net zouden vangen…</h2>
+          <p class="lede reveal">…wie zou er dan het zwaarst uitkomen? Een handvol meervallen weegt op tegen een hele school blankvoorns.</p>
+        </div>
+
+        <div class="net-controls-wrap">
+          <span class="net-controls-label">Bekijk op</span>
+          <div class="net-toggle" role="tablist" aria-label="Verdeling op">
+            <button type="button" class="net-toggle-btn" data-stat="count" role="tab" aria-selected="false">Aantal</button>
+            <button type="button" class="net-toggle-btn active" data-stat="biomass" role="tab" aria-selected="true">Biomassa</button>
+            <button type="button" class="net-toggle-btn" data-stat="weight" role="tab" aria-selected="false">Gewicht / vis</button>
+          </div>
+        </div>
+
+        <div class="net-stage" id="netStage" aria-label="Bubbel-diagram per soort"></div>
+        <div class="net-info" id="netInfo" aria-live="polite">Klik op een bubbel voor details, of wissel hierboven van weergave.</div>
+      </div>
+    </section>
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 12: Journaal         -->
+    <!-- ============================ -->
+    <section id="ch-journal" class="chapter" aria-label="Hoofdstuk 12: Het Visdeurbel-journaal">
+      <div class="chapter-inner">
+        <div class="chapter-text">
+          <p class="eyebrow reveal">Hoofdstuk 12 — Journaal</p>
+          <h2 class="reveal">Het Visdeurbel-journaal.</h2>
+          <p class="lede reveal">Een ouderwets logboek van een digitale wereld. Elke vissoort krijgt een eigen kolom.</p>
+        </div>
+
+        <article class="journal-paper" id="journalPaper">
+          <header class="journal-masthead">
+            <h3 class="journal-title">De Visdeurbel — Editie 2026</h3>
+            <div class="journal-sub">Vroege berichten uit de Weerdsluis · Voorjaar 2026 · Onafhankelijk natuurboek</div>
+          </header>
+          <div class="journal-grid" id="journalGrid"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============================ -->
+    <!-- Hoofdstuk 13: Outro            -->
+    <!-- ============================ -->
+    <section id="ch-outro" class="chapter" aria-label="Hoofdstuk 13: Bedankt">
+      <div class="chapter-inner" style="text-align: center;">
+        <p class="eyebrow reveal">Tot volgend jaar</p>
+        <h2 class="reveal">Druk op de bel.<br/>De vissen rekenen op je.</h2>
+        <p class="lede reveal" style="margin: 0 auto;">Het seizoen loopt af, maar volgend voorjaar staan ze weer voor de sluis. Kom terug, kijk mee — en help ze door.</p>
+        <a class="outro-button reveal" href="https://visdeurbel.nl" target="_blank" rel="noopener">Naar de live-stream →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="credits">
+    <p>Visdeurbel is een project van Gemeente Utrecht, Hoogheemraadschap De Stichtse Rijnlanden en Dutch Wall Fish.<br/>
+      Datavisualisatie: vangstdata 2026, één seizoen — maart t/m juli. <a href="https://visdeurbel.nl">visdeurbel.nl</a></p>
+  </footer>
+
+  <script src="scripts/main.js"></script>
+</body>
+</html>
