@@ -1,0 +1,32 @@
+:root {
+  --bg-deep:    #01463c;
+  --bg-mid:     #015a4e;
+  --bg-shallow: #027060;
+  --foam:       #f8e7cd;
+  --sun:        #c0a8ff;
+  --water-mid:  #014a42;
+}
+
+html, body { background: #01463c; }
+
+.lede { color: rgba(248,231,205,0.85); }
+
+.fish-tooltip {
+  background: rgba(1,70,60,0.94);
+  border-color: rgba(248,231,205,0.3);
+}
+
+.fish-tooltip strong { color: var(--sun); }
+
+.radar-detail-panel {
+  background: rgba(1,70,60,0.92);
+  border-color: rgba(248,231,205,0.25);
+}
+
+.radar-detail-panel strong { color: var(--sun); }
+
+#ch-ring { background: #f8e7cd; }
+
+#ch-ring h2,
+#ch-ring .eyebrow,
+#ch-ring .lede { color: #01463c; }
