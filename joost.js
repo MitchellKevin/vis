@@ -99,16 +99,17 @@ const pathGen = d3.geoPath(projection);
 const graticule = d3.geoGraticule()();
 
 // ── Colors ───────────────────────────────────────
+// Colors aligned to Visdeurbel design tokens
 const C = {
-  land:      '#D8EFDF',
-  landHover: '#B0D9BC',
-  water:     '#A8D5EA',
-  waterDeep: '#7ABCD8',
-  green:     '#3A7D44',
-  greenDark: '#1B4332',
-  coral:     '#E8896A',
-  stroke:    'rgba(27,67,50,0.2)',
-  graticule: 'rgba(27,67,50,0.07)',
+  land:      '#d4ede9',   // tint of --color-green-dark
+  landHover: '#b0d9d4',
+  water:     '#c2e8f5',   // light teal tint
+  waterDeep: '#7abcd8',
+  green:     '#1eacb0',   // --color-teal (active country accent)
+  greenDark: '#01463c',   // --color-green-dark
+  coral:     '#ff80b9',   // --color-pink
+  stroke:    'rgba(1,70,60,0.2)',
+  graticule: 'rgba(1,70,60,0.07)',
 };
 
 const colorScale = d3.scaleSequentialLog(d3.interpolate('#C8E6D0', '#1B4332'));
