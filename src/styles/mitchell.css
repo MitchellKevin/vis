@@ -292,6 +292,131 @@ body.mitchell-page {
   margin: var(--space-5) auto 0;
 }
 
+/* ── Aquarium (kijkglas) ─────────────────────────────── */
+.aquarium-stage {
+  position: relative;
+  width: min(96vw, 1000px);
+  aspect-ratio: 16 / 10;
+  margin: var(--space-7) auto 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  cursor: crosshair;
+  background:
+    radial-gradient(ellipse at center, rgba(30,172,176,0.16) 0%, rgba(1,90,78,0.5) 50%, #012c26 100%);
+  border: 1px solid rgb(253 247 239 / 0.25);
+  box-shadow: inset 0 0 80px rgb(1 33 28 / 0.5), 0 16px 40px rgb(1 70 60 / 0.25);
+}
+.aquarium-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.aquarium-counter {
+  position: absolute;
+  bottom: var(--space-3);
+  right: var(--space-4);
+  font: var(--text-p2-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-off-white);
+  background: rgb(1 33 28 / 0.55);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-button);
+  pointer-events: none;
+}
+.aquarium-rip {
+  position: absolute;
+  width: 8px; height: 8px;
+  border: 2px solid var(--color-off-white);
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: aquarium-rip 0.9s ease-out forwards;
+}
+@keyframes aquarium-rip {
+  to { width: 220px; height: 220px; opacity: 0; }
+}
+.aquarium-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-5) auto 0;
+  max-width: 820px;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  font: var(--text-p2);
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+.filter-chip::before {
+  content: '';
+  width: 10px; height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--chip, var(--color-teal));
+}
+.filter-chip:hover { background: rgb(1 70 60 / 0.06); }
+.filter-chip:focus-visible { outline: 2px solid var(--color-purple-bell); outline-offset: 2px; }
+.filter-chip.muted { opacity: 0.4; text-decoration: line-through; }
+.aquarium-tip {
+  text-align: center;
+  font: var(--text-p2);
+  color: var(--text-muted);
+  margin: var(--space-4) auto 0;
+}
+
+/* ── Het net (circle-pack) ───────────────────────────── */
+.net-controls-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-6) auto 0;
+}
+.net-controls-label { font: var(--text-p2); color: rgb(253 247 239 / 0.7); }
+.net-toggle {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-off-white);
+  border-radius: var(--radius-pill);
+  background: rgb(253 247 239 / 0.06);
+}
+.net-toggle-btn {
+  font: var(--text-p2-bold);
+  color: var(--color-off-white);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.net-toggle-btn:hover { background: rgb(253 247 239 / 0.1); }
+.net-toggle-btn.active { background: var(--color-purple); color: var(--color-green-dark); }
+.net-toggle-btn:focus-visible { outline: 2px solid var(--color-purple); outline-offset: 2px; }
+
+.net-stage { width: min(94vw, 900px); aspect-ratio: 900 / 680; margin: var(--space-5) auto 0; }
+.net-stage svg { width: 100%; height: 100%; }
+.net-rope { stroke: rgb(253 247 239 / 0.28); stroke-width: 1; fill: none; }
+.net-bubble { cursor: pointer; transition: filter 0.2s ease; transform-box: fill-box; }
+.net-bubble:hover, .net-bubble:focus-visible {
+  filter: brightness(1.12) drop-shadow(0 0 10px currentColor);
+  outline: none;
+}
+.net-info {
+  text-align: center;
+  margin: var(--space-5) auto 0;
+  max-width: 52ch;
+  min-height: 1.4em;
+  font: var(--text-p2);
+  color: rgb(253 247 239 / 0.85);
+}
+
 /* ── Radar ───────────────────────────────────────────── */
 .radar-stage { width: min(94vw, 620px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; position: relative; }
 .radar-stage svg { width: 100%; height: 100%; }

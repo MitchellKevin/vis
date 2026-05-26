@@ -191,6 +191,39 @@ export default function Mitchell() {
         </div>
       </section>
 
+      <section id="ch-aquarium" className="chapter" aria-label="Aquarium">
+        <div className="chapter-inner chapter-inner--wide">
+          <div className="chapter-text">
+            <p className="eyebrow reveal">Kijkglas</p>
+            <h2 className="reveal">Dit is hoe <span id="aquariumTotal">…</span> waarnemingen er ongeveer uitzien.</h2>
+            <p className="lede reveal">Niet allemaal tegelijk natuurlijk — een steekproef, elk met een eigen koers, tempo en verhaal.</p>
+          </div>
+          <div className="aquarium-stage" id="aquariumStage" aria-label="Vissen die rondzwemmen"></div>
+          <div className="aquarium-filters" id="aquariumFilters" role="group" aria-label="Filter vissoorten"></div>
+          <p className="aquarium-tip">Tip — klik in het aquarium om de vissen te laten schrikken.</p>
+        </div>
+      </section>
+
+      <section id="ch-net" className="chapter chapter--dark" aria-label="Het net">
+        <div className="chapter-inner">
+          <div className="chapter-text">
+            <p className="eyebrow reveal">Het net</p>
+            <h2 className="reveal">Als we ze allemaal in één net zouden vangen…</h2>
+            <p className="lede reveal">…wie zou er dan het zwaarst uitkomen? Een handvol meervallen weegt op tegen een hele school blankvoorns.</p>
+          </div>
+          <div className="net-controls-wrap">
+            <span className="net-controls-label">Bekijk op</span>
+            <div className="net-toggle" role="tablist" aria-label="Verdeling op">
+              <button type="button" className="net-toggle-btn" data-stat="count" role="tab" aria-selected="false">Aantal</button>
+              <button type="button" className="net-toggle-btn active" data-stat="biomass" role="tab" aria-selected="true">Biomassa</button>
+              <button type="button" className="net-toggle-btn" data-stat="weight" role="tab" aria-selected="false">Gewicht / vis</button>
+            </div>
+          </div>
+          <div className="net-stage" id="netStage" aria-label="Bubbel-diagram per soort"></div>
+          <div className="net-info" id="netInfo" aria-live="polite">Klik op een bubbel voor details, of wissel hierboven van weergave.</div>
+        </div>
+      </section>
+
       <section id="ch-radar" className="chapter chapter--dark" aria-label="Visradar">
         <div className="chapter-inner">
           <div className="chapter-text">

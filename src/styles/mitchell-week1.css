@@ -13,6 +13,7 @@
 #ch-languages { background: var(--gradient-data-bg); }
 #ch-funnel    { background: var(--gradient-data-bg); }
 #ch-shoal     { background: var(--bg-page); }
+#ch-aquarium  { background: var(--color-gold-light); }
 
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 768px) {

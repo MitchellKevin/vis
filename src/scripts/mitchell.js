@@ -1049,6 +1049,305 @@ export function initMitchell() {
   };
 
   // ════════════════════════════════════════════════════
+  // Aquarium — een steekproef van waarnemingen (canvas)
+  // ════════════════════════════════════════════════════
+  chapterInit['ch-aquarium'] = () => {
+    const stage = $('#aquariumStage');
+    if (!stage) return;
+    stage.querySelectorAll('canvas, .aquarium-counter').forEach(n => n.remove());
+    const canvas = document.createElement('canvas');
+    stage.appendChild(canvas);
+    const counter = document.createElement('div');
+    counter.className = 'aquarium-counter';
+    counter.setAttribute('aria-live', 'polite');
+    stage.appendChild(counter);
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let W = 0, H = 0;
+    function resize() {
+      const r = stage.getBoundingClientRect();
+      W = r.width; H = r.height;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    const ro = new ResizeObserver(resize); ro.observe(stage);
+
+    const total = TOTAL || visData.reduce((s, v) => s + v.count, 0) || 1;
+    const tEl = $('#aquariumTotal'); if (tEl) tEl.textContent = fmt(total);
+
+    // Vis-silhouetten naar kleine offscreen-canvassen (goedkoop hertekenen)
+    const sprites = {};
+    function drawFishPath(c, shape, w, h) {
+      c.beginPath();
+      if (shape === 'long') {
+        c.moveTo(-w * 0.42, 0); c.quadraticCurveTo(-w * 0.5, -h * 0.35, -w * 0.35, -h * 0.35);
+        c.quadraticCurveTo(0, -h * 0.42, w * 0.25, -h * 0.28); c.lineTo(w * 0.35, -h * 0.2);
+        c.lineTo(w * 0.46, -h * 0.32); c.lineTo(w * 0.5, 0); c.lineTo(w * 0.46, h * 0.32);
+        c.lineTo(w * 0.35, h * 0.2); c.lineTo(w * 0.25, h * 0.28);
+        c.quadraticCurveTo(0, h * 0.42, -w * 0.35, h * 0.35); c.quadraticCurveTo(-w * 0.5, h * 0.35, -w * 0.42, 0);
+      } else if (shape === 'tiny') {
+        c.moveTo(-w * 0.36, 0); c.quadraticCurveTo(-w * 0.46, -h * 0.5, -w * 0.18, -h * 0.55);
+        c.quadraticCurveTo(w * 0.22, -h * 0.6, w * 0.34, -h * 0.25); c.lineTo(w * 0.46, -h * 0.45);
+        c.lineTo(w * 0.42, 0); c.lineTo(w * 0.46, h * 0.45); c.lineTo(w * 0.34, h * 0.25);
+        c.quadraticCurveTo(w * 0.22, h * 0.6, -w * 0.18, h * 0.55); c.quadraticCurveTo(-w * 0.46, h * 0.5, -w * 0.36, 0);
+      } else if (shape === 'pred') {
+        c.moveTo(-w * 0.36, 0); c.quadraticCurveTo(-w * 0.46, -h * 0.5, -w * 0.18, -h * 0.5);
+        c.quadraticCurveTo(w * 0.18, -h * 0.55, w * 0.34, -h * 0.3); c.lineTo(w * 0.42, -h * 0.32);
+        c.lineTo(w * 0.46, -h * 0.18); c.lineTo(w * 0.5, -h * 0.5); c.lineTo(w * 0.5, h * 0.5);
+        c.lineTo(w * 0.46, h * 0.18); c.lineTo(w * 0.42, h * 0.32); c.lineTo(w * 0.34, h * 0.3);
+        c.quadraticCurveTo(w * 0.18, h * 0.55, -w * 0.18, h * 0.5); c.quadraticCurveTo(-w * 0.46, h * 0.5, -w * 0.36, 0);
+      } else if (shape === 'baars') {
+        c.moveTo(-w * 0.36, 0); c.quadraticCurveTo(-w * 0.44, -h * 0.5, -w * 0.2, -h * 0.6);
+        c.lineTo(-w * 0.08, -h * 0.75); c.lineTo(0.04, -h * 0.6); c.quadraticCurveTo(w * 0.2, -h * 0.65, w * 0.32, -h * 0.22);
+        c.lineTo(w * 0.46, -h * 0.6); c.lineTo(w * 0.5, 0); c.lineTo(w * 0.46, h * 0.6); c.lineTo(w * 0.32, h * 0.22);
+        c.quadraticCurveTo(w * 0.2, h * 0.65, 0.04, h * 0.6); c.lineTo(-w * 0.08, h * 0.75); c.lineTo(-w * 0.2, h * 0.6);
+        c.quadraticCurveTo(-w * 0.44, h * 0.5, -w * 0.36, 0);
+      } else {
+        c.moveTo(-w * 0.36, 0); c.quadraticCurveTo(-w * 0.44, -h * 0.5, -w * 0.2, -h * 0.6);
+        c.quadraticCurveTo(w * 0.2, -h * 0.7, w * 0.32, -h * 0.2); c.lineTo(w * 0.46, -h * 0.5);
+        c.lineTo(w * 0.5, 0); c.lineTo(w * 0.46, h * 0.5); c.lineTo(w * 0.32, h * 0.2);
+        c.quadraticCurveTo(w * 0.2, h * 0.7, -w * 0.2, h * 0.6); c.quadraticCurveTo(-w * 0.44, h * 0.5, -w * 0.36, 0);
+      }
+      c.fill();
+    }
+    function makeSprite(shape, color) {
+      const key = shape + color;
+      if (sprites[key]) return sprites[key];
+      const w = shape === 'long' ? 64 : shape === 'tiny' ? 32 : 48;
+      const h = shape === 'long' ? 14 : shape === 'tiny' ? 12 : 22;
+      const c = document.createElement('canvas');
+      c.width = w * dpr; c.height = h * dpr;
+      const cc = c.getContext('2d');
+      cc.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cc.fillStyle = color; cc.translate(w / 2, h / 2);
+      drawFishPath(cc, shape, w, h);
+      sprites[key] = c; return c;
+    }
+
+    // ~80 vissen, evenredig per soort
+    const sample = [];
+    visData.forEach(v => {
+      const n = Math.max(1, Math.round((v.count / total) * 80));
+      for (let i = 0; i < n; i++) sample.push({
+        x: Math.random() * 100, y: Math.random() * 100,
+        vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.2,
+        shape: v.shape, color: v.color, naam: v.naam,
+        size: v.shape === 'tiny' ? 0.6 : v.shape === 'long' ? 1.2 : 0.9,
+        wig: Math.random() * Math.PI * 2, visible: true,
+      });
+    });
+
+    // filter-chips per soort
+    const filtersHost = $('#aquariumFilters');
+    if (filtersHost) {
+      filtersHost.innerHTML = '';
+      visData.forEach(v => {
+        const chip = document.createElement('button');
+        chip.type = 'button'; chip.className = 'filter-chip'; chip.dataset.naam = v.naam;
+        chip.style.setProperty('--chip', v.color); chip.setAttribute('aria-pressed', 'true');
+        chip.textContent = v.naam;
+        chip.addEventListener('click', () => {
+          const muted = chip.classList.toggle('muted');
+          chip.setAttribute('aria-pressed', String(!muted));
+          sample.forEach(f => { if (f.naam === v.naam) f.visible = !muted; });
+        });
+        filtersHost.appendChild(chip);
+      });
+    }
+
+    // klik = laten schrikken + rimpel
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width * 100;
+      const py = (e.clientY - rect.top) / rect.height * 100;
+      sample.forEach(f => {
+        const dx = f.x - px, dy = f.y - py, dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 35) { const k = (35 - dist) / 35; f.vx += (dx / Math.max(0.1, dist)) * k * 2.5; f.vy += (dy / Math.max(0.1, dist)) * k * 1.6; }
+      });
+      const rip = document.createElement('span');
+      rip.className = 'aquarium-rip';
+      rip.style.left = (e.clientX - rect.left) + 'px';
+      rip.style.top = (e.clientY - rect.top) + 'px';
+      stage.appendChild(rip);
+      setTimeout(() => rip.remove(), 950);
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width * 100;
+      const py = (e.clientY - rect.top) / rect.height * 100;
+      let closest = null, cd = 4;
+      sample.forEach(f => { if (!f.visible) return; const d = Math.hypot(f.x - px, f.y - py); if (d < cd) { cd = d; closest = f; } });
+      if (closest) { canvas.style.cursor = 'pointer'; showTooltip(`<strong>${closest.naam}</strong>klik om de vissen te laten schrikken`, e.clientX, e.clientY); }
+      else { canvas.style.cursor = 'crosshair'; hideTooltip(); }
+    });
+    canvas.addEventListener('mouseleave', () => hideTooltip());
+
+    let running = false, rafId = 0, counterRafId = 0;
+    function tick() {
+      ctx.clearRect(0, 0, W, H);
+      const grd = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H));
+      grd.addColorStop(0, 'rgba(30,172,176,0.10)'); grd.addColorStop(1, 'rgba(30,172,176,0)');
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+      sample.forEach(f => {
+        f.x += f.vx; f.y += f.vy + Math.sin(f.wig) * 0.04; f.wig += 0.08;
+        f.vx += (50 - f.x) * 0.00006; f.vy += (50 - f.y) * 0.00006;
+        f.vx += (Math.random() - 0.5) * 0.01; f.vy += (Math.random() - 0.5) * 0.006;
+        f.vx *= 0.992; f.vy *= 0.992;
+        if (f.x < -5) f.x = 105; if (f.x > 105) f.x = -5;
+        if (f.y < -5) f.y = 105; if (f.y > 105) f.y = -5;
+        if (!f.visible) return;
+        const sprite = makeSprite(f.shape, f.color);
+        const px = (f.x / 100) * W, py = (f.y / 100) * H;
+        const angle = Math.atan2(f.vy, f.vx);
+        const flip = Math.abs(angle) > Math.PI / 2 ? -1 : 1;
+        const sw = sprite.width / dpr * f.size, sh = sprite.height / dpr * f.size;
+        ctx.save(); ctx.translate(px, py); ctx.rotate(angle * (flip < 0 ? -1 : 1)); ctx.scale(1, flip);
+        ctx.globalAlpha = 0.92; ctx.drawImage(sprite, -sw / 2, -sh / 2, sw, sh); ctx.restore();
+      });
+      if (running) rafId = raf(tick);
+    }
+    function animateCounter() {
+      const start = performance.now(), dur = 3800;
+      function step(now) {
+        const t = Math.min(1, (now - start) / dur);
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        counter.textContent = `${fmt(Math.round(eased * total))} / ${fmt(total)}`;
+        if (t < 1) counterRafId = raf(step);
+      }
+      counterRafId = raf(step);
+    }
+
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        if (!running && !reduceMotion) { running = true; tick(); }
+        if (!counter.dataset.animated) {
+          counter.dataset.animated = '1';
+          if (reduceMotion) counter.textContent = `${fmt(total)} / ${fmt(total)}`; else animateCounter();
+        }
+        if (reduceMotion) tick();
+      } else { running = false; cancelAnimationFrame(rafId); }
+    }, { threshold: 0.1 });
+    io.observe(stage);
+    cleanups.push(() => { running = false; cancelAnimationFrame(rafId); cancelAnimationFrame(counterRafId); io.disconnect(); ro.disconnect(); });
+  };
+
+  // ════════════════════════════════════════════════════
+  // Het net — als we ze allemaal zouden vangen (circle-pack)
+  // ════════════════════════════════════════════════════
+  chapterInit['ch-net'] = () => {
+    const host = $('#netStage');
+    const info = $('#netInfo');
+    const W = 900, H = 680;
+    const svg = d3.select(host).append('svg').attr('viewBox', `0 0 ${W} ${H}`);
+
+    // het net dat van bovenaf zakt
+    const netGroup = svg.append('g');
+    const meshBot = 380;
+    for (let i = 0; i <= 16; i++) {
+      const x = (i / 16) * W;
+      netGroup.append('path').attr('class', 'net-rope')
+        .attr('d', `M ${x} 0 Q ${x + Math.sin(i) * 12} 200, ${x + Math.sin(i + 0.5) * 30} ${meshBot}`);
+    }
+    for (let j = 0; j <= 8; j++) {
+      const y = (j / 8) * meshBot, r = 8 + j * 2;
+      netGroup.append('path').attr('class', 'net-rope').attr('d', `M 0 ${y} Q ${W / 2} ${y + r}, ${W} ${y}`);
+    }
+    netGroup.append('line').attr('x1', 0).attr('y1', 0).attr('x2', W).attr('y2', 0)
+      .attr('stroke', 'rgb(253 247 239 / 0.7)').attr('stroke-width', 2);
+    netGroup.attr('transform', 'translate(0,-200)')
+      .transition().delay(reduceMotion ? 0 : 300).duration(reduceMotion ? 0 : 1400).attr('transform', 'translate(0,0)');
+
+    const bubbleGroup = svg.append('g').attr('transform', 'translate(20, 80)');
+    const defs = svg.append('defs');
+    let currentStat = 'biomass';
+
+    const statFn = { count: d => d.count, weight: d => d.weight, biomass: d => d.count * d.weight };
+    const statLabel = {
+      count:   v => `${fmt(v.count)} waarnemingen`,
+      weight:  v => `~${v.weight} kg per vis`,
+      biomass: v => `${fmt(v.count * v.weight)} kg biomassa (${fmt(v.count)} × ${v.weight} kg)`,
+    };
+    const explainer = {
+      count: 'Verdeeld op aantal waarnemingen.',
+      weight: 'Verdeeld op gemiddeld gewicht per vis.',
+      biomass: 'Verdeeld op biomassa: aantal × gewicht.',
+    };
+
+    function renderPack(stat) {
+      const packData = visData.map(v => ({ ...v, value: statFn[stat](v) }));
+      const pack = d3.pack().size([W - 40, H - 100]).padding(8);
+      const root = d3.hierarchy({ children: packData }).sum(d => d.value);
+      const nodes = pack(root).leaves();
+      const D = reduceMotion ? 0 : 1;
+
+      const sel = bubbleGroup.selectAll('.net-bubble').data(nodes, d => d.data.naam);
+      sel.exit().transition().duration(500 * D).attr('transform', d => `translate(${d.x}, ${d.y}) scale(0)`).remove();
+
+      const enter = sel.enter().append('g')
+        .attr('class', 'net-bubble').attr('tabindex', 0).attr('role', 'button')
+        .attr('transform', d => `translate(${d.x}, ${d.y - 200}) scale(0)`);
+
+      enter.each(function (d) {
+        const g = d3.select(this);
+        const gradId = `bubGrad-${d.data.naam.replace(/\W/g, '')}`;
+        const grad = defs.append('radialGradient').attr('id', gradId).attr('cx', '35%').attr('cy', '30%');
+        grad.append('stop').attr('offset', '0%').attr('stop-color', C.off).attr('stop-opacity', 0.7);
+        grad.append('stop').attr('offset', '50%').attr('stop-color', d.data.color).attr('stop-opacity', 0.55);
+        grad.append('stop').attr('offset', '100%').attr('stop-color', d.data.color).attr('stop-opacity', 0.85);
+        g.append('circle').attr('class', 'bub-main').attr('r', d.r).attr('fill', `url(#${gradId})`)
+          .attr('stroke', 'rgb(253 247 239 / 0.3)').attr('stroke-width', 1);
+        g.append('circle').attr('class', 'bub-shine').attr('cx', -d.r * 0.3).attr('cy', -d.r * 0.3).attr('r', d.r * 0.25)
+          .attr('fill', 'rgb(253 247 239 / 0.45)');
+        g.append('g').attr('class', 'bub-fish').style('color', d.data.color);
+        g.append('text').attr('class', 'bub-label').attr('text-anchor', 'middle')
+          .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('fill', C.off);
+      });
+
+      const all = enter.merge(sel);
+      all.each(function (d) {
+        const g = d3.select(this);
+        const fishSize = Math.min(d.r * 1.4, 96);
+        g.select('.bub-fish').html(`<use href="#${fishSymbolId(d.data.shape)}" x="${-fishSize / 2}" y="${-fishSize / 4}" width="${fishSize}" height="${fishSize / 2.5}"/>`);
+        g.attr('aria-label', `${d.data.naam}: ${statLabel[stat](d.data)}`);
+        const setInfo = () => { info.textContent = `${d.data.naam} — ${statLabel[stat](d.data)}.`; };
+        g.on('click', setInfo).on('mouseenter', setInfo)
+          .on('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setInfo(); } });
+        g.select('.bub-main').transition().duration(800 * D).attr('r', d.r);
+        g.select('.bub-shine').transition().duration(800 * D).attr('cx', -d.r * 0.3).attr('cy', -d.r * 0.3).attr('r', d.r * 0.25);
+        g.select('.bub-label').transition().duration(800 * D)
+          .attr('y', d.r * 0.55).attr('font-size', Math.min(d.r * 0.32, 18)).attr('opacity', d.r > 28 ? 0.92 : 0);
+      });
+      enter.transition().delay((d, i) => (reduceMotion ? 0 : 200 + i * 70)).duration(900 * D).ease(d3.easeCubicOut)
+        .attr('transform', d => `translate(${d.x}, ${d.y}) scale(1)`);
+      sel.transition().duration(800 * D).ease(d3.easeCubicInOut)
+        .attr('transform', d => `translate(${d.x}, ${d.y}) scale(1)`);
+    }
+    renderPack(currentStat);
+    if (info) info.textContent = explainer[currentStat];
+
+    // toggle — onclick i.p.v. addEventListener zodat er bij hertekenen niets opstapelt
+    $$('.net-toggle-btn').forEach(btn => {
+      const on = btn.dataset.stat === currentStat;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', String(on));
+      btn.onclick = () => {
+        if (btn.dataset.stat === currentStat) return;
+        currentStat = btn.dataset.stat;
+        $$('.net-toggle-btn').forEach(b => {
+          const a = b.dataset.stat === currentStat;
+          b.classList.toggle('active', a);
+          b.setAttribute('aria-selected', String(a));
+        });
+        renderPack(currentStat);
+        if (info) info.textContent = explainer[currentStat];
+      };
+    });
+    cleanups.push(() => { $$('.net-toggle-btn').forEach(b => { b.onclick = null; }); });
+  };
+
+  // ════════════════════════════════════════════════════
   // Radar — vissoorten onder de sluis
   // ════════════════════════════════════════════════════
   chapterInit['ch-radar'] = () => {
@@ -1134,7 +1433,7 @@ export function initMitchell() {
   // ── Data laden & (her)tekenen ─────────────────────
   const STAGES = ['#ringStage', '#worldStage', '#funnelStage', '#shoalStage', '#radarStage',
     '#tideStage', '#peaksStage', '#fanaticsStage', '#langStage', '#globeStage', '#pondStage',
-    '#weekdayStage', '#screensStage'];
+    '#weekdayStage', '#screensStage', '#aquariumStage', '#netStage'];
   let currentPeriod = 'maand';
 
   async function loadData(url) {
@@ -1174,7 +1473,7 @@ export function initMitchell() {
     $$('.chapter').forEach(c => { delete c.dataset.inited; });
     STAGES.forEach(sel => {
       const s = $(sel);
-      if (s) s.querySelectorAll('svg, canvas, .pond-clock, .pond-counter').forEach(n => n.remove());
+      if (s) s.querySelectorAll('svg, canvas, .pond-clock, .pond-counter, .aquarium-counter, .aquarium-rip').forEach(n => n.remove());
     });
     const rd = $('#radarDetail'); if (rd) rd.classList.remove('visible');
   }
