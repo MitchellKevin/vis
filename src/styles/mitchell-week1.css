@@ -1,32 +1,27 @@
-:root {
-  --bg-deep:    #01463c;
-  --bg-mid:     #015a4e;
-  --bg-shallow: #027060;
-  --foam:       #f8e7cd;
-  --sun:        #c0a8ff;
-  --water-mid:  #014a42;
+/* ============================================================================
+ * Mitchell — pagina-thema (week 1)
+ * Achtergrond-ritme per hoofdstuk + responsive. Structuur en componenten
+ * staan in mitchell.css; dit is de dunne thematische laag erbovenop.
+ * Alle waarden via tokens uit visdeurbel-tokens.css.
+ * ========================================================================== */
+
+/* Lichte hoofdstukken — afwisseling tussen crème en off-white.
+ * De donkere (#ch-world, #ch-radar) krijgen hun groen uit .chapter--dark. */
+#ch-ring      { background: var(--color-gold-light); }
+#ch-weekday   { background: var(--bg-page); }
+#ch-peaks     { background: var(--gradient-data-bg); }
+#ch-languages { background: var(--gradient-data-bg); }
+#ch-funnel    { background: var(--gradient-data-bg); }
+#ch-shoal     { background: var(--bg-page); }
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .chapter {
+    min-height: auto;
+    padding: var(--space-9) var(--space-4);
+  }
+  .chapter-text { max-width: 100%; }
+  .ring-stage   { margin-top: var(--space-6); }
+  .world-stage  { margin-top: var(--space-5); }
+  .funnel-legend, .shoal-legend { gap: var(--space-3) var(--space-4); }
 }
-
-body.mitchell-page { background: #01463c; }
-
-.lede { color: rgba(248,231,205,0.85); }
-
-.fish-tooltip {
-  background: rgba(1,70,60,0.94);
-  border-color: rgba(248,231,205,0.3);
-}
-
-.fish-tooltip strong { color: var(--sun); }
-
-.radar-detail-panel {
-  background: rgba(1,70,60,0.92);
-  border-color: rgba(248,231,205,0.25);
-}
-
-.radar-detail-panel strong { color: var(--sun); }
-
-#ch-ring { background: #f8e7cd; }
-
-#ch-ring h2,
-#ch-ring .eyebrow,
-#ch-ring .lede { color: #01463c; }
