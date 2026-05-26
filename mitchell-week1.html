@@ -5,33 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Week 1</title>
     <link rel="stylesheet" href="styles/mitchell.css">
+    <link rel="stylesheet" href="styles/mitchell-week1.css">
+    <link rel="stylesheet" href="styles/nav-shared.css">
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-    <style>
-      :root {
-        --bg-deep:    #01463c;
-        --bg-mid:     #015a4e;
-        --bg-shallow: #027060;
-        --foam:       #f8e7cd;
-        --sun:        #c0a8ff;
-        --water-mid:  #014a42;
-      }
-      html, body { background: #01463c; }
-      .lede { color: rgba(248,231,205,0.85); }
-      .fish-tooltip {
-        background: rgba(1,70,60,0.94);
-        border-color: rgba(248,231,205,0.3);
-      }
-      .fish-tooltip strong { color: var(--sun); }
-      .radar-detail-panel {
-        background: rgba(1,70,60,0.92);
-        border-color: rgba(248,231,205,0.25);
-      }
-      .radar-detail-panel strong { color: var(--sun); }
-      #ch-ring { background: #f8e7cd; }
-      #ch-ring h2, #ch-ring .eyebrow, #ch-ring .lede { color: #01463c; }
-    </style>
 </head>
 <body>
+  <nav class="vdb-nav">
+    <a class="vdb-nav__home" href="index.html">← Visdeurbel</a>
+    <span class="vdb-nav__divider">/</span>
+    <div class="vdb-nav__links">
+      <a class="vdb-nav__link" href="Julius.html">Julius</a>
+      <a class="vdb-nav__link" href="joost.html">Joost</a>
+      <a class="vdb-nav__link" aria-current="page" href="mitchell-week1.html">Mitchell</a>
+      <a class="vdb-nav__link" href="nienke.html">Nienke</a>
+      <a class="vdb-nav__link" href="Dashboard/index.html">Dashboard</a>
+    </div>
+  </nav>
   <div class="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
      <!-- ============================ -->
     <!-- Hoofdstuk 8: Ringkalender      -->
