@@ -24,9 +24,17 @@
     <main>
         <h2>Tijdlijn</h2>
         <p>Hoe laat op de dag heb je de meeste kans op een vis?</p>
-        <p>Aantal gespotte vissen per uur per maand</p>
+        <p>Aantal gespotte vissen per uur per maand,
+            <br>
+            De meest gespotte vis per uur per maand.
+        </p>
         <div class="timeline-container">
+            <div class="tooltip-layer" id="tooltip-layer"></div>
             <div class="bars" id="bars"></div>
+            <div class="timeline-controls">
+                <button class="btn" id="scroll-left">← Uur naar links</button>
+                <button class="btn" id="scroll-right">Uur naar rechts →</button>
+            </div>
         </div>
     </main>
 </body>

@@ -1,3 +1,25 @@
+let scrollOffset = 0;
+const HOURS = 24;
+
+let hourData = [];
+
+const bars = document.getElementById('bars');
+
+document.getElementById('scroll-left')
+  .addEventListener('click', () => {
+
+    scrollOffset = (scrollOffset - 1 + HOURS) % HOURS;
+    render(hourData);
+});
+
+document.getElementById('scroll-right')
+  .addEventListener('click', () => {
+
+    scrollOffset = (scrollOffset + 1) % HOURS;
+    render(hourData);
+});
+
+
 // Data ophalen uit het JSON-bestand
 async function loadData() {
     const response = await fetch('../json/event-maand.json');
@@ -14,59 +36,88 @@ async function loadData() {
 
 // Tel hoeveel vissen er per uur zijn
 function countPerHour(events) {
-    // Voor elk uur bewaren we alleen het aantal vissen
-    const hours = Array.from({ length: 24 }, () => ({
-        fish: 0
-    }));
+  const hours = Array.from({ length: 24 }, () => ({
+    total: 0,
+    days: new Set(),
+    fishCounts: new Map(),
+    average: 0,
+    topFish: null
+  }));
 
-    events.forEach(event => {
-        // Haal het uur uit de datum/tijd
-        const hour = parseInt(event.created_at.split(' ')[1].split(':')[0]);
+  events.forEach(event => {
+    if (event.event_name !== 'uploadedFish') return;
 
-        // Tel alleen vissen mee
-        if (event.event_name === 'uploadedFish') {
-            hours[hour].fish++;
-        }
-    });
+    const [date, time] = event.created_at.split(' ');
+    const hour = parseInt(time.slice(0, 2), 10);
 
-    return hours;
+    hours[hour].total++;
+    hours[hour].days.add(date);
+
+    const fish = event.referrer_query.match(/fish=([^&]+)/)?.[1];
+
+    if (!fish || fish === 'unknown' || fish === 'onbekend') return;
+
+    hours[hour].fishCounts.set(fish, (hours[hour].fishCounts.get(fish) || 0) + 1);
+  });
+
+  hours.forEach(hour => {
+    const dayCount = hour.days.size || 1;
+    hour.average = hour.total / dayCount;
+
+    let topFish = null;
+    let topCount = 0;
+
+    for (const [fish, count] of hour.fishCounts) {
+      if (count > topCount) {
+        topCount = count;
+        topFish = fish;
+      }
+    }
+
+    hour.topFish = topFish;
+  });
+
+  return hours;
 }
 
 // Maak de grafiek zichtbaar in de HTML
 function render(hourData) {
-    const barsEl = document.getElementById('bars');
-    const maxFish = Math.max(...hourData.map(hour => hour.fish), 1);
+  const barsEl = document.getElementById('bars');
+  const maxFish = Math.max(...hourData.map(hour => hour.average), 1);
+  const fragment = document.createDocumentFragment();
 
-    // Eerst alles leegmaken
-    barsEl.innerHTML = '';
+  barsEl.innerHTML = '';
 
-    hourData.forEach((hourInfo, hour) => {
-        // Bereken de hoogte van de staaf
-        const height = Math.round((hourInfo.fish / maxFish) * 240);
+  hourData.forEach((_, i) => {
+    const hour = (i + scrollOffset) % HOURS;
+    const hourInfo = hourData[hour];
+    const height = Math.round((hourInfo.average / maxFish) * 240);
 
-        // Maak een nieuw element voor deze kolom
-        const col = document.createElement('div');
-        col.className = 'bar-col';
+    const col = document.createElement('div');
+    col.className = 'bar-col';
 
-        // Zet de HTML in de kolom
-        col.innerHTML = `
-            ${hourInfo.fish > 0 ? `<span class="bar-count">${String(hour).padStart(2, '0')}:00</span>` : ''}
-            <div class="bar-fill" style="height: ${height}px;"></div>
-            <div class="tooltip">
-                ${String(hour).padStart(2, '0')}:00, 
-                ${hourInfo.fish} vis${hourInfo.fish !== 1 ? 'sen' : ''}
-            </div>
-        `;
+    const fishUrl = hourInfo.topFish
+    ? `./images/${encodeURIComponent(hourInfo.topFish.toLowerCase())}.png`
+    : '';
 
-        // Voeg de kolom toe aan de grafiek
-        barsEl.appendChild(col);
-    });
+    col.innerHTML = `
+      ${hourInfo.average > 0 ? `<span class="bar-count">${String(hour).padStart(2, '0')}:00</span>` : ''}
+        <div class="bar-fill" style="height: ${height}px; ${fishUrl ? `background-image: url('${fishUrl}');` : ''}"></div>
+      <div class="tooltip">
+        Gemiddeld ${hourInfo.average.toFixed()} vissen gespot om ${String(hour).padStart(2, '0')}:00, de ${hourInfo.topFish} was de meest gevonden vis dit uur.
+      </div>
+    `;
+
+    fragment.appendChild(col);
+  });
+
+  barsEl.appendChild(fragment);
 }
 
 // Alles starten
 loadData()
     .then(events => {
-        const hourData = countPerHour(events);
+        hourData = countPerHour(events);
         render(hourData);
     })
     .catch(err => {
