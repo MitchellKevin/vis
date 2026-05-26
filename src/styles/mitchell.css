@@ -23,7 +23,7 @@
 
     *, *::before, *::after { box-sizing: border-box; }
 
-    html, body {
+    body.mitchell-page {
       margin: 0;
       padding: 0;
       background: var(--bg-deep);
@@ -37,7 +37,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      html, body { scroll-behavior: auto; }
+      body.mitchell-page { scroll-behavior: auto; }
       *, *::before, *::after {
         animation-duration: 0.001ms !important;
         animation-iteration-count: 1 !important;

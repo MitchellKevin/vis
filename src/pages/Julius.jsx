@@ -2,6 +2,13 @@ import { useRef, useState, useEffect } from 'react';
 import Nav from '../components/Nav.jsx';
 import '../styles/Julius.css';
 
+function useBodyClass(cls) {
+  useEffect(() => {
+    document.body.classList.add(cls);
+    return () => document.body.classList.remove(cls);
+  }, [cls]);
+}
+
 const FISH_DATA = [
   {
     naam: 'Snoekbaars',
@@ -20,6 +27,7 @@ const FISH_DATA = [
 const SLIDES = Array.from({ length: 12 }, (_, i) => FISH_DATA[i % FISH_DATA.length]);
 
 export default function Julius() {
+  useBodyClass('julius-page');
   const carouselRef = useRef(null);
   const popoverRef = useRef(null);
   const [activeAcc, setActiveAcc] = useState({});

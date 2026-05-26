@@ -2,7 +2,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-body {
+body.julius-page {
   background: var(--bg-inverse);
   color: var(--text-on-inverse);
   font: var(--text-p1);

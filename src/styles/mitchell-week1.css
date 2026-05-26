@@ -7,7 +7,7 @@
   --water-mid:  #014a42;
 }
 
-html, body { background: #01463c; }
+body.mitchell-page { background: #01463c; }
 
 .lede { color: rgba(248,231,205,0.85); }
 

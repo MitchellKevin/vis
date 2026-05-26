@@ -8,6 +8,11 @@ export default function Mitchell() {
   const initialized = useRef(false);
 
   useEffect(() => {
+    document.body.classList.add('mitchell-page');
+    return () => document.body.classList.remove('mitchell-page');
+  }, []);
+
+  useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
     const cleanup = initMitchell();
