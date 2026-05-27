@@ -84,12 +84,13 @@ const graticuleG     = d3.select('#graticule-g');
 const loadingOverlay = document.getElementById('loading-overlay');
 
 // ── Globe size ───────────────────────────────────
-const W = 370, H = 340, R = 145;
+const PAD = 60;                        // padding so shadow/arcs don't clip
+const W = 370 + PAD * 2, H = 340 + PAD * 2, R = 145;
 
 // ── Projection (Orthographic = globe) ────────────
 const projection = d3.geoOrthographic()
   .scale(R)
-  .translate([W / 2, H / 2])
+  .translate([W / 2, H / 2])          // globe still centred in expanded canvas
   .clipAngle(90)
   .rotate([0, -20, 0]);   // start centred roughly on Europe/Atlantic
 
@@ -223,20 +224,31 @@ function redraw() {
   d3.select('#globe-shine').attr('d', pathGen({ type: 'Sphere' }));
   d3.select('#globe-outline').attr('d', pathGen({ type: 'Sphere' }));
 
-  // Overlays — reproject from stored [lon,lat]
+  // Re-project flow arc sample points when the globe rotates
+  if (flowAnimState) {
+    const cx0 = W / 2, cy0 = H / 2;
+    flowAnimState.arcData.forEach(d => {
+      d.points.forEach(p => {
+        const raw = projection([p.glon, p.glat]);
+        if (!raw) { p.pt = null; return; }
+        p.basePt = raw.slice();
+        const dx = raw[0] - cx0, dy = raw[1] - cy0;
+        const len = Math.hypot(dx, dy) || 1;
+        const lift = d.maxLift * Math.sin(p.t * Math.PI);
+        p.pt = [raw[0] + (dx / len) * lift, raw[1] + (dy / len) * lift];
+      });
+    });
+  }
+
+  // Overlays — reproject from stored [lon,lat] (non-flow overlays only)
   overlaysG.selectAll('.overlay-group').each(function() {
     const g   = d3.select(this);
     const lon = +g.attr('data-lon');
     const lat = +g.attr('data-lat');
     const visible = isVisible(lon, lat);
 
-    // Flow lines: re-path them via pathGen
-    if (g.classed('flow-line')) {
-      g.attr('opacity', visible ? 0.55 : 0);
-      const line = { type: 'LineString', coordinates: [[lon, lat], UTRECHT] };
-      g.attr('d', pathGen(line));
-      return;
-    }
+    // flow-arc-g is handled by the animation tick — skip here
+    if (g.classed('flow-arc-g')) return;
 
     // All other overlays: translate to projected point
     const coords = projection([lon, lat]);
@@ -663,58 +675,201 @@ function renderPies() {
   });
 }
 
-// ── 5. Flow lines: arcs from each country to Utrecht ──
+// ── 5. Flow lines: animated commit-globe arcs to Utrecht ──
 const UTRECHT = [5.1214, 52.0908];
+
+// Stores active flow animation state so redraw() can reposition arcs
+let flowAnimState = null;
+let flowAnimRAF   = null;
+
 function renderFlows() {
   countriesG.selectAll('path').attr('fill', C.land);
   overlaysG.selectAll('*').remove();
-  const wScale = d3.scaleSqrt([0, maxEvents], [0.5, 4]);
+
+  // Cancel any previous flow animation
+  if (flowAnimRAF) { cancelAnimationFrame(flowAnimRAF); flowAnimRAF = null; }
+  flowAnimState = null;
+
+  // Ensure glow filter exists in defs
+  const svgDefs = d3.select(svgEl).select('defs');
+  if (svgDefs.select('#flowGlow').empty()) {
+    svgDefs.append('filter')
+      .attr('id', 'flowGlow')
+      .attr('x', '-50%').attr('y', '-50%')
+      .attr('width', '200%').attr('height', '200%')
+      .html(`
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      `);
+  }
+
+  const wScale = d3.scaleSqrt([0, maxEvents], [0.4, 3]);
+
   setLegend(`<div class="map-legend-title">Lijnen naar Utrecht</div>
-    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#3A7D44;height:3px;border-radius:2px"></div>Dikker = meer</div>`);
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#1eacb0;height:3px;border-radius:2px"></div>Dikker = meer bezoeken</div>
+    <div class="map-legend-row"><div class="map-legend-swatch" style="background:#ff80b9;border-radius:50%"></div>Utrecht 📍</div>`);
+
+  // Build per-country arc data using great-circle interpolation + 3D lift
+  const GEO_INTERP = d3.geoInterpolate;
+  const arcData = [];
+  const cx0 = W / 2, cy0 = H / 2; // globe center in SVG coords
 
   Object.values(countryData).forEach(c => {
     const coords = CENTROIDS[c.code]; if (!coords) return;
     const [lon, lat] = coords;
-    // Don't draw a line from Utrecht to Utrecht
     if (Math.abs(lon - UTRECHT[0]) < 2 && Math.abs(lat - UTRECHT[1]) < 2) return;
 
-    const line = { type: 'LineString', coordinates: [[lon, lat], UTRECHT] };
-    const visible = isVisible(lon, lat) || isVisible(UTRECHT[0], UTRECHT[1]);
-    if (!visible) return;
+    // Sample the great-circle arc as projected 2-D points
+    const interp = GEO_INTERP([lon, lat], UTRECHT);
+    const steps  = 80;
+    const rawPts = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const [glon, glat] = interp(t);
+      const pt = projection([glon, glat]);
+      if (pt) rawPts.push({ pt: pt.slice(), glon, glat, t });
+    }
+    if (rawPts.length < 2) return;
 
-    overlaysG.append('path')
-      .attr('class', 'overlay-group flow-line')
-      .attr('data-lon', lon).attr('data-lat', lat)
-      .attr('d', pathGen(line))
-      .attr('fill', 'none')
-      .attr('stroke', C.green)
-      .attr('stroke-width', wScale(c.events))
-      .attr('stroke-opacity', 0.55)
-      .attr('stroke-linecap', 'round')
-      .on('mouseover', ev => { stopAutoRotate(); showTooltip(c, ev); })
+    // Compute lift: arcs bow outward from the globe centre.
+    // Lift amount scales with arc chord length in screen space.
+    const p0 = rawPts[0].pt, p1 = rawPts[rawPts.length - 1].pt;
+    const chordLen = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+    // Max lift = 30% of chord, at least 10px for short arcs
+    const maxLift = Math.max(10, chordLen * 0.30);
+
+    const points = rawPts.map(({ pt, glon, glat, t }) => {
+      // Direction from globe center to this point (normalised)
+      const dx = pt[0] - cx0, dy = pt[1] - cy0;
+      const len = Math.hypot(dx, dy) || 1;
+      // Bell-curve lift peaks at t=0.5
+      const lift = maxLift * Math.sin(t * Math.PI);
+      return {
+        pt: [pt[0] + (dx / len) * lift, pt[1] + (dy / len) * lift],
+        glon, glat, t,
+        basePt: pt, // keep original for reprojection
+      };
+    });
+
+    arcData.push({
+      c,
+      lon, lat,
+      points,
+      maxLift,
+      width: wScale(c.events),
+      phase: Math.random(),
+      speed: 0.0004 + (c.events / maxEvents) * 0.0008,
+    });
+  });
+
+  // Keep state so redraw() can update paths
+  flowAnimState = { arcData };
+
+  // ── Draw base arcs & particles ───────────────────
+  // Each arc = one <path> for the base + one <circle> for the traveling particle
+  arcData.forEach((d, i) => {
+    const g = overlaysG.append('g')
+      .attr('class', 'overlay-group flow-arc-g')
+      .attr('data-lon', d.lon)
+      .attr('data-lat', d.lat)
+      .attr('opacity', isVisible(d.lon, d.lat) ? 1 : 0)
+      .on('mouseover', ev => { stopAutoRotate(); showTooltip(d.c, ev); })
       .on('mouseleave', hideTooltip);
 
-    // Dot at origin country
-    const [cx, cy] = projection([lon, lat]) || [0, 0];
-    overlaysG.append('circle')
-      .attr('class', 'overlay-group')
-      .attr('data-lon', lon).attr('data-lat', lat)
-      .attr('cx', cx).attr('cy', cy)
-      .attr('r', 3).attr('fill', C.green).attr('fill-opacity', 0.8)
+    // Trail path (glow)
+    g.append('path')
+      .attr('class', 'flow-trail-glow')
+      .attr('fill', 'none')
+      .attr('stroke', '#1eacb0')
+      .attr('stroke-width', d.width + 2)
+      .attr('stroke-opacity', 0.12)
+      .attr('stroke-linecap', 'round')
+      .attr('filter', 'url(#flowGlow)')
+      .attr('pointer-events', 'none');
+
+    // Main arc path
+    g.append('path')
+      .attr('class', 'flow-trail')
+      .attr('fill', 'none')
+      .attr('stroke', '#1eacb0')
+      .attr('stroke-width', d.width)
+      .attr('stroke-opacity', 0.5)
+      .attr('stroke-linecap', 'round')
+      .attr('pointer-events', 'none');
+
+    // Traveling particle (bright dot)
+    g.append('circle')
+      .attr('class', 'flow-particle')
+      .attr('r', Math.max(2.5, d.width * 1.2))
+      .attr('fill', '#ffffff')
+      .attr('fill-opacity', 0.9)
+      .attr('filter', 'url(#flowGlow)')
       .attr('pointer-events', 'none');
   });
 
-  // Utrecht destination dot
-  const [ux, uy] = projection(UTRECHT) || [0, 0];
-  overlaysG.append('circle')
-    .attr('cx', ux).attr('cy', uy).attr('r', 5)
-    .attr('fill', C.coral).attr('stroke', C.greenDark).attr('stroke-width', 1.5)
+  // Utrecht beacon
+  const utrechtG = overlaysG.append('g')
+    .attr('class', 'flow-utrecht-beacon')
     .attr('pointer-events', 'none');
-  overlaysG.append('text')
-    .attr('x', ux).attr('y', uy - 8).attr('text-anchor', 'middle')
-    .attr('fill', C.greenDark).attr('font-size', '9px').attr('font-weight', '700')
-    .attr('font-family', 'DM Sans, sans-serif').attr('pointer-events', 'none')
-    .text('Utrecht');
+
+  utrechtG.append('circle').attr('class', 'flow-utpulse').attr('r', 9)
+    .attr('fill', '#ff80b9').attr('fill-opacity', 0.25);
+  utrechtG.append('circle').attr('r', 5)
+    .attr('fill', '#ff80b9').attr('stroke', '#01463c').attr('stroke-width', 1.5);
+  utrechtG.append('text')
+    .attr('y', -10).attr('text-anchor', 'middle')
+    .attr('fill', '#01463c').attr('font-size', '8.5px').attr('font-weight', '700')
+    .attr('font-family', 'PT Sans, sans-serif')
+    .text('Utrecht 📍');
+
+  // ── Animation loop ───────────────────────────────
+  function tick(ts) {
+    if (currentMode !== 'flows') return; // stop if tab switched
+
+    const arcGs = overlaysG.selectAll('.flow-arc-g').nodes();
+
+    arcData.forEach((d, i) => {
+      const pts = d.points;
+      const visible = isVisible(d.lon, d.lat);
+      const g = d3.select(arcGs[i]);
+      g.attr('opacity', visible ? 1 : 0);
+      if (!visible) return;
+
+      // Rebuild path from projected points (re-projected each frame via redraw)
+      const lineStr = 'M' + pts.filter(p => p.pt).map(p => `${p.pt[0]},${p.pt[1]}`).join('L');
+      g.select('.flow-trail-glow').attr('d', lineStr);
+      g.select('.flow-trail').attr('d', lineStr);
+
+      // Particle position along the arc
+      const phase = ((ts * d.speed + d.phase) % 1);
+      const idx   = Math.floor(phase * (pts.length - 1));
+      const pt0   = pts[idx]?.pt;
+      const pt1   = pts[Math.min(idx + 1, pts.length - 1)]?.pt;
+      if (pt0 && pt1) {
+        const frac = phase * (pts.length - 1) - idx;
+        g.select('.flow-particle')
+          .attr('cx', pt0[0] + (pt1[0] - pt0[0]) * frac)
+          .attr('cy', pt0[1] + (pt1[1] - pt0[1]) * frac);
+      } else if (pt0) {
+        g.select('.flow-particle').attr('cx', pt0[0]).attr('cy', pt0[1]);
+      }
+    });
+
+    // Utrecht beacon
+    const [ux, uy] = projection(UTRECHT) || [W/2, H/2];
+    const beacon = overlaysG.select('.flow-utrecht-beacon');
+    beacon.attr('transform', `translate(${ux},${uy})`);
+    // Pulse animation via radius oscillation
+    const pulseR = 9 + 5 * Math.abs(Math.sin(ts * 0.002));
+    beacon.select('.flow-utpulse').attr('r', pulseR).attr('fill-opacity', 0.15 + 0.15 * Math.abs(Math.sin(ts * 0.002)));
+
+    flowAnimRAF = requestAnimationFrame(tick);
+  }
+
+  flowAnimRAF = requestAnimationFrame(tick);
 }
 
 // ── 6. Device split: mobile vs desktop ───────────
@@ -878,6 +1033,12 @@ function getCountryFill(d) {
 }
 
 function render() {
+  // Cancel flow animation if leaving flows mode
+  if (currentMode !== 'flows' && flowAnimRAF) {
+    cancelAnimationFrame(flowAnimRAF);
+    flowAnimRAF  = null;
+    flowAnimState = null;
+  }
   const modes = {
     choropleth: renderChoropleth,
     bubble:     renderBubble,
