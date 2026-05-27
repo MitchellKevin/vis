@@ -1,5 +1,8 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 
 export function initMitchell() {
   // ── Styleguide tokens (hex mirrors of visdeurbel-tokens.css) ──
@@ -39,6 +42,7 @@ export function initMitchell() {
   let geoData = null, funnelData = null, techData = null, worldTopo = null;
   let dailyData = null, sessionsData = null, pondWeekData = null, languagesData = null;
   let screensData = null, orientationData = null;
+  let swimTeardown = null;
 
   // ── Landcentroïden [lengtegraad, breedtegraad, naam] voor de bel-landen ──
   const COUNTRY_GEO = {
@@ -1430,10 +1434,244 @@ export function initMitchell() {
     cleanups.push(() => { running = false; cancelAnimationFrame(raf2); io.disconnect(); });
   };
 
+  // ════════════════════════════════════════════════════
+  // Hero — duizenden belroepen vormen één vis (canvas)
+  // ════════════════════════════════════════════════════
+  chapterInit['ch-hero'] = (sectionEl) => {
+    const stage = $('#heroStage');
+    if (!stage) return;
+    const overlay = sectionEl.querySelector('.hero-overlay');
+    const countEl = $('#heroCount');
+    const periodEl = $('#heroPeriod');
+    if (periodEl) periodEl.textContent = periodLabel || '';
+    const target = TOTAL || 0;
+
+    const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+    const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+    const easeIn = (t) => t * t * t;
+    const heroCol = d3.interpolateRgbBasis([C.teal, C.bell, C.purple, C.pink, C.goldDeep]);
+
+    // Vis-silhouet → puntenwolk (offscreen tekenen, pixels uitlezen)
+    function buildFishPoints(n) {
+      const FW = 900, FH = 460, fcx = FW / 2, fcy = FH / 2, hw = 360, hh = 150;
+      const oc = document.createElement('canvas'); oc.width = FW; oc.height = FH;
+      const o = oc.getContext('2d'); o.fillStyle = '#fff';
+      o.beginPath(); o.ellipse(fcx + hw * 0.06, fcy, hw * 0.68, hh * 0.82, 0, 0, Math.PI * 2); o.fill();           // romp
+      o.beginPath(); o.moveTo(fcx - hw * 0.5, fcy); o.lineTo(fcx - hw, fcy - hh * 0.95); o.lineTo(fcx - hw, fcy + hh * 0.95); o.closePath(); o.fill(); // staart
+      o.beginPath(); o.moveTo(fcx - hw * 0.18, fcy - hh * 0.6); o.lineTo(fcx + hw * 0.34, fcy - hh * 0.6); o.lineTo(fcx + hw * 0.02, fcy - hh * 1.12); o.closePath(); o.fill(); // rugvin
+      o.beginPath(); o.moveTo(fcx - hw * 0.02, fcy + hh * 0.5); o.lineTo(fcx + hw * 0.3, fcy + hh * 0.5); o.lineTo(fcx + hw * 0.12, fcy + hh * 0.95); o.closePath(); o.fill(); // buikvin
+      const img = o.getImageData(0, 0, FW, FH).data;
+      const pts = [];
+      for (let y = 0; y < FH; y += 2) for (let x = 0; x < FW; x += 2) { if (img[(y * FW + x) * 4 + 3] > 128) pts.push([x, y]); }
+      for (let i = pts.length - 1; i > 0; i--) { const j = (rng() * (i + 1)) | 0; const t = pts[i]; pts[i] = pts[j]; pts[j] = t; }
+      let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+      for (const p of pts) { if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0]; if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1]; }
+      const bw = maxX - minX || 1, bxc = (minX + maxX) / 2, byc = (minY + maxY) / 2;
+      const take = Math.min(n, pts.length), out = [];
+      for (let i = 0; i < take; i++) { const p = pts[i]; out.push({ fx: (p[0] - bxc) / bw, fy: (p[1] - byc) / bw }); }
+      return out;
+    }
+
+    const N = Math.min(target || 6000, window.innerWidth < 700 ? 4500 : 9000);
+    const parts = buildFishPoints(N).map(fp => ({
+      fx: fp.fx, fy: fp.fy,
+      ca: rng() * Math.PI * 2, cr: 0.28 + rng() * 0.82,
+      delay: rng() * 850, dur: 1400 + rng() * 900,
+      ea: rng() * Math.PI * 2, er: 0.4 + rng() * 0.95,
+      size: 1.3 + rng() * 1.3, ph: rng() * Math.PI * 2,
+      col: heroCol(clamp(fp.fx + 0.5, 0, 1)),
+    }));
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'hero-canvas';
+    stage.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let W = 0, H = 0;
+    function resize() {
+      const r = stage.getBoundingClientRect();
+      W = r.width; H = r.height;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    const ro = new ResizeObserver(resize); ro.observe(stage);
+
+    function draw(elapsed) {
+      const rct = sectionEl.getBoundingClientRect();
+      const s = clamp(-rct.top / (rct.height * 0.85), 0, 1);
+      const maxR = Math.hypot(W, H) * 0.62;
+      const scale = Math.min(W * 0.66, 760);
+      const cx = W / 2, cy = H * 0.5;
+      const expEase = easeIn(s);
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of parts) {
+        const ft = clamp((elapsed - p.delay) / p.dur, 0, 1), ef = easeOut(ft);
+        const fhx = cx + p.fx * scale, fhy = cy + p.fy * scale;
+        const clx = cx + Math.cos(p.ca) * p.cr * maxR, cly = cy + Math.sin(p.ca) * p.cr * maxR;
+        let x = clx + (fhx - clx) * ef, y = cly + (fhy - cly) * ef;
+        const wob = (1 - s) * ef;
+        x += Math.sin(elapsed * 0.0011 + p.ph) * 3 * wob;
+        y += Math.cos(elapsed * 0.0009 + p.ph) * 3 * wob;
+        if (s > 0) { x += Math.cos(p.ea) * p.er * maxR * 0.9 * expEase; y += Math.sin(p.ea) * p.er * maxR * 0.55 * expEase + expEase * expEase * H * 0.5; }
+        const a = ef * (1 - smoothstep(0.6, 1, s));
+        if (a <= 0.01) continue;
+        ctx.globalAlpha = a * 0.92;
+        ctx.fillStyle = p.col;
+        ctx.fillRect(x - p.size / 2, y - p.size / 2, p.size, p.size);
+      }
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      const ce = easeOut(clamp(elapsed / 2200, 0, 1));
+      if (countEl) countEl.textContent = fmt(Math.round(ce * target));
+      if (overlay) { overlay.style.opacity = String(1 - smoothstep(0, 0.55, s)); overlay.style.transform = `translateY(${-s * 40}px)`; }
+    }
+
+    if (reduceMotion) {
+      draw(99999);
+      cleanups.push(() => ro.disconnect());
+      return;
+    }
+
+    let formStart = 0, running = false, rafId = 0;
+    function frame(now) {
+      if (!formStart) formStart = now;
+      draw(now - formStart);
+      if (running) rafId = raf(frame);
+    }
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { if (!running) { running = true; rafId = raf(frame); } }
+      else { running = false; cancelAnimationFrame(rafId); }
+    }, { threshold: 0 });
+    io.observe(sectionEl);
+    cleanups.push(() => { running = false; cancelAnimationFrame(rafId); io.disconnect(); ro.disconnect(); });
+  };
+
+  // ════════════════════════════════════════════════════
+  // Dieptewereld — bioluminescente soorten op hun diepte
+  // ════════════════════════════════════════════════════
+  chapterInit['ch-depth'] = () => {
+    const stage = $('#depthStage');
+    if (!stage) return;
+    const detail = $('#depthDetail');
+    const list = visData.filter(v => v.count > 0).map(v => ({ ...v }));
+    if (!list.length) { stage.insertAdjacentHTML('afterbegin', '<p class="stage-fallback">Geen soortdata.</p>'); return; }
+    const totalC = d3.sum(list, d => d.count);
+
+    const W = 900, H = 620;
+    const svg = d3.select(stage).append('svg').attr('class', 'depth-svg').attr('viewBox', `0 0 ${W} ${H}`);
+    const defs = svg.append('defs');
+    const ray = defs.append('linearGradient').attr('id', 'depthRay').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1);
+    ray.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(30,172,176,0.20)');
+    ray.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(30,172,176,0)');
+
+    // lichtbundels van boven
+    const rays = svg.append('g').attr('class', 'depth-rays');
+    [[-0.05, 90], [0.28, 130], [0.58, 80], [0.82, 150]].forEach(([fx, w], i) => {
+      const x = fx * W;
+      rays.append('polygon')
+        .attr('points', `${x},0 ${x + w},0 ${x + w * 2.2},${H} ${x + w * 1.2},${H}`)
+        .attr('fill', 'url(#depthRay)')
+        .style('animation', `depth-ray-sway ${9 + i * 2}s ease-in-out ${i * 1.4}s infinite`);
+    });
+
+    // dieptebanden
+    const bands = [
+      { key: 'top', label: 'Oppervlak', y: H * 0.22 },
+      { key: 'mid', label: 'Midden', y: H * 0.52 },
+      { key: 'bodem', label: 'Bodem', y: H * 0.82 },
+    ];
+    bands.forEach(b => {
+      svg.append('line').attr('x1', 74).attr('x2', W - 18).attr('y1', b.y).attr('y2', b.y)
+        .attr('stroke', 'rgba(253,247,239,0.10)').attr('stroke-dasharray', '2 7');
+      svg.append('text').attr('x', 16).attr('y', b.y + 4).attr('font-family', FONT_BODY)
+        .attr('font-size', 12).attr('font-weight', 700).attr('fill', C.off).attr('opacity', 0.45).text(b.label);
+    });
+
+    // marine snow
+    const snow = d3.range(46).map(() => ({ x: rng() * W, y: rng() * H, r: 0.6 + rng() * 1.6, sp: 7 + rng() * 17, sw: rng() * Math.PI * 2 }));
+    const snowSel = svg.append('g').attr('class', 'depth-snow').selectAll('circle').data(snow).join('circle')
+      .attr('r', d => d.r).attr('cx', d => d.x).attr('cy', d => d.y).attr('fill', 'rgba(253,247,239,0.5)');
+
+    // soorten per band, horizontaal verdeeld
+    const byBand = { top: [], mid: [], bodem: [] };
+    list.forEach(v => { (byBand[v.diepte] || byBand.mid).push(v); });
+    const maxCount = d3.max(list, d => d.count);
+    const wScale = d3.scaleSqrt().domain([0, maxCount]).range([44, 150]);
+    const nodes = [];
+    bands.forEach(b => {
+      const arr = byBand[b.key], n = arr.length || 1;
+      arr.forEach((v, i) => {
+        const w = wScale(v.count);
+        const tx = 120 + ((i + 0.5) / n) * (W - 190);
+        nodes.push({ ...v, w, h: w * 0.46, tx, ty: b.y, x: tx + (rng() - 0.5) * 60, y: b.y + (rng() - 0.5) * 50, bandLabel: b.label });
+      });
+    });
+
+    const fishG = svg.append('g').attr('class', 'depth-fishes');
+    const node = fishG.selectAll('g.depth-fish').data(nodes).join('g')
+      .attr('class', 'depth-fish').attr('tabindex', 0).attr('role', 'img')
+      .attr('aria-label', d => `${d.naam}: ${fmt(d.count)} waarnemingen, diepte ${d.bandLabel}`)
+      .style('color', d => d.color);
+    node.append('ellipse').attr('class', 'depth-glow').attr('rx', d => d.w * 0.72).attr('ry', d => d.h * 1.4)
+      .attr('fill', d => d.color).style('animation-delay', () => `${rng() * 4}s`);
+    node.append('use').attr('class', 'depth-fish-body')
+      .attr('href', d => '#' + fishSymbolId(d.shape))
+      .attr('x', d => -d.w / 2).attr('y', d => -d.h / 2).attr('width', d => d.w).attr('height', d => d.h);
+    node.append('text').attr('class', 'depth-label').attr('text-anchor', 'middle')
+      .attr('y', d => d.h / 2 + 16).attr('font-family', FONT_BODY).attr('font-size', 12).attr('font-weight', 700)
+      .attr('fill', C.off).text(d => d.naam);
+
+    function activate(d) {
+      svg.classed('has-focus', true);
+      node.classed('active', n => n === d);
+      if (detail) {
+        detail.innerHTML = `<strong>${d.naam}</strong>${fmt(d.count)} waarnemingen · ${(d.count / totalC * 100).toFixed(1)}%<br/>Diepte: ${d.bandLabel}<br/>Gewicht: ~${d.weight} kg`;
+        detail.classList.add('visible');
+      }
+    }
+    function deactivate() { svg.classed('has-focus', false); node.classed('active', false); if (detail) detail.classList.remove('visible'); }
+    node.on('mouseenter mousemove', (e, d) => { activate(d); showTooltip(`<strong>${d.naam}</strong>${fmt(d.count)} waarnemingen`, e.clientX, e.clientY); })
+      .on('mouseleave', () => { deactivate(); hideTooltip(); })
+      .on('focus', (e, d) => { activate(d); const bb = e.currentTarget.getBoundingClientRect(); showTooltip(`<strong>${d.naam}</strong>${fmt(d.count)} waarnemingen`, bb.left + bb.width / 2, bb.top); })
+      .on('blur', () => { deactivate(); hideTooltip(); });
+
+    const place = () => node.attr('transform', d => `translate(${d.x},${d.y})`);
+    const sim = d3.forceSimulation(nodes)
+      .force('x', d3.forceX(d => d.tx).strength(0.18))
+      .force('y', d3.forceY(d => d.ty).strength(0.32))
+      .force('collide', d3.forceCollide(d => Math.max(d.w * 0.55, 28)).strength(0.85))
+      .on('tick', place);
+
+    if (reduceMotion) {
+      sim.stop(); for (let i = 0; i < 240; i++) sim.tick(); place();
+      cleanups.push(() => sim.stop());
+      return;
+    }
+
+    let ended = false;
+    sim.on('end', () => { ended = true; nodes.forEach(d => { d.bx = d.x; d.by = d.y; d.ph = rng() * Math.PI * 2; }); });
+    let running = false, rafD = 0, prev = 0; const t0 = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.05, (now - (prev || now)) / 1000); prev = now;
+      snow.forEach(p => { p.y += p.sp * dt; p.sw += dt; p.x += Math.sin(p.sw) * 0.25; if (p.y > H + 4) { p.y = -4; p.x = rng() * W; } });
+      snowSel.attr('cx', p => p.x).attr('cy', p => p.y);
+      if (ended) { const t = (now - t0) / 1000; nodes.forEach(d => { d.x = d.bx + Math.sin(t * 0.5 + d.ph) * 5; d.y = d.by + Math.cos(t * 0.42 + d.ph) * 5; }); place(); }
+      if (running) rafD = raf(loop);
+    }
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { if (!running) { running = true; rafD = raf(loop); } }
+      else { running = false; cancelAnimationFrame(rafD); }
+    }, { threshold: 0.15 });
+    io.observe(stage);
+    cleanups.push(() => { running = false; cancelAnimationFrame(rafD); io.disconnect(); sim.stop(); });
+  };
+
   // ── Data laden & (her)tekenen ─────────────────────
-  const STAGES = ['#ringStage', '#worldStage', '#funnelStage', '#shoalStage', '#radarStage',
+  const STAGES = ['#heroStage', '#ringStage', '#worldStage', '#funnelStage', '#shoalStage', '#radarStage',
     '#tideStage', '#peaksStage', '#fanaticsStage', '#langStage', '#globeStage', '#pondStage',
-    '#weekdayStage', '#screensStage', '#aquariumStage', '#netStage'];
+    '#weekdayStage', '#screensStage', '#aquariumStage', '#netStage', '#depthStage'];
   let currentPeriod = 'maand';
 
   async function loadData(url) {
@@ -1476,6 +1714,7 @@ export function initMitchell() {
       if (s) s.querySelectorAll('svg, canvas, .pond-clock, .pond-counter, .aquarium-counter, .aquarium-rip').forEach(n => n.remove());
     });
     const rd = $('#radarDetail'); if (rd) rd.classList.remove('visible');
+    const dd = $('#depthDetail'); if (dd) dd.classList.remove('visible');
   }
 
   async function setPeriod(period) {
@@ -1494,6 +1733,88 @@ export function initMitchell() {
     observeChapters();
   }
 
+  // ════════════════════════════════════════════════════
+  // Scroll-vis — een gids die slingerend de pagina af zwemt
+  // ════════════════════════════════════════════════════
+  function initSwimFish() {
+    if (reduceMotion) return () => {};
+    gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+    document.querySelectorAll('.swim-fish').forEach(n => n.remove()); // de-dupe bij hermount
+
+    const host = document.createElement('div');
+    host.className = 'swim-fish';
+    host.setAttribute('aria-hidden', 'true');
+    host.innerHTML = `
+      <div class="swim-fish-rot">
+        <svg viewBox="0 0 64 32">
+          <defs>
+            <linearGradient id="swimFishGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="${C.teal}"/>
+              <stop offset="58%" stop-color="${C.bell}"/>
+              <stop offset="100%" stop-color="${C.purple}"/>
+            </linearGradient>
+          </defs>
+          <g fill="url(#swimFishGrad)">
+            <path class="swim-fish-tail" d="M18 16 L2 5 L6 16 L2 27 Z"/>
+            <ellipse cx="36" cy="16" rx="22" ry="10.5"/>
+            <path d="M34 7 q7 -8 13 -3 q-5 3 -7 7 Z"/>
+          </g>
+          <circle cx="48" cy="13" r="2.1" fill="#01211c"/>
+        </svg>
+      </div>`;
+    document.body.appendChild(host);
+    const rotEl = host.querySelector('.swim-fish-rot');
+
+    const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+
+    // Serpentine-pad over de volledige viewport, opnieuw opgebouwd bij resize
+    let raw = null;
+    function rebuild() {
+      const W = window.innerWidth, H = window.innerHeight;
+      const mx = Math.min(130, W * 0.13);
+      const topPad = 96, botPad = 90;
+      const amp = (W / 2) - mx, crossings = 5, NP = 140;
+      const pts = [];
+      for (let i = 0; i <= NP; i++) {
+        const t = i / NP;
+        pts.push([(W / 2) - amp * Math.cos(t * Math.PI * crossings), topPad + t * (H - topPad - botPad)]);
+      }
+      const d = d3.line().curve(d3.curveCatmullRom.alpha(0.5))(pts);
+      raw = MotionPathPlugin.getRawPath(d);
+      MotionPathPlugin.cacheRawPathMeasurements(raw);
+    }
+    rebuild();
+
+    let lastDir = 1;
+    function placeFish(p) {
+      if (!raw) return;
+      const a = MotionPathPlugin.getPositionOnPath(raw, clamp(p, 0, 1));
+      const b = MotionPathPlugin.getPositionOnPath(raw, clamp(p + 0.004, 0, 1));
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dir = dx < -0.02 ? -1 : dx > 0.02 ? 1 : lastDir;
+      lastDir = dir;
+      const tilt = clamp(Math.atan2(dy, Math.abs(dx) + 1e-4) * 180 / Math.PI, -18, 18);
+      gsap.set(host, { x: a.x, y: a.y, xPercent: -50, yPercent: -50, scaleX: dir });
+      gsap.set(rotEl, { rotation: tilt });
+    }
+    placeFish(0);
+
+    const proxy = { p: 0 };
+    const tween = gsap.to(proxy, {
+      p: 1, ease: 'none',
+      scrollTrigger: { start: 0, end: 'max', scrub: 1, invalidateOnRefresh: true },
+      onUpdate: () => placeFish(proxy.p),
+    });
+    ScrollTrigger.addEventListener('refreshInit', rebuild);
+
+    return () => {
+      ScrollTrigger.removeEventListener('refreshInit', rebuild);
+      if (tween.scrollTrigger) tween.scrollTrigger.kill();
+      tween.kill();
+      host.remove();
+    };
+  }
+
   // ── Boot ──────────────────────────────────────────
   async function boot() {
     try { await loadData('/json/vis-data.json'); }
@@ -1502,6 +1823,9 @@ export function initMitchell() {
     catch (e) { console.warn('world-110m.json niet geladen', e); }
     $$('.data-switch__btn').forEach(b => b.addEventListener('click', () => setPeriod(b.dataset.period)));
     observeChapters();
+    // Na de awaits aanmaken: overleeft zo de StrictMode mount→unmount→remount
+    // (anders ruimt de unmount-cleanup de vis op vóór hij opnieuw gemaakt wordt).
+    swimTeardown = initSwimFish();
   }
 
   boot();
@@ -1510,5 +1834,6 @@ export function initMitchell() {
     sectionObserver.disconnect();
     cleanups.forEach(fn => { try { fn(); } catch { /* noop */ } });
     rafs.forEach(id => cancelAnimationFrame(id));
+    if (swimTeardown) swimTeardown();
   };
 }

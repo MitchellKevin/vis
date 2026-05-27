@@ -456,3 +456,176 @@ body.mitchell-page {
   color: var(--color-purple);
   margin-bottom: var(--space-1);
 }
+
+/* ── Hero — puntenwolk wordt vis ─────────────────────── */
+.chapter--hero {
+  padding: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 42%, rgba(30, 172, 176, 0.18), transparent 70%),
+    radial-gradient(circle at 50% 120%, rgba(155, 116, 255, 0.16), transparent 60%),
+    var(--color-green-dark);
+}
+.hero-stage { position: absolute; inset: 0; z-index: 0; }
+.hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hero-overlay {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: var(--space-6);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+.hero-eyebrow {
+  font: var(--text-p2-bold);
+  color: var(--color-teal);
+  margin: 0 0 var(--space-4);
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(56px, 13vw, 168px);
+  line-height: 1;
+  color: var(--color-off-white);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 40px rgba(1, 33, 28, 0.6);
+}
+.hero-sub {
+  font: var(--text-p1-bold);
+  color: var(--color-purple);
+  margin: var(--space-4) 0 0;
+}
+.hero-lede {
+  font: var(--text-p1);
+  color: rgb(253 247 239 / 0.78);
+  max-width: 44ch;
+  margin: var(--space-5) auto 0;
+}
+.hero-scroll {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-9);
+  font: var(--text-p2-bold);
+  color: rgb(253 247 239 / 0.55);
+}
+.hero-scroll-dot {
+  width: 22px; height: 36px;
+  border: 1.5px solid rgb(253 247 239 / 0.5);
+  border-radius: var(--radius-pill);
+  position: relative;
+}
+.hero-scroll-dot::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 7px;
+  width: 4px; height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-purple);
+  transform: translateX(-50%);
+  animation: hero-scroll-bob 1.6s ease-in-out infinite;
+}
+@keyframes hero-scroll-bob {
+  0%, 100% { transform: translate(-50%, 0); opacity: 1; }
+  60%      { transform: translate(-50%, 14px); opacity: 0.2; }
+}
+
+/* ── Dieptewereld (bioluminescent) ───────────────────── */
+.depth-stage {
+  position: relative;
+  width: min(96vw, 900px);
+  aspect-ratio: 900 / 620;
+  margin: var(--space-7) auto 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  border: 1px solid rgb(253 247 239 / 0.12);
+  background:
+    radial-gradient(ellipse 70% 32% at 50% -6%, rgba(30, 172, 176, 0.22), transparent 70%),
+    linear-gradient(180deg, #04302a 0%, #02211d 45%, #010f0d 100%);
+  box-shadow: inset 0 -60px 90px rgb(0 0 0 / 0.5), 0 16px 40px rgb(1 70 60 / 0.3);
+}
+.depth-svg { width: 100%; height: 100%; display: block; }
+.depth-rays polygon { mix-blend-mode: screen; opacity: 0.5; }
+@keyframes depth-ray-sway {
+  0%, 100% { transform: translateX(0); opacity: 0.35; }
+  50%      { transform: translateX(18px); opacity: 0.6; }
+}
+.depth-snow circle { pointer-events: none; }
+.depth-fish { cursor: pointer; transition: opacity 0.35s ease; }
+.depth-fish:focus-visible { outline: none; }
+.depth-glow {
+  pointer-events: none;
+  opacity: 0.32;
+  filter: blur(16px);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: depth-glow-pulse 6s ease-in-out infinite;
+}
+@keyframes depth-glow-pulse {
+  0%, 100% { opacity: 0.22; transform: scale(0.92); }
+  50%      { opacity: 0.42; transform: scale(1.08); }
+}
+.depth-fish-body {
+  filter: drop-shadow(0 0 5px currentColor);
+  transition: filter 0.3s ease;
+}
+.depth-label {
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 0.3s ease;
+}
+.depth-svg.has-focus .depth-fish { opacity: 0.22; }
+.depth-svg.has-focus .depth-fish.active { opacity: 1; }
+.depth-fish.active .depth-glow { opacity: 0.7; }
+.depth-fish.active .depth-fish-body { filter: drop-shadow(0 0 12px currentColor) brightness(1.15); }
+.depth-fish.active .depth-label { opacity: 1; }
+.depth-detail {
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  max-width: 230px;
+  background: rgb(1 33 28 / 0.78);
+  border: 1px solid rgb(253 247 239 / 0.25);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
+  font: var(--text-p2);
+  color: var(--color-off-white);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.depth-detail.visible { opacity: 1; }
+.depth-detail strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--color-purple);
+  margin-bottom: var(--space-1);
+}
+
+/* ── Scroll-vis — slingerende gids over de pagina ────── */
+.swim-fish {
+  position: fixed;
+  left: 0; top: 0;
+  width: 60px; height: 30px;
+  z-index: 50;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 0 12px rgb(155 116 255 / 0.5));
+}
+.swim-fish svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.swim-fish-rot { width: 100%; height: 100%; transform-origin: 50% 50%; }
+.swim-fish-tail {
+  transform-box: fill-box;
+  transform-origin: 100% 50%;
+  animation: swim-tail 0.85s ease-in-out infinite;
+}
+@keyframes swim-tail {
+  0%, 100% { transform: rotate(-9deg); }
+  50%      { transform: rotate(9deg); }
+}
+@media (max-width: 768px) {
+  .swim-fish { width: 46px; height: 23px; }
+}

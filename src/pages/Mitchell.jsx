@@ -59,6 +59,17 @@ export default function Mitchell() {
 
       <div className="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
 
+      <section id="ch-hero" className="chapter chapter--hero chapter--dark" aria-label="Intro">
+        <div className="hero-stage" id="heroStage" aria-hidden="true"></div>
+        <div className="hero-overlay">
+          <p className="hero-eyebrow">De Visdeurbel in cijfers</p>
+          <h1 className="hero-title"><span id="heroCount">0</span></h1>
+          <p className="hero-sub">keer ging de bel · <span id="heroPeriod">…</span></p>
+          <p className="hero-lede">Duizenden mensen drukken op de knop om een vis door de sluis te helpen. Samen vormen ze één grote vis — scroll en laat ze los.</p>
+          <div className="hero-scroll" aria-hidden="true"><span className="hero-scroll-dot"></span>scroll</div>
+        </div>
+      </section>
+
       <section id="ch-ring" className="chapter" aria-label="Ringkalender">
         <div className="chapter-inner">
           <div className="chapter-text">
@@ -233,6 +244,19 @@ export default function Mitchell() {
           </div>
           <div className="radar-stage" id="radarStage" aria-label="Radar met opflitsende vissoorten">
             <div className="radar-detail-panel" id="radarDetail" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ch-depth" className="chapter chapter--dark" aria-label="Dieptewereld">
+        <div className="chapter-inner">
+          <div className="chapter-text">
+            <p className="eyebrow reveal">Onder het oppervlak</p>
+            <h2 className="reveal">Elke soort op zijn eigen diepte.</h2>
+            <p className="lede reveal">Sommige vissen scheren langs het oppervlak, andere kruipen over de bodem. Beweeg over een vis en hij licht op in het donker.</p>
+          </div>
+          <div className="depth-stage" id="depthStage" aria-label="Vissoorten op hun waterdiepte">
+            <div className="depth-detail" id="depthDetail" role="status" aria-live="polite"></div>
           </div>
         </div>
       </section>
