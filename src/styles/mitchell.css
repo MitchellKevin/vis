@@ -492,12 +492,12 @@ body.mitchell-page {
 }
 .hero-sub {
   font: var(--text-p1-bold);
-  color: var(--color-purple);
+  color: var(--color-off-white);
   margin: var(--space-4) 0 0;
 }
 .hero-lede {
   font: var(--text-p1);
-  color: rgb(253 247 239 / 0.78);
+  color: var(--color-off-white);
   max-width: 44ch;
   margin: var(--space-5) auto 0;
 }
@@ -506,7 +506,7 @@ body.mitchell-page {
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
-  margin-top: var(--space-9);
+  margin-top: var(--space-11);
   font: var(--text-p2-bold);
   color: rgb(253 247 239 / 0.55);
 }
