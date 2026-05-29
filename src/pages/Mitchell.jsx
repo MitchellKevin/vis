@@ -102,7 +102,7 @@ export default function Mitchell() {
             <p className="lede reveal">Belt het weekend op een ander ritme dan een doordeweekse dag? De twee curves vertellen het.</p>
             <p className="chapter-stat reveal" id="weekdayStat" aria-live="polite"></p>
           </div>
-          <div className="weekday-stage" id="weekdayStage" aria-label="Belroepen per uur: weekend versus doordeweeks"></div>
+          <div className="weekday-stage" id="weekdayStage" aria-label="Bel oproepen per uur: weekend versus doordeweeks"></div>
         </div>
       </section>
 
@@ -111,10 +111,10 @@ export default function Mitchell() {
           <div className="chapter-text">
             <p className="eyebrow reveal">Piekdagen</p>
             <h2 className="reveal">Eén maand, een paar uitbarstingen.</h2>
-            <p className="lede reveal">Belroepen komen niet gelijkmatig binnen. Op sommige dagen barst het los.</p>
+            <p className="lede reveal">Bel oproepen komen niet gelijkmatig binnen. Op sommige dagen barst het los.</p>
             <p className="chapter-stat reveal" id="peaksStat" aria-live="polite"></p>
           </div>
-          <div className="peaks-stage" id="peaksStage" aria-label="Dagelijkse belroepen over de maand"></div>
+          <div className="peaks-stage" id="peaksStage" aria-label="Dagelijkse bel oproepen over de maand"></div>
         </div>
       </section>
 
@@ -126,7 +126,7 @@ export default function Mitchell() {
             <p className="lede reveal">Eén Utrechtse sluis, <strong id="worldCountryCount">159</strong> landen die meekijken. Van Polen tot de Filipijnen drukt iedereen mee op de knop.</p>
             <p className="world-stat reveal" id="worldStat" aria-live="polite"></p>
           </div>
-          <div className="world-stage" id="worldStage" aria-label="Wereldkaart met belroepen per land"></div>
+          <div className="world-stage" id="worldStage" aria-label="Wereldkaart met bel oproepen per land"></div>
         </div>
       </section>
 
@@ -149,7 +149,7 @@ export default function Mitchell() {
             <h2 className="reveal">De bel volgt de schemering.</h2>
             <p className="lede reveal">Het drukste uur is overal hetzelfde lokale moment. Kijk hoe de avondpiek met de draaiing van de aarde de wereld rondreist.</p>
           </div>
-          <div className="globe-stage" id="globeStage" aria-label="Draaiende wereldbol met belroepen"></div>
+          <div className="globe-stage" id="globeStage" aria-label="Draaiende wereldbol met bel oproepen"></div>
         </div>
       </section>
 
@@ -160,7 +160,7 @@ export default function Mitchell() {
             <h2 className="reveal">Aanbellen of toch afhaken?</h2>
             <p className="lede reveal">Niet elke gespotte vis wordt gemeld. Voor elke vijf keer dat iemand twijfelt en wegklikt, gaat er één keer écht de bel.</p>
           </div>
-          <div className="funnel-stage" id="funnelStage" aria-label="Stroomdiagram van meldingen naar belroepen"></div>
+          <div className="funnel-stage" id="funnelStage" aria-label="Stroomdiagram van meldingen naar bel oproepen"></div>
           <div className="funnel-legend" id="funnelLegend"></div>
         </div>
       </section>
@@ -173,7 +173,7 @@ export default function Mitchell() {
             <p className="lede reveal">De meeste bezoekers bellen één keer en zwaaien de vis uit. Maar een handjevol blijft maar drukken.</p>
             <p className="chapter-stat reveal" id="fanaticsStat" aria-live="polite"></p>
           </div>
-          <div className="fanatics-stage" id="fanaticsStage" aria-label="Belroepen per bezoek"></div>
+          <div className="fanatics-stage" id="fanaticsStage" aria-label="Bel oproepen per bezoek"></div>
         </div>
       </section> */}
 
@@ -269,7 +269,7 @@ export default function Mitchell() {
             <h2 className="reveal">Een week in zestig seconden.</h2>
             <p className="lede reveal">Elke rimpeling is één belroep, op het exacte moment dat hij gebeurde. Zie de sluis ademen: stil in de nacht, een stortbui rond etenstijd.</p>
           </div>
-          <div className="pond-stage" id="pondStage" aria-label="Rimpelingen die belroepen door de week tonen"></div>
+          <div className="pond-stage" id="pondStage" aria-label="Rimpelingen die bel oproepen door de week tonen"></div>
         </div>
       </section> */}
     </>

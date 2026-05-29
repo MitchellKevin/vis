@@ -277,7 +277,7 @@ export function initMitchell() {
         dot.transition().delay(reduceMotion ? 0 : i * 2).duration(reduceMotion ? 0 : 250).attr('r', 1.2 + norm * 5.5);
         if (cnt > 0) {
           const label   = weekDayLabels[Math.floor(i / 24)] || '';
-          const tooltip = `<strong>${label} ${String(i % 24).padStart(2, '0')}:00</strong>${fmt(cnt)} belroepen`;
+          const tooltip = `<strong>${label} ${String(i % 24).padStart(2, '0')}:00</strong>${fmt(cnt)} bel oproepen`;
           dot.on('mouseenter mousemove', (e) => showTooltip(tooltip, e.clientX, e.clientY))
              .on('mouseleave blur', () => hideTooltip())
              .on('focus', () => {
@@ -287,7 +287,7 @@ export function initMitchell() {
         }
       }
 
-      drawCenter(fmt(TOTAL), 'belroepen', periodLabel || '18 apr – 18 mei 2026', null);
+      drawCenter(fmt(TOTAL), 'bel oproepen', periodLabel || '18 apr – 18 mei 2026', null);
     }
 
     // Jaar — buitenste ring zijn maanden, dots binnen elke wig zijn dagen
@@ -330,14 +330,14 @@ export function initMitchell() {
             .attr('fill', color).attr('opacity', day.total > 0 ? 0.25 + norm * 0.75 : 0.08);
           dot.transition().delay(reduceMotion ? 0 : (idx * 24 + di * 2)).duration(reduceMotion ? 0 : 220).attr('r', 1.3 + norm * 4);
           if (day.total > 0) {
-            const tip = `<strong>${day.dayOfMonth} ${m.short}</strong>${fmt(day.total)} belroepen`;
+            const tip = `<strong>${day.dayOfMonth} ${m.short}</strong>${fmt(day.total)} bel oproepen`;
             dot.on('mouseenter mousemove', e => showTooltip(tip, e.clientX, e.clientY))
                .on('mouseleave', () => hideTooltip());
           }
         });
       });
 
-      drawCenter(fmt(TOTAL), 'belroepen', 'klik een maand om in te zoomen', null);
+      drawCenter(fmt(TOTAL), 'bel oproepen', 'klik een maand om in te zoomen', null);
     }
 
     // Maand — wedges per dag, dots per uur (zoals plat, maar voor één maand)
@@ -390,7 +390,7 @@ export function initMitchell() {
         dot.transition().delay(reduceMotion ? 0 : i * 1).duration(reduceMotion ? 0 : 200).attr('r', 1.2 + norm * 5);
       }
 
-      drawCenter(`${month.long} ${month.year}`, `${fmt(month.total)} belroepen`, '← terug naar jaar', () => {
+      drawCenter(`${month.long} ${month.year}`, `${fmt(month.total)} bel oproepen`, '← terug naar jaar', () => {
         view = { level: 'year' }; draw();
       });
     }
@@ -431,14 +431,14 @@ export function initMitchell() {
           .attr('fill', color).attr('opacity', cnt > 0 ? 0.3 + norm * 0.7 : 0.1);
         dot.transition().delay(reduceMotion ? 0 : h * 18).duration(reduceMotion ? 0 : 260).attr('r', 4 + norm * 9);
         if (cnt > 0) {
-          const tip = `<strong>${day.dayOfMonth} ${month.short} ${String(h).padStart(2, '0')}:00</strong>${fmt(cnt)} belroepen`;
+          const tip = `<strong>${day.dayOfMonth} ${month.short} ${String(h).padStart(2, '0')}:00</strong>${fmt(cnt)} bel oproepen`;
           dot.attr('cursor', 'pointer')
             .on('mouseenter mousemove', e => showTooltip(tip, e.clientX, e.clientY))
             .on('mouseleave', () => hideTooltip());
         }
       }
 
-      drawCenter(`${day.dayOfMonth} ${month.long}`, `${fmt(day.total)} belroepen`, `← terug naar ${month.short}`, () => {
+      drawCenter(`${day.dayOfMonth} ${month.long}`, `${fmt(day.total)} bel oproepen`, `← terug naar ${month.short}`, () => {
         view = { level: 'month', monthIndex: mIdx }; draw();
       });
     }
@@ -467,7 +467,7 @@ export function initMitchell() {
       .attr('d', path).attr('fill', 'rgba(253,247,239,0.06)')
       .attr('stroke', 'rgba(253,247,239,0.16)').attr('stroke-width', 0.4);
 
-    // belroepen per land → punten
+    // bel oproepen per land → punten
     const counts = geoData.countries || {};
     const pts = Object.entries(COUNTRY_GEO)
       .map(([code, g]) => ({ code, name: g[2], count: counts[code] || 0, lnglat: [g[0], g[1]] }))
@@ -504,7 +504,7 @@ export function initMitchell() {
       const g = dotLayer.append('g')
         .attr('class', 'world-dot').attr('transform', `translate(${x},${y})`)
         .attr('tabindex', 0).attr('role', 'img')
-        .attr('aria-label', `${p.name}: ${fmt(p.count)} belroepen`);
+        .attr('aria-label', `${p.name}: ${fmt(p.count)} bel oproepen`);
       g.append('circle').attr('class', 'world-dot-glow').attr('r', 0).attr('fill', col).attr('opacity', 0.15);
       const core = g.append('circle').attr('class', 'world-dot-core').attr('r', 0)
         .attr('fill', col).attr('opacity', 0.92)
@@ -514,7 +514,7 @@ export function initMitchell() {
 
       const pct = ((p.count / geoData.total) * 100);
       const pctStr = pct >= 0.1 ? pct.toFixed(1) : '<0,1';
-      const tip = `<strong>${p.name}</strong>${fmt(p.count)} belroepen · ${pctStr}%`;
+      const tip = `<strong>${p.name}</strong>${fmt(p.count)} bel oproepen · ${pctStr}%`;
       g.on('mouseenter mousemove', (e) => showTooltip(tip, e.clientX, e.clientY))
        .on('mouseleave blur', () => hideTooltip())
        .on('focus', () => { const bb = g.node().getBoundingClientRect(); showTooltip(tip, bb.left + bb.width / 2, bb.top); });
@@ -534,7 +534,7 @@ export function initMitchell() {
     const cc = $('#worldCountryCount'); if (cc) cc.textContent = String(Object.keys(geoData.countries).length);
     const top5 = pts.slice(0, 5).map(p => p.name).join(' · ');
     const stat = $('#worldStat');
-    if (stat) stat.innerHTML = `Samen goed voor <strong>${fmt(geoData.total)}</strong> belroepen.<br><span class="world-top">Grootste bellers: ${top5}</span>`;
+    if (stat) stat.innerHTML = `Samen goed voor <strong>${fmt(geoData.total)}</strong> bel oproepen.<br><span class="world-top">Grootste bellers: ${top5}</span>`;
   };
 
   // ════════════════════════════════════════════════════
@@ -811,7 +811,7 @@ export function initMitchell() {
 
     svg.append('text').attr('x', mL).attr('y', 20).attr('font-family', FONT_BODY).attr('font-size', 13)
       .attr('font-weight', 700).attr('fill', C.off).attr('opacity', 0.7)
-      .text('belroepen per bezoek — aantal bezoeken (√-schaal)');
+      .text('bel oproepen per bezoek — aantal bezoeken (√-schaal)');
 
     const rows = svg.selectAll('g.fan-row').data(hist).join('g').attr('class', 'fan-row');
     rows.append('rect').attr('x', mL).attr('y', d => y(String(d.r))).attr('height', y.bandwidth()).attr('rx', 5)
@@ -829,7 +829,7 @@ export function initMitchell() {
     const ringPct = Math.round(s.ringers / s.totalSessions * 100);
     const top1 = Math.round(s.topShare.p1 * 100);
     const stat = $('#fanaticsStat');
-    if (stat) stat.innerHTML = `Eén bezoek belde maar liefst <strong>${fmt(s.maxRings)}</strong> keer. Slechts <strong>${ringPct}%</strong> van de bezoeken belt überhaupt — en de drukste <strong>1%</strong> is samen goed voor <strong>${top1}%</strong> van álle belroepen.`;
+    if (stat) stat.innerHTML = `Eén bezoek belde maar liefst <strong>${fmt(s.maxRings)}</strong> keer. Slechts <strong>${ringPct}%</strong> van de bezoeken belt überhaupt — en de drukste <strong>1%</strong> is samen goed voor <strong>${top1}%</strong> van álle bel oproepen.`;
   };
 
   // ════════════════════════════════════════════════════
@@ -916,7 +916,7 @@ export function initMitchell() {
         const d = entries[i];
         guide.attr('x1', x(d.i)).attr('x2', x(d.i)).attr('opacity', 0.3);
         focus.attr('cx', x(d.i)).attr('cy', y(d.value)).attr('opacity', 1);
-        showTooltip(`<strong>${d.label}</strong>${fmt(d.value)} belroepen`, e.clientX, e.clientY);
+        showTooltip(`<strong>${d.label}</strong>${fmt(d.value)} bel oproepen`, e.clientX, e.clientY);
       })
       .on('mouseleave', () => { guide.attr('opacity', 0); focus.attr('opacity', 0); hideTooltip(); });
 
@@ -1024,10 +1024,10 @@ export function initMitchell() {
     const maxC = d3.max(pts, p => p.count) || 1;
     const rS = d3.scaleSqrt().domain([0, maxC]).range([1.6, 12]);
     const dots = svg.append('g').selectAll('g.globe-dot').data(pts).join('g').attr('class', 'globe-dot')
-      .attr('tabindex', 0).attr('role', 'img').attr('aria-label', p => `${p.name}: ${fmt(p.count)} belroepen`);
+      .attr('tabindex', 0).attr('role', 'img').attr('aria-label', p => `${p.name}: ${fmt(p.count)} bel oproepen`);
     dots.append('circle').attr('class', 'gd-glow');
     dots.append('circle').attr('class', 'gd-core').attr('stroke', 'rgba(253,247,239,0.6)').attr('stroke-width', 0.5);
-    dots.on('mouseenter mousemove', (e, p) => showTooltip(`<strong>${p.name}</strong>${fmt(p.count)} belroepen`, e.clientX, e.clientY))
+    dots.on('mouseenter mousemove', (e, p) => showTooltip(`<strong>${p.name}</strong>${fmt(p.count)} bel oproepen`, e.clientX, e.clientY))
       .on('mouseleave blur', () => hideTooltip());
 
     const clockLabel = svg.append('text').attr('x', cx).attr('y', H - 22).attr('text-anchor', 'middle')
@@ -1119,7 +1119,7 @@ export function initMitchell() {
         ctx.arc((m / MIN) * Wd, Hd / 2 + (Math.random() - 0.5) * Hd * 0.5, 1 + inten * 4, 0, 7);
         ctx.fillStyle = `rgba(155,116,255,${0.15 + inten * 0.5})`; ctx.fill();
       }
-      counter.textContent = `${fmt(prefix[MIN])} belroepen in een week`;
+      counter.textContent = `${fmt(prefix[MIN])} bel oproepen in een week`;
       cleanups.push(() => ro.disconnect());
       return;
     }
@@ -1143,7 +1143,7 @@ export function initMitchell() {
       }
       const dow = Math.min(6, Math.floor(curMin / 1440)), hod = Math.floor((curMin % 1440) / 60), moh = curMin % 60;
       clock.textContent = `${dayLabels[dow]} ${String(hod).padStart(2, '0')}:${String(moh).padStart(2, '0')}`;
-      counter.textContent = `${fmt(prefix[curMin])} belroepen`;
+      counter.textContent = `${fmt(prefix[curMin])} bel oproepen`;
       if (running) raf4 = raf(frame);
     }
     const io = new IntersectionObserver(([e]) => {
@@ -1685,7 +1685,7 @@ export function initMitchell() {
   };
 
   // ════════════════════════════════════════════════════
-  // Hero — duizenden belroepen vormen één vis (canvas)
+  // Hero — duizenden bel oproepen vormen één vis (canvas)
   // ════════════════════════════════════════════════════
   chapterInit['ch-hero'] = (sectionEl) => {
     const stage = $('#heroStage');
