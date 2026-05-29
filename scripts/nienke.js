@@ -140,3 +140,8 @@ timelineContainers.forEach((container, index) => {
       console.error(`Kon data niet laden voor tijdlijn ${index + 1}:`, err);
     });
 });
+
+
+
+// MARK: Table toegankelijkheid
+
