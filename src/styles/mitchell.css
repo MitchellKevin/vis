@@ -168,6 +168,30 @@ body.mitchell-page {
 .ring-stage svg { width: 100%; height: 100%; }
 .ring-dot { cursor: pointer; transition: opacity 0.2s ease; }
 .ring-dot:hover, .ring-dot:focus-visible { filter: drop-shadow(0 0 6px currentColor); outline: none; }
+.ring-wedge .ring-label-mark {
+  fill: none;
+  stroke: var(--color-purple-bell, #c0a8ff);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  pointer-events: none;
+  /* Bij uithover: opacity faded uit, dashoffset snapt onzichtbaar terug
+     zodat de animatie niet omgekeerd wordt afgespeeld. */
+  transition: stroke-dashoffset 0s 0.3s, opacity 0.3s ease-out;
+}
+.ring-wedge:hover .ring-label-mark,
+.ring-wedge:focus-visible .ring-label-mark {
+  opacity: 0.95;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.72s cubic-bezier(.4,0,.2,1), opacity 0.18s ease-out;
+}
+.ring-wedge:hover text,
+.ring-wedge:focus-visible text {
+  opacity: 1;
+}
 
 /* ── 24-uurs getij ───────────────────────────────────── */
 .tide-stage { width: min(94vw, 600px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; }

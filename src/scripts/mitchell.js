@@ -178,6 +178,7 @@ export function initMitchell() {
     const stageSel = d3.select($('#ringStage'));
     const svg = stageSel.append('svg').attr('viewBox', `0 0 ${W} ${H}`);
 
+
     // Voor jaar: groepeer dagen per maand zodat we kunnen in- en uitzoomen
     const isYear = currentPeriod === 'jaar' && weekDays && weekDays.length;
     const months = [];
@@ -302,7 +303,7 @@ export function initMitchell() {
           .attr('x2', cx + Math.cos(aDivider) * (outerR + 10)).attr('y2', cy + Math.sin(aDivider) * (outerR + 10))
           .attr('stroke', 'rgba(1,70,60,0.18)').attr('stroke-dasharray', '3 4');
 
-        const wedge = svg.append('g').attr('cursor', 'pointer').attr('tabindex', 0).attr('role', 'button')
+        const wedge = svg.append('g').attr('class', 'ring-wedge').attr('cursor', 'pointer').attr('tabindex', 0).attr('role', 'button')
           .attr('aria-label', `Zoom in op ${m.long}`)
           .on('click', () => { view = { level: 'month', monthIndex: idx }; draw(); })
           .on('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); view = { level: 'month', monthIndex: idx }; draw(); } });
@@ -313,8 +314,13 @@ export function initMitchell() {
             .startAngle(aDivider + Math.PI / 2).endAngle(aDivider + Math.PI / 2 + (2 * Math.PI / N))())
           .attr('transform', `translate(${cx},${cy})`).attr('fill', 'transparent');
 
+        const labelX = cx + Math.cos(aLabel) * (outerR + 24);
+        const labelY = cy + Math.sin(aLabel) * (outerR + 24);
+        wedge.append('ellipse').attr('class', 'ring-label-mark')
+          .attr('cx', labelX).attr('cy', labelY).attr('rx', 20).attr('ry', 14)
+          .attr('pathLength', 100);
         wedge.append('text')
-          .attr('x', cx + Math.cos(aLabel) * (outerR + 24)).attr('y', cy + Math.sin(aLabel) * (outerR + 24) + 4)
+          .attr('x', labelX).attr('y', labelY + 4)
           .attr('text-anchor', 'middle').attr('font-family', FONT_BODY).attr('font-size', 13).attr('font-weight', 700)
           .attr('fill', C.green).attr('opacity', 0.9).text(m.short);
 
@@ -358,7 +364,7 @@ export function initMitchell() {
           .attr('x2', cx + Math.cos(aDivider) * (outerR + 10)).attr('y2', cy + Math.sin(aDivider) * (outerR + 10))
           .attr('stroke', 'rgba(1,70,60,0.18)').attr('stroke-dasharray', '3 4');
 
-        const wedge = svg.append('g').attr('cursor', 'pointer').attr('tabindex', 0).attr('role', 'button')
+        const wedge = svg.append('g').attr('class', 'ring-wedge').attr('cursor', 'pointer').attr('tabindex', 0).attr('role', 'button')
           .attr('aria-label', `Zoom in op ${days[d].dayOfMonth} ${month.short}`)
           .on('click', () => { view = { level: 'day', monthIndex: mIdx, dayIndex: d }; draw(); })
           .on('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); view = { level: 'day', monthIndex: mIdx, dayIndex: d }; draw(); } });
@@ -366,8 +372,13 @@ export function initMitchell() {
           .attr('d', d3.arc().innerRadius(innerR - 4).outerRadius(outerR + 18)
             .startAngle(aDivider + Math.PI / 2).endAngle(aDivider + Math.PI / 2 + (2 * Math.PI / N))())
           .attr('transform', `translate(${cx},${cy})`).attr('fill', 'transparent');
+        const labelX = cx + Math.cos(aLabel) * (outerR + 22);
+        const labelY = cy + Math.sin(aLabel) * (outerR + 22);
+        wedge.append('ellipse').attr('class', 'ring-label-mark')
+          .attr('cx', labelX).attr('cy', labelY).attr('rx', N > 20 ? 13 : 15).attr('ry', N > 20 ? 11 : 12)
+          .attr('pathLength', 100);
         wedge.append('text')
-          .attr('x', cx + Math.cos(aLabel) * (outerR + 22)).attr('y', cy + Math.sin(aLabel) * (outerR + 22) + 4)
+          .attr('x', labelX).attr('y', labelY + 4)
           .attr('text-anchor', 'middle').attr('font-family', FONT_BODY).attr('font-size', N > 20 ? 10 : 12).attr('font-weight', 700)
           .attr('fill', C.green).attr('opacity', 0.85).text(String(days[d].dayOfMonth));
 
