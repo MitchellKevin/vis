@@ -475,10 +475,19 @@ body.mitchell-page {
   pointer-events: none;
   will-change: opacity, transform;
 }
+.hero-overlay::before {
+  content: '';
+  position: absolute;
+  inset: -10% -8%;
+  z-index: -1;
+  background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(1, 33, 28, 0.78) 0%, rgba(1, 33, 28, 0.55) 45%, rgba(1, 33, 28, 0) 80%);
+  pointer-events: none;
+}
 .hero-eyebrow {
   font: var(--text-p2-bold);
   color: var(--color-teal);
   margin: 0 0 var(--space-4);
+  text-shadow: 0 1px 12px rgba(1, 33, 28, 0.7);
 }
 .hero-title {
   font-family: var(--font-display);
@@ -488,18 +497,26 @@ body.mitchell-page {
   color: var(--color-off-white);
   margin: 0;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 40px rgba(1, 33, 28, 0.6);
+  text-shadow:
+    0 0 24px rgba(1, 33, 28, 0.85),
+    0 2px 40px rgba(1, 33, 28, 0.7);
 }
 .hero-sub {
   font: var(--text-p1-bold);
   color: var(--color-off-white);
   margin: var(--space-4) 0 0;
+  text-shadow:
+    0 1px 2px rgba(1, 33, 28, 0.9),
+    0 0 16px rgba(1, 33, 28, 0.75);
 }
 .hero-lede {
   font: var(--text-p1);
   color: var(--color-off-white);
   max-width: 44ch;
   margin: var(--space-5) auto 0;
+  text-shadow:
+    0 1px 2px rgba(1, 33, 28, 0.9),
+    0 0 14px rgba(1, 33, 28, 0.7);
 }
 .hero-scroll {
   display: inline-flex;
@@ -524,11 +541,11 @@ body.mitchell-page {
   border-radius: var(--radius-full);
   background: var(--color-purple);
   transform: translateX(-50%);
-  animation: hero-scroll-bob 1.6s ease-in-out infinite;
+  animation: hero-scroll-bob 2.8s ease-in-out infinite;
 }
 @keyframes hero-scroll-bob {
-  0%, 100% { transform: translate(-50%, 0); opacity: 1; }
-  60%      { transform: translate(-50%, 14px); opacity: 0.2; }
+  0%, 100% { transform: translate(-50%, 0); opacity: 0.85; }
+  60%      { transform: translate(-50%, 6px); opacity: 0.35; }
 }
 
 /* ── Dieptewereld (bioluminescent) ───────────────────── */
@@ -620,11 +637,12 @@ body.mitchell-page {
 .swim-fish-tail {
   transform-box: fill-box;
   transform-origin: 100% 50%;
-  animation: swim-tail 0.85s ease-in-out infinite;
+  animation: swim-tail 0.55s ease-in-out infinite;
 }
 @keyframes swim-tail {
-  0%, 100% { transform: rotate(-9deg); }
-  50%      { transform: rotate(9deg); }
+  0%, 100% { transform: rotate(-14deg); }
+  35%      { transform: rotate(12deg); }
+  65%      { transform: rotate(8deg); }
 }
 @media (max-width: 768px) {
   .swim-fish { width: 46px; height: 23px; }

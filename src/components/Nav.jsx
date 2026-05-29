@@ -18,7 +18,7 @@ export default function Nav({ current }) {
         >Joost</NavLink>
         <NavLink
           className="vdb-nav__link"
-          to="/mitchell"
+          to="/Mitchell"
           aria-current={current === 'mitchell' ? 'page' : undefined}
         >Mitchell</NavLink>
         <NavLink

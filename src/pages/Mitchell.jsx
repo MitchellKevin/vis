@@ -52,9 +52,10 @@ export default function Mitchell() {
       <Nav current="mitchell" />
       <FishSprite />
 
-      <div className="data-switch" role="group" aria-label="Kies dataset: maand of week">
-        <button type="button" className="data-switch__btn is-active" data-period="maand" aria-pressed="true">Maand</button>
+      <div className="data-switch" role="group" aria-label="Kies dataset: week, maand of jaar">
         <button type="button" className="data-switch__btn" data-period="week" aria-pressed="false">Week</button>
+        <button type="button" className="data-switch__btn is-active" data-period="maand" aria-pressed="true">Maand</button>
+        <button type="button" className="data-switch__btn" data-period="jaar" aria-pressed="false">Jaar</button>
       </div>
 
       <div className="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
@@ -152,7 +153,7 @@ export default function Mitchell() {
         </div>
       </section>
 
-      <section id="ch-funnel" className="chapter" aria-label="De belstroom">
+      {/* <section id="ch-funnel" className="chapter" aria-label="De belstroom">
         <div className="chapter-inner">
           <div className="chapter-text">
             <p className="eyebrow reveal">De belstroom</p>
@@ -174,7 +175,7 @@ export default function Mitchell() {
           </div>
           <div className="fanatics-stage" id="fanaticsStage" aria-label="Belroepen per bezoek"></div>
         </div>
-      </section>
+      </section> */}
 
       <section id="ch-shoal" className="chapter" aria-label="Apparaten">
         <div className="chapter-inner">
@@ -189,7 +190,7 @@ export default function Mitchell() {
         </div>
       </section>
 
-      <section id="ch-screens" className="chapter chapter--dark" aria-label="Schermen">
+      {/* <section id="ch-screens" className="chapter chapter--dark" aria-label="Schermen">
         <div className="chapter-inner">
           <div className="chapter-text">
             <p className="eyebrow reveal">Schermen-aquarium</p>
@@ -233,7 +234,7 @@ export default function Mitchell() {
           <div className="net-stage" id="netStage" aria-label="Bubbel-diagram per soort"></div>
           <div className="net-info" id="netInfo" aria-live="polite">Klik op een bubbel voor details, of wissel hierboven van weergave.</div>
         </div>
-      </section>
+      </section> */}
 
       <section id="ch-radar" className="chapter chapter--dark" aria-label="Visradar">
         <div className="chapter-inner">
@@ -248,7 +249,7 @@ export default function Mitchell() {
         </div>
       </section>
 
-      <section id="ch-depth" className="chapter chapter--dark" aria-label="Dieptewereld">
+      {/* <section id="ch-depth" className="chapter chapter--dark" aria-label="Dieptewereld">
         <div className="chapter-inner">
           <div className="chapter-text">
             <p className="eyebrow reveal">Onder het oppervlak</p>
@@ -259,9 +260,9 @@ export default function Mitchell() {
             <div className="depth-detail" id="depthDetail" role="status" aria-live="polite"></div>
           </div>
         </div>
-      </section>
+      </section> */}
 
-      <section id="ch-pond" className="chapter chapter--dark" aria-label="Levende sluis">
+      {/* <section id="ch-pond" className="chapter chapter--dark" aria-label="Levende sluis">
         <div className="chapter-inner">
           <div className="chapter-text">
             <p className="eyebrow reveal">De levende sluis</p>
@@ -270,7 +271,7 @@ export default function Mitchell() {
           </div>
           <div className="pond-stage" id="pondStage" aria-label="Rimpelingen die belroepen door de week tonen"></div>
         </div>
-      </section>
+      </section> */}
     </>
   );
 }

@@ -1,8 +1,6 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 
 export function initMitchell() {
   // ── Styleguide tokens (hex mirrors of visdeurbel-tokens.css) ──
@@ -38,7 +36,9 @@ export function initMitchell() {
 
   let TOTAL = 0;
   const MONTH_FULL = ['Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November'];
-  let weekHours = [], weekDayLabels = [], periodLabel = '';
+  let weekHours = [], weekDayLabels = [], weekDays = [], periodLabel = '';
+  const MONTH_SHORT_NL = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+  const MONTH_LONG_NL  = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
   let geoData = null, funnelData = null, techData = null, worldTopo = null;
   let dailyData = null, sessionsData = null, pondWeekData = null, languagesData = null;
   let screensData = null, orientationData = null;
@@ -175,68 +175,273 @@ export function initMitchell() {
   chapterInit['ch-ring'] = () => {
     const W = 680, H = 680, cx = W / 2, cy = H / 2;
     const innerR = 130, outerR = 290;
-    const DAYS  = weekDayLabels.length || 9;
-    const SLOTS = DAYS * 24;
-    const data  = weekHours.length ? weekHours : new Array(SLOTS).fill(0);
-    const maxV  = Math.max(...data, 1);
+    const stageSel = d3.select($('#ringStage'));
+    const svg = stageSel.append('svg').attr('viewBox', `0 0 ${W} ${H}`);
 
-    const svg = d3.select($('#ringStage')).append('svg').attr('viewBox', `0 0 ${W} ${H}`);
-
-    for (let d = 0; d < DAYS; d++) {
-      const aDivider = (d / DAYS) * 2 * Math.PI - Math.PI / 2;
-      const aLabel   = ((d + 0.5) / DAYS) * 2 * Math.PI - Math.PI / 2;
-      svg.append('line')
-        .attr('x1', cx + Math.cos(aDivider) * (innerR - 10)).attr('y1', cy + Math.sin(aDivider) * (innerR - 10))
-        .attr('x2', cx + Math.cos(aDivider) * (outerR + 10)).attr('y2', cy + Math.sin(aDivider) * (outerR + 10))
-        .attr('stroke', 'rgba(1,70,60,0.18)').attr('stroke-dasharray', '3 4');
-      svg.append('text')
-        .attr('x', cx + Math.cos(aLabel) * (outerR + 24)).attr('y', cy + Math.sin(aLabel) * (outerR + 24) + 4)
-        .attr('text-anchor', 'middle').attr('font-family', FONT_BODY).attr('font-size', 13).attr('font-weight', 700)
-        .attr('fill', d >= 1 && d <= 7 ? C.bell : C.green).attr('opacity', 0.9)
-        .text(weekDayLabels[d] || '');
-      const nightStart = (d * 24 + 21) / SLOTS * 2 * Math.PI - Math.PI / 2;
-      const nightEnd   = (d * 24 + 29) / SLOTS * 2 * Math.PI - Math.PI / 2;
-      svg.append('path')
-        .attr('d', d3.arc().innerRadius(innerR - 8).outerRadius(innerR).startAngle(nightStart).endAngle(nightEnd)())
-        .attr('transform', `translate(${cx},${cy})`).attr('fill', 'rgba(1,70,60,0.08)');
+    // Voor jaar: groepeer dagen per maand zodat we kunnen in- en uitzoomen
+    const isYear = currentPeriod === 'jaar' && weekDays && weekDays.length;
+    const months = [];
+    if (isYear) {
+      let cur = null;
+      weekDays.forEach((dateStr, i) => {
+        const dt = new Date(dateStr);
+        if (Number.isNaN(dt.getTime())) return;
+        const key = `${dt.getUTCFullYear()}-${dt.getUTCMonth()}`;
+        if (!cur || cur.key !== key) {
+          cur = {
+            key, monthIdx: dt.getUTCMonth(), year: dt.getUTCFullYear(),
+            short: MONTH_SHORT_NL[dt.getUTCMonth()], long: MONTH_LONG_NL[dt.getUTCMonth()],
+            days: [], total: 0,
+          };
+          months.push(cur);
+        }
+        const hours = (weekHours || []).slice(i * 24, (i + 1) * 24);
+        const total = hours.reduce((s, v) => s + (v || 0), 0);
+        cur.days.push({ dayOfMonth: dt.getUTCDate(), label: weekDayLabels[i] || '', hours, total });
+        cur.total += total;
+      });
     }
 
-    svg.append('text').attr('x', cx).attr('y', cy - 10).attr('text-anchor', 'middle')
-      .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('font-size', 50)
-      .attr('fill', C.green).text(fmt(TOTAL));
-    svg.append('text').attr('x', cx).attr('y', cy + 20).attr('text-anchor', 'middle')
-      .attr('font-family', FONT_BODY).attr('font-size', 14).attr('font-weight', 700)
-      .attr('fill', C.green).attr('opacity', 0.6).text('belroepen');
-    svg.append('text').attr('x', cx).attr('y', cy + 42).attr('text-anchor', 'middle')
-      .attr('font-family', FONT_BODY).attr('font-size', 13)
-      .attr('fill', C.bell).attr('opacity', 0.95).text(periodLabel || '18 apr – 18 mei 2026');
+    let view = isYear ? { level: 'year' } : { level: 'flat' };
+    draw();
 
-    const dots = svg.append('g');
-    for (let i = 0; i < SLOTS; i++) {
-      const cnt  = data[i] || 0, norm = cnt / maxV;
-      const a    = (i / SLOTS) * 2 * Math.PI - Math.PI / 2;
-      const r    = innerR + 14 + norm * (outerR - innerR - 20);
-      const color = norm > 0.65 ? C.bell : norm > 0.25 ? C.green : 'rgba(1,70,60,0.4)';
-      const dot = dots.append('circle')
-        .attr('class', 'ring-dot')
-        .attr('cx', cx + Math.cos(a) * r).attr('cy', cy + Math.sin(a) * r).attr('r', 0)
-        .attr('fill', color).attr('opacity', cnt > 0 ? 0.25 + norm * 0.75 : 0.08)
-        .attr('tabindex', cnt > 0 ? 0 : -1);
-      dot.transition().delay(reduceMotion ? 0 : i * 2).duration(reduceMotion ? 0 : 250).attr('r', 1.2 + norm * 5.5);
-      if (cnt > 0) {
-        const label   = weekDayLabels[Math.floor(i / 24)] || '';
-        const tooltip = `<strong>${label} ${String(i % 24).padStart(2, '0')}:00</strong>${fmt(cnt)} belroepen`;
-        dot.on('mouseenter mousemove', (e) => showTooltip(tooltip, e.clientX, e.clientY))
-           .on('mouseleave blur', () => hideTooltip())
-           .on('focus', () => {
-             const bb = dot.node().getBoundingClientRect();
-             showTooltip(tooltip, bb.left + bb.width / 2, bb.top);
-           });
+    function draw() {
+      svg.selectAll('*').remove();
+      svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', innerR + 8)
+        .attr('fill', 'none').attr('stroke', 'rgba(1,70,60,0.15)').attr('stroke-dasharray', '2 5');
+      if (view.level === 'flat')      drawFlat();
+      else if (view.level === 'year') drawYear();
+      else if (view.level === 'month') drawMonth(view.monthIndex);
+      else if (view.level === 'day')   drawDay(view.monthIndex, view.dayIndex);
+    }
+
+    function drawCenter(big, sub, hint, onBack) {
+      svg.append('text').attr('x', cx).attr('y', cy - 10).attr('text-anchor', 'middle')
+        .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('font-size', big.length > 12 ? 32 : 44)
+        .attr('fill', C.green).text(big);
+      svg.append('text').attr('x', cx).attr('y', cy + 16).attr('text-anchor', 'middle')
+        .attr('font-family', FONT_BODY).attr('font-size', 13).attr('font-weight', 700)
+        .attr('fill', C.green).attr('opacity', 0.6).text(sub);
+      if (onBack) {
+        const g = svg.append('g').attr('cursor', 'pointer').attr('tabindex', 0).attr('role', 'button')
+          .on('click', onBack).on('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onBack(); } });
+        g.append('rect').attr('x', cx - 78).attr('y', cy + 32).attr('width', 156).attr('height', 28)
+          .attr('rx', 14).attr('fill', 'rgba(1,70,60,0.08)').attr('stroke', 'rgba(1,70,60,0.18)');
+        g.append('text').attr('x', cx).attr('y', cy + 51).attr('text-anchor', 'middle')
+          .attr('font-family', FONT_BODY).attr('font-size', 12).attr('font-weight', 700)
+          .attr('fill', C.green).text(hint);
+      } else if (hint) {
+        svg.append('text').attr('x', cx).attr('y', cy + 42).attr('text-anchor', 'middle')
+          .attr('font-family', FONT_BODY).attr('font-size', 13)
+          .attr('fill', C.bell).attr('opacity', 0.95).text(hint);
       }
     }
 
-    svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', innerR + 8)
-      .attr('fill', 'none').attr('stroke', 'rgba(1,70,60,0.15)').attr('stroke-dasharray', '2 5');
+    // Plat — bestaande weergave voor week/maand
+    function drawFlat() {
+      const DAYS  = weekDayLabels.length || 9;
+      const SLOTS = DAYS * 24;
+      const data  = weekHours.length ? weekHours : new Array(SLOTS).fill(0);
+      const maxV  = Math.max(...data, 1);
+
+      for (let d = 0; d < DAYS; d++) {
+        const aDivider = (d / DAYS) * 2 * Math.PI - Math.PI / 2;
+        const aLabel   = ((d + 0.5) / DAYS) * 2 * Math.PI - Math.PI / 2;
+        svg.append('line')
+          .attr('x1', cx + Math.cos(aDivider) * (innerR - 10)).attr('y1', cy + Math.sin(aDivider) * (innerR - 10))
+          .attr('x2', cx + Math.cos(aDivider) * (outerR + 10)).attr('y2', cy + Math.sin(aDivider) * (outerR + 10))
+          .attr('stroke', 'rgba(1,70,60,0.18)').attr('stroke-dasharray', '3 4');
+        svg.append('text')
+          .attr('x', cx + Math.cos(aLabel) * (outerR + 24)).attr('y', cy + Math.sin(aLabel) * (outerR + 24) + 4)
+          .attr('text-anchor', 'middle').attr('font-family', FONT_BODY).attr('font-size', 13).attr('font-weight', 700)
+          .attr('fill', d >= 1 && d <= 7 ? C.bell : C.green).attr('opacity', 0.9)
+          .text(weekDayLabels[d] || '');
+        const nightStart = (d * 24 + 21) / SLOTS * 2 * Math.PI - Math.PI / 2;
+        const nightEnd   = (d * 24 + 29) / SLOTS * 2 * Math.PI - Math.PI / 2;
+        svg.append('path')
+          .attr('d', d3.arc().innerRadius(innerR - 8).outerRadius(innerR).startAngle(nightStart).endAngle(nightEnd)())
+          .attr('transform', `translate(${cx},${cy})`).attr('fill', 'rgba(1,70,60,0.08)');
+      }
+
+      const dots = svg.append('g');
+      for (let i = 0; i < SLOTS; i++) {
+        const cnt  = data[i] || 0, norm = cnt / maxV;
+        const a    = (i / SLOTS) * 2 * Math.PI - Math.PI / 2;
+        const r    = innerR + 14 + norm * (outerR - innerR - 20);
+        const color = norm > 0.65 ? C.bell : norm > 0.25 ? C.green : 'rgba(1,70,60,0.4)';
+        const dot = dots.append('circle')
+          .attr('class', 'ring-dot')
+          .attr('cx', cx + Math.cos(a) * r).attr('cy', cy + Math.sin(a) * r).attr('r', 0)
+          .attr('fill', color).attr('opacity', cnt > 0 ? 0.25 + norm * 0.75 : 0.08)
+          .attr('tabindex', cnt > 0 ? 0 : -1);
+        dot.transition().delay(reduceMotion ? 0 : i * 2).duration(reduceMotion ? 0 : 250).attr('r', 1.2 + norm * 5.5);
+        if (cnt > 0) {
+          const label   = weekDayLabels[Math.floor(i / 24)] || '';
+          const tooltip = `<strong>${label} ${String(i % 24).padStart(2, '0')}:00</strong>${fmt(cnt)} belroepen`;
+          dot.on('mouseenter mousemove', (e) => showTooltip(tooltip, e.clientX, e.clientY))
+             .on('mouseleave blur', () => hideTooltip())
+             .on('focus', () => {
+               const bb = dot.node().getBoundingClientRect();
+               showTooltip(tooltip, bb.left + bb.width / 2, bb.top);
+             });
+        }
+      }
+
+      drawCenter(fmt(TOTAL), 'belroepen', periodLabel || '18 apr – 18 mei 2026', null);
+    }
+
+    // Jaar — buitenste ring zijn maanden, dots binnen elke wig zijn dagen
+    function drawYear() {
+      const N = months.length || 12;
+      const maxDay = Math.max(...months.flatMap(m => m.days.map(d => d.total)), 1);
+      months.forEach((m, idx) => {
+        const aDivider = (idx / N) * 2 * Math.PI - Math.PI / 2;
+        const aLabel   = ((idx + 0.5) / N) * 2 * Math.PI - Math.PI / 2;
+        svg.append('line')
+          .attr('x1', cx + Math.cos(aDivider) * (innerR - 10)).attr('y1', cy + Math.sin(aDivider) * (innerR - 10))
+          .attr('x2', cx + Math.cos(aDivider) * (outerR + 10)).attr('y2', cy + Math.sin(aDivider) * (outerR + 10))
+          .attr('stroke', 'rgba(1,70,60,0.18)').attr('stroke-dasharray', '3 4');
+
+        const wedge = svg.append('g').attr('cursor', 'pointer').attr('tabindex', 0).attr('role', 'button')
+          .attr('aria-label', `Zoom in op ${m.long}`)
+          .on('click', () => { view = { level: 'month', monthIndex: idx }; draw(); })
+          .on('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); view = { level: 'month', monthIndex: idx }; draw(); } });
+
+        // Onzichtbare hit-arc zodat hele wig klikbaar is
+        wedge.append('path')
+          .attr('d', d3.arc().innerRadius(innerR - 4).outerRadius(outerR + 18)
+            .startAngle(aDivider + Math.PI / 2).endAngle(aDivider + Math.PI / 2 + (2 * Math.PI / N))())
+          .attr('transform', `translate(${cx},${cy})`).attr('fill', 'transparent');
+
+        wedge.append('text')
+          .attr('x', cx + Math.cos(aLabel) * (outerR + 24)).attr('y', cy + Math.sin(aLabel) * (outerR + 24) + 4)
+          .attr('text-anchor', 'middle').attr('font-family', FONT_BODY).attr('font-size', 13).attr('font-weight', 700)
+          .attr('fill', C.green).attr('opacity', 0.9).text(m.short);
+
+        const D = m.days.length || 1;
+        m.days.forEach((day, di) => {
+          const sub = (idx + (di + 0.5) / D) / N;
+          const a = sub * 2 * Math.PI - Math.PI / 2;
+          const norm = day.total / maxDay;
+          const r = innerR + 14 + norm * (outerR - innerR - 20);
+          const color = norm > 0.65 ? C.bell : norm > 0.25 ? C.green : 'rgba(1,70,60,0.4)';
+          const dot = wedge.append('circle')
+            .attr('cx', cx + Math.cos(a) * r).attr('cy', cy + Math.sin(a) * r).attr('r', 0)
+            .attr('fill', color).attr('opacity', day.total > 0 ? 0.25 + norm * 0.75 : 0.08);
+          dot.transition().delay(reduceMotion ? 0 : (idx * 24 + di * 2)).duration(reduceMotion ? 0 : 220).attr('r', 1.3 + norm * 4);
+          if (day.total > 0) {
+            const tip = `<strong>${day.dayOfMonth} ${m.short}</strong>${fmt(day.total)} belroepen`;
+            dot.on('mouseenter mousemove', e => showTooltip(tip, e.clientX, e.clientY))
+               .on('mouseleave', () => hideTooltip());
+          }
+        });
+      });
+
+      drawCenter(fmt(TOTAL), 'belroepen', 'klik een maand om in te zoomen', null);
+    }
+
+    // Maand — wedges per dag, dots per uur (zoals plat, maar voor één maand)
+    function drawMonth(mIdx) {
+      const month = months[mIdx];
+      if (!month) return;
+      const days = month.days;
+      const N = days.length;
+      const SLOTS = N * 24;
+      const allHours = days.flatMap(d => d.hours);
+      const maxV = Math.max(...allHours, 1);
+
+      for (let d = 0; d < N; d++) {
+        const aDivider = (d / N) * 2 * Math.PI - Math.PI / 2;
+        const aLabel   = ((d + 0.5) / N) * 2 * Math.PI - Math.PI / 2;
+        svg.append('line')
+          .attr('x1', cx + Math.cos(aDivider) * (innerR - 10)).attr('y1', cy + Math.sin(aDivider) * (innerR - 10))
+          .attr('x2', cx + Math.cos(aDivider) * (outerR + 10)).attr('y2', cy + Math.sin(aDivider) * (outerR + 10))
+          .attr('stroke', 'rgba(1,70,60,0.18)').attr('stroke-dasharray', '3 4');
+
+        const wedge = svg.append('g').attr('cursor', 'pointer').attr('tabindex', 0).attr('role', 'button')
+          .attr('aria-label', `Zoom in op ${days[d].dayOfMonth} ${month.short}`)
+          .on('click', () => { view = { level: 'day', monthIndex: mIdx, dayIndex: d }; draw(); })
+          .on('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); view = { level: 'day', monthIndex: mIdx, dayIndex: d }; draw(); } });
+        wedge.append('path')
+          .attr('d', d3.arc().innerRadius(innerR - 4).outerRadius(outerR + 18)
+            .startAngle(aDivider + Math.PI / 2).endAngle(aDivider + Math.PI / 2 + (2 * Math.PI / N))())
+          .attr('transform', `translate(${cx},${cy})`).attr('fill', 'transparent');
+        wedge.append('text')
+          .attr('x', cx + Math.cos(aLabel) * (outerR + 22)).attr('y', cy + Math.sin(aLabel) * (outerR + 22) + 4)
+          .attr('text-anchor', 'middle').attr('font-family', FONT_BODY).attr('font-size', N > 20 ? 10 : 12).attr('font-weight', 700)
+          .attr('fill', C.green).attr('opacity', 0.85).text(String(days[d].dayOfMonth));
+
+        const nightStart = (d * 24 + 21) / SLOTS * 2 * Math.PI - Math.PI / 2;
+        const nightEnd   = (d * 24 + 29) / SLOTS * 2 * Math.PI - Math.PI / 2;
+        svg.append('path')
+          .attr('d', d3.arc().innerRadius(innerR - 8).outerRadius(innerR).startAngle(nightStart).endAngle(nightEnd)())
+          .attr('transform', `translate(${cx},${cy})`).attr('fill', 'rgba(1,70,60,0.08)');
+      }
+
+      const dots = svg.append('g').attr('pointer-events', 'none');
+      for (let i = 0; i < SLOTS; i++) {
+        const cnt = allHours[i] || 0, norm = cnt / maxV;
+        const a = (i / SLOTS) * 2 * Math.PI - Math.PI / 2;
+        const r = innerR + 14 + norm * (outerR - innerR - 20);
+        const color = norm > 0.65 ? C.bell : norm > 0.25 ? C.green : 'rgba(1,70,60,0.4)';
+        const dot = dots.append('circle')
+          .attr('cx', cx + Math.cos(a) * r).attr('cy', cy + Math.sin(a) * r).attr('r', 0)
+          .attr('fill', color).attr('opacity', cnt > 0 ? 0.25 + norm * 0.75 : 0.08);
+        dot.transition().delay(reduceMotion ? 0 : i * 1).duration(reduceMotion ? 0 : 200).attr('r', 1.2 + norm * 5);
+      }
+
+      drawCenter(`${month.long} ${month.year}`, `${fmt(month.total)} belroepen`, '← terug naar jaar', () => {
+        view = { level: 'year' }; draw();
+      });
+    }
+
+    // Dag — 24 uur-wedges met één bal per uur
+    function drawDay(mIdx, dIdx) {
+      const month = months[mIdx];
+      const day = month && month.days[dIdx];
+      if (!day) return;
+      const hours = day.hours;
+      const maxV = Math.max(...hours, 1);
+      const N = 24;
+
+      for (let h = 0; h < N; h++) {
+        const aDivider = (h / N) * 2 * Math.PI - Math.PI / 2;
+        const aLabel   = ((h + 0.5) / N) * 2 * Math.PI - Math.PI / 2;
+        svg.append('line')
+          .attr('x1', cx + Math.cos(aDivider) * (innerR - 10)).attr('y1', cy + Math.sin(aDivider) * (innerR - 10))
+          .attr('x2', cx + Math.cos(aDivider) * (outerR + 10)).attr('y2', cy + Math.sin(aDivider) * (outerR + 10))
+          .attr('stroke', 'rgba(1,70,60,0.18)').attr('stroke-dasharray', '3 4');
+        const isNight = h >= 21 || h < 5;
+        if (isNight) {
+          svg.append('path')
+            .attr('d', d3.arc().innerRadius(innerR - 8).outerRadius(innerR)
+              .startAngle(aDivider + Math.PI / 2).endAngle(aDivider + Math.PI / 2 + 2 * Math.PI / N)())
+            .attr('transform', `translate(${cx},${cy})`).attr('fill', 'rgba(1,70,60,0.08)');
+        }
+        svg.append('text')
+          .attr('x', cx + Math.cos(aLabel) * (outerR + 22)).attr('y', cy + Math.sin(aLabel) * (outerR + 22) + 4)
+          .attr('text-anchor', 'middle').attr('font-family', FONT_BODY).attr('font-size', 12).attr('font-weight', 700)
+          .attr('fill', isNight ? C.bell : C.green).attr('opacity', 0.85).text(`${String(h).padStart(2, '0')}u`);
+
+        const cnt = hours[h] || 0, norm = cnt / maxV;
+        const r = innerR + 18 + norm * (outerR - innerR - 28);
+        const color = norm > 0.65 ? C.bell : norm > 0.25 ? C.green : 'rgba(1,70,60,0.4)';
+        const dot = svg.append('circle')
+          .attr('cx', cx + Math.cos(aLabel) * r).attr('cy', cy + Math.sin(aLabel) * r).attr('r', 0)
+          .attr('fill', color).attr('opacity', cnt > 0 ? 0.3 + norm * 0.7 : 0.1);
+        dot.transition().delay(reduceMotion ? 0 : h * 18).duration(reduceMotion ? 0 : 260).attr('r', 4 + norm * 9);
+        if (cnt > 0) {
+          const tip = `<strong>${day.dayOfMonth} ${month.short} ${String(h).padStart(2, '0')}:00</strong>${fmt(cnt)} belroepen`;
+          dot.attr('cursor', 'pointer')
+            .on('mouseenter mousemove', e => showTooltip(tip, e.clientX, e.clientY))
+            .on('mouseleave', () => hideTooltip());
+        }
+      }
+
+      drawCenter(`${day.dayOfMonth} ${month.long}`, `${fmt(day.total)} belroepen`, `← terug naar ${month.short}`, () => {
+        view = { level: 'month', monthIndex: mIdx }; draw();
+      });
+    }
   };
 
   // ════════════════════════════════════════════════════
@@ -664,12 +869,30 @@ export function initMitchell() {
       .attr('stroke', C.bell).attr('stroke-width', 2.5).attr('clip-path', 'url(#peaksClip)');
     if (!reduceMotion) clip.transition().duration(1500).ease(d3.easeCubicInOut).attr('width', W);
 
-    entries.forEach(d => {
-      if (d.i % 5 === 0 || d.i === entries.length - 1) {
+    // X-as labels: bij veel dagen één label per maand, anders elke ~5e dag
+    if (entries.length > 14) {
+      const seenMonths = new Set();
+      entries.forEach(d => {
+        const dateStr = weekDays[d.i];
+        if (!dateStr) return;
+        const dt = new Date(dateStr);
+        if (Number.isNaN(dt.getTime())) return;
+        const key = `${dt.getUTCFullYear()}-${dt.getUTCMonth()}`;
+        if (seenMonths.has(key)) return;
+        seenMonths.add(key);
+        const xPos = x(d.i);
+        svg.append('line').attr('x1', xPos).attr('x2', xPos).attr('y1', H - mB).attr('y2', H - mB + 6)
+          .attr('stroke', C.green).attr('opacity', 0.35).attr('stroke-width', 1);
+        svg.append('text').attr('x', xPos).attr('y', H - mB + 22).attr('text-anchor', 'middle')
+          .attr('font-family', FONT_BODY).attr('font-size', 12).attr('font-weight', 700)
+          .attr('fill', C.green).attr('opacity', 0.75).text(MONTH_SHORT_NL[dt.getUTCMonth()]);
+      });
+    } else {
+      entries.forEach(d => {
         svg.append('text').attr('x', x(d.i)).attr('y', H - mB + 20).attr('text-anchor', 'middle')
           .attr('font-family', FONT_BODY).attr('font-size', 11).attr('fill', C.green).attr('opacity', 0.6).text(d.label);
-      }
-    });
+      });
+    }
 
     // piekdag
     const peak = entries.reduce((a, b) => b.value > a.value ? b : a, entries[0]);
@@ -1378,11 +1601,32 @@ export function initMitchell() {
       .attr('fill', 'url(#radarSweep)').attr('opacity', 0.6);
     svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 5).attr('fill', C.purple);
 
+    // Afstand tot het midden = inverse van waarnemingen: vaakst gezien dicht bij
+    // het scherm, zeldzaam aan de rand. Hoeken willekeurig met rejection sampling
+    // zodat soorten elkaar niet overlappen.
     const pingSeed = mulberry32(42);
-    const pings = visData.map(v => {
-      const angle = pingSeed() * Math.PI * 2;
-      const distance = 60 + pingSeed() * (R - 70);
-      return { ...v, x: cx + Math.cos(angle) * distance, y: cy + Math.sin(angle) * distance };
+    const counts = visData.map(v => v.count || 0);
+    const maxC = Math.max(...counts, 1);
+    const positiveCounts = counts.filter(c => c > 0);
+    const minC = positiveCounts.length ? Math.min(...positiveCounts) : maxC;
+    const innerD = 70, outerD = R - 55;
+    const dscale = d3.scaleSqrt().domain([minC, maxC]).range([outerD, innerD]).clamp(true);
+    const minGap = 70; // minimale onderlinge afstand in px
+    const pings = [];
+    visData.forEach(v => {
+      const distance = v.count > 0
+        ? dscale(v.count) + (pingSeed() - 0.5) * 22
+        : outerD + 10;
+      let best = null, bestScore = -Infinity;
+      for (let t = 0; t < 60; t++) {
+        const angle = pingSeed() * Math.PI * 2;
+        const px = cx + Math.cos(angle) * distance;
+        const py = cy + Math.sin(angle) * distance;
+        const nearest = pings.reduce((m, p) => Math.min(m, Math.hypot(p.x - px, p.y - py)), Infinity);
+        if (nearest >= minGap) { best = { angle, x: px, y: py }; break; }
+        if (nearest > bestScore) { bestScore = nearest; best = { angle, x: px, y: py }; }
+      }
+      pings.push({ ...v, ...best });
     });
 
     const detailPanel = $('#radarDetail');
@@ -1397,12 +1641,18 @@ export function initMitchell() {
       g.append('circle').attr('r', 8).attr('fill', p.color).attr('opacity', 0.6);
       g.append('g').attr('class', 'fish-wiggle').style('color', p.color)
         .html(`<use href="#${fishSymbolId(p.shape)}" x="-22" y="-9" width="44" height="18"/>`);
+      // Label rechts van de vis, tenzij het dan de rand raakt; idem voor links
+      let labelRight = p.x > cx;
+      const labelText = `${p.naam} · ${fmt(p.count)}`;
+      const estW = labelText.length * 7 + 26;
+      if (labelRight && p.x + estW > W - 6) labelRight = false;
+      else if (!labelRight && p.x - estW < 6) labelRight = true;
       g.append('text')
-        .attr('x', p.x > cx ? 26 : -26).attr('y', 4)
-        .attr('text-anchor', p.x > cx ? 'start' : 'end')
+        .attr('x', labelRight ? 26 : -26).attr('y', 4)
+        .attr('text-anchor', labelRight ? 'start' : 'end')
         .attr('font-family', FONT_BODY).attr('font-size', 12).attr('font-weight', 700)
         .attr('fill', C.off).attr('opacity', 0.85)
-        .text(`${p.naam} · ${fmt(p.count)}`);
+        .text(labelText);
 
       const showDetail = () => {
         pingsGroup.selectAll('.radar-ping').classed('selected', false);
@@ -1674,8 +1924,110 @@ export function initMitchell() {
     '#weekdayStage', '#screensStage', '#aquariumStage', '#netStage', '#depthStage'];
   let currentPeriod = 'maand';
 
-  async function loadData(url) {
+  // Bouwt nep-jaardata uit de maand-snapshot — vermenigvuldigt tellers
+  // en plakt 365 dagen aan elkaar met een ruwe seizoensgolf.
+  function synthesizeYear(live) {
+    const SCALE = 12;
+    const DAYS = 365;
+    const scaleNum = v => (typeof v === 'number' ? Math.round(v * SCALE) : v);
+    const scaleObj = obj => {
+      if (!obj) return;
+      Object.keys(obj).forEach(k => { obj[k] = scaleNum(obj[k]); });
+    };
+
+    scaleObj(live.species);
+    if (typeof live.totalUploads === 'number') live.totalUploads = scaleNum(live.totalUploads);
+    if (typeof live.pondTotal === 'number')    live.pondTotal    = scaleNum(live.pondTotal);
+
+    if (live.funnel) {
+      ['uploadedFish', 'dismissedUploading', 'total'].forEach(k => {
+        if (typeof live.funnel[k] === 'number') live.funnel[k] = scaleNum(live.funnel[k]);
+      });
+    }
+
+    if (live.geo) {
+      if (typeof live.geo.total === 'number') live.geo.total = scaleNum(live.geo.total);
+      if (live.geo.countries && typeof live.geo.countries === 'object') {
+        Object.keys(live.geo.countries).forEach(k => {
+          const v = live.geo.countries[k];
+          if (typeof v === 'number') live.geo.countries[k] = scaleNum(v);
+          else if (v && typeof v === 'object' && typeof v.n === 'number') v.n = scaleNum(v.n);
+        });
+      }
+    }
+
+    if (live.tech) ['device', 'browser', 'os'].forEach(cat => scaleObj(live.tech[cat]));
+
+    if (Array.isArray(live.languages)) {
+      live.languages.forEach(l => { if (typeof l.n === 'number') l.n = scaleNum(l.n); });
+    }
+    if (Array.isArray(live.screens)) {
+      live.screens.forEach(s => { if (typeof s.n === 'number') s.n = scaleNum(s.n); });
+    }
+    if (live.orientation) {
+      ['portrait', 'landscape', 'square', 'total', 'unique'].forEach(k => {
+        if (typeof live.orientation[k] === 'number') live.orientation[k] = scaleNum(live.orientation[k]);
+      });
+    }
+    if (live.sessions) {
+      ['totalSessions', 'ringers', 'totalRings'].forEach(k => {
+        if (typeof live.sessions[k] === 'number') live.sessions[k] = scaleNum(live.sessions[k]);
+      });
+      if (Array.isArray(live.sessions.hist)) {
+        live.sessions.hist = live.sessions.hist.map(v => scaleNum(v));
+      }
+    }
+
+    // Rek de uurpatronen uit tot 365 dagen met een zachte seizoensgolf
+    const srcHours = live.weekHours || [];
+    const srcDays = Math.max(1, Math.floor(srcHours.length / 24));
+    const yearHours = new Array(DAYS * 24).fill(0);
+    for (let d = 0; d < DAYS; d++) {
+      // Piek rond zomerstart, dal rond half december
+      const season = 0.65 + 0.55 * Math.sin(((d - 80) / DAYS) * Math.PI * 2);
+      const jitter = 0.82 + Math.random() * 0.36;
+      const factor = season * jitter;
+      for (let h = 0; h < 24; h++) {
+        const base = srcHours[(d % srcDays) * 24 + h] || 0;
+        yearHours[d * 24 + h] = Math.round(base * factor);
+      }
+    }
+    live.weekHours = yearHours;
+
+    // Daglabels voor een vol jaar — start op 1 jun van vorig jaar
+    const startDate = new Date(Date.UTC(2025, 5, 1));
+    const dayKeys = [], dayLabels = [];
+    for (let i = 0; i < DAYS; i++) {
+      const dt = new Date(startDate.getTime() + i * 86400000);
+      dayKeys.push(dt.toISOString().slice(0, 10));
+      dayLabels.push(`${dt.getUTCDate()} ${MONTH_SHORT_NL[dt.getUTCMonth()]}`);
+    }
+    live.weekDays = dayKeys;
+    live.weekDayLabels = dayLabels;
+
+    // Daily afgeleid van de nieuwe uren — sleutels 1..365
+    const daily = {};
+    for (let d = 0; d < DAYS; d++) {
+      let s = 0;
+      for (let h = 0; h < 24; h++) s += yearHours[d * 24 + h];
+      daily[d + 1] = s;
+    }
+    live.daily = daily;
+
+    const endDate = new Date(startDate.getTime() + (DAYS - 1) * 86400000);
+    const fmt = dt => `${dt.getUTCDate()} ${MONTH_SHORT_NL[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`;
+    live.period = {
+      start: dayKeys[0],
+      end: dayKeys[DAYS - 1],
+      label: `${fmt(startDate)} – ${fmt(endDate)}`,
+    };
+
+    return live;
+  }
+
+  async function loadData(url, transform) {
     const live = await fetch(url).then(r => r.json());
+    if (transform) transform(live);
     visData.forEach(v => { v.count = 0; });
     Object.entries(live.species || {}).forEach(([naam, count]) => {
       const v = visData.find(d => d.naam === naam);
@@ -1683,6 +2035,7 @@ export function initMitchell() {
     });
     weekHours       = live.weekHours     || [];
     weekDayLabels   = live.weekDayLabels || [];
+    weekDays        = live.weekDays      || [];
     periodLabel     = live.period?.label || '';
     geoData         = live.geo       || null;
     funnelData      = live.funnel    || null;
@@ -1727,7 +2080,9 @@ export function initMitchell() {
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     clearChapters();
-    try { await loadData(period === 'week' ? '/json/vis-data-week.json' : '/json/vis-data.json'); }
+    const url = period === 'week' ? '/json/vis-data-week.json' : '/json/vis-data.json';
+    const transform = period === 'jaar' ? synthesizeYear : null;
+    try { await loadData(url, transform); }
     catch (e) { console.warn('dataset niet geladen', e); }
     if (sw) sw.classList.remove('is-loading');
     observeChapters();
@@ -1738,7 +2093,6 @@ export function initMitchell() {
   // ════════════════════════════════════════════════════
   function initSwimFish() {
     if (reduceMotion) return () => {};
-    gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
     document.querySelectorAll('.swim-fish').forEach(n => n.remove()); // de-dupe bij hermount
 
     const host = document.createElement('div');
@@ -1767,50 +2121,94 @@ export function initMitchell() {
 
     const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
 
-    // Serpentine-pad over de volledige viewport, opnieuw opgebouwd bij resize
-    let raw = null;
-    function rebuild() {
-      const W = window.innerWidth, H = window.innerHeight;
-      const mx = Math.min(130, W * 0.13);
-      const topPad = 96, botPad = 90;
-      const amp = (W / 2) - mx, crossings = 5, NP = 140;
-      const pts = [];
-      for (let i = 0; i <= NP; i++) {
-        const t = i / NP;
-        pts.push([(W / 2) - amp * Math.cos(t * Math.PI * crossings), topPad + t * (H - topPad - botPad)]);
+    // Zoek alle grafiek-stages waaromheen de vis kan zwemmen (skipt de hero
+    // omdat die zijn eigen grote vis heeft).
+    function getStages() {
+      return Array.from(document.querySelectorAll('.chapter:not(.chapter--hero)'))
+        .map(ch => ch.querySelector('[class$="-stage"]') || ch.querySelector('[class*="-stage "]') || ch)
+        .filter(Boolean);
+    }
+
+    let curX = window.innerWidth * 0.82, curY = window.innerHeight * 0.55;
+    let lastDir = 1, lastTilt = 0;
+    let initialized = false;
+    let raf2 = 0;
+    const t0 = performance.now();
+
+    function tick(now) {
+      const tt = (now - t0) / 1000;
+      const vh = window.innerHeight;
+      const vw = window.innerWidth;
+      const viewCy = vh / 2;
+
+      // Pak de stage die het dichtst bij het verticale midden zit
+      let active = null, activeBox = null, bestDist = Infinity;
+      getStages().forEach(s => {
+        const r = s.getBoundingClientRect();
+        if (r.height < 40 || r.bottom < 0 || r.top > vh) return;
+        const sCy = r.top + r.height / 2;
+        const d = Math.abs(sCy - viewCy);
+        if (d < bestDist) { bestDist = d; active = s; activeBox = r; }
+      });
+
+      let targetX, targetY, tx, ty;
+      if (active && activeBox) {
+        const sCx = activeBox.left + activeBox.width / 2;
+        const sCy = activeBox.top + activeBox.height / 2;
+        // Ovaal net buiten de stage; idle-drift zorgt voor continue rondgang
+        const radX = clamp(activeBox.width  / 2 + 70, 170, vw * 0.45);
+        const radY = clamp(activeBox.height / 2 + 50, 130, vh * 0.45);
+
+        // Hoek wordt gestuurd door scroll-positie binnen de chapter +
+        // langzame drift, zodat de vis ook in rust blijft rondcirkelen.
+        const ch = active.closest('.chapter') || active;
+        const chR = ch.getBoundingClientRect();
+        const span = chR.height + vh;
+        const chT  = clamp((vh - chR.top) / span, 0, 1);
+        const angle = chT * Math.PI * 2.6 + tt * 0.35;
+
+        targetX = sCx + Math.cos(angle) * radX;
+        targetY = sCy + Math.sin(angle) * radY;
+        // Tangent voor tilt en kijkrichting
+        tx = -Math.sin(angle) * radX;
+        ty =  Math.cos(angle) * radY;
+      } else {
+        // Geen actieve stage: drijf rustig rechtsonder
+        targetX = vw - 90 + Math.sin(tt * 0.6) * 30;
+        targetY = vh - 110 + Math.sin(tt * 0.9) * 20;
+        tx = Math.cos(tt * 0.6); ty = Math.sin(tt * 0.9);
       }
-      const d = d3.line().curve(d3.curveCatmullRom.alpha(0.5))(pts);
-      raw = MotionPathPlugin.getRawPath(d);
-      MotionPathPlugin.cacheRawPathMeasurements(raw);
-    }
-    rebuild();
 
-    let lastDir = 1;
-    function placeFish(p) {
-      if (!raw) return;
-      const a = MotionPathPlugin.getPositionOnPath(raw, clamp(p, 0, 1));
-      const b = MotionPathPlugin.getPositionOnPath(raw, clamp(p + 0.004, 0, 1));
-      const dx = b.x - a.x, dy = b.y - a.y;
-      const dir = dx < -0.02 ? -1 : dx > 0.02 ? 1 : lastDir;
+      // Veilig binnen viewport houden
+      targetX = clamp(targetX, 40, vw - 40);
+      targetY = clamp(targetY, 60, vh - 60);
+
+      // Vloeiend naar doel toe lerpen — voorkomt schokjes bij stage-wissel
+      const k = initialized ? 0.09 : 1;
+      curX += (targetX - curX) * k;
+      curY += (targetY - curY) * k;
+      initialized = true;
+
+      // Tilt + facing — met smoothing zodat het niet flikkert
+      const tang = Math.atan2(ty, Math.abs(tx) + 1e-4) * 180 / Math.PI;
+      const dir = tx < -0.05 ? -1 : tx > 0.05 ? 1 : lastDir;
       lastDir = dir;
-      const tilt = clamp(Math.atan2(dy, Math.abs(dx) + 1e-4) * 180 / Math.PI, -18, 18);
-      gsap.set(host, { x: a.x, y: a.y, xPercent: -50, yPercent: -50, scaleX: dir });
-      gsap.set(rotEl, { rotation: tilt });
-    }
-    placeFish(0);
+      lastTilt += (clamp(tang, -22, 22) - lastTilt) * 0.18;
 
-    const proxy = { p: 0 };
-    const tween = gsap.to(proxy, {
-      p: 1, ease: 'none',
-      scrollTrigger: { start: 0, end: 'max', scrub: 1, invalidateOnRefresh: true },
-      onUpdate: () => placeFish(proxy.p),
-    });
-    ScrollTrigger.addEventListener('refreshInit', rebuild);
+      // Idle bob bovenop, voor 'levend' gevoel
+      const bobX = Math.sin(tt * 1.3) * 2.6;
+      const bobY = Math.sin(tt * 2.1 + 0.4) * 3.2;
+      const yaw  = Math.sin(tt * 1.65 + 0.9) * 3.5;
+
+      gsap.set(host,  { x: curX + bobX, y: curY + bobY, xPercent: -50, yPercent: -50, scaleX: dir });
+      gsap.set(rotEl, { rotation: lastTilt + yaw });
+
+      raf2 = requestAnimationFrame(tick);
+    }
+    raf2 = requestAnimationFrame(tick);
 
     return () => {
-      ScrollTrigger.removeEventListener('refreshInit', rebuild);
-      if (tween.scrollTrigger) tween.scrollTrigger.kill();
-      tween.kill();
+      cancelAnimationFrame(raf2);
       host.remove();
     };
   }
