@@ -1,0 +1,14 @@
+@import './visdeurbel-tokens.css';
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-inverse);
+}
+
+#root {
+  width: 100%;
+}
