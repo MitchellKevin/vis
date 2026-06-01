@@ -259,8 +259,37 @@ body.mitchell-page {
 .pond-counter { bottom: var(--space-4); right: var(--space-4); }
 
 /* ── Wereldkaart ─────────────────────────────────────── */
-.world-stage { width: min(96vw, 1100px); aspect-ratio: 980 / 540; margin: var(--space-7) auto 0; }
+.world-stage {
+  width: min(96vw, 1100px);
+  margin: var(--space-7) auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+.world-svg-host { width: 100%; aspect-ratio: 980 / 540; }
 .world-stage svg { width: 100%; height: 100%; }
+.world-toggle {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid rgb(253 247 239 / 0.35);
+  border-radius: var(--radius-pill);
+  background: rgb(253 247 239 / 0.06);
+}
+.world-toggle-btn {
+  font: var(--text-p2-bold);
+  color: var(--color-off-white);
+  padding: var(--space-2) var(--space-5);
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.world-toggle-btn:hover { background: rgb(253 247 239 / 0.1); }
+.world-toggle-btn.is-active { background: var(--color-purple); color: var(--color-green-dark); }
+.world-toggle-btn:focus-visible { outline: 2px solid var(--color-purple); outline-offset: 2px; }
 .world-dot { cursor: pointer; }
 .world-dot:focus-visible { outline: none; }
 .world-dot:hover .world-dot-glow,
