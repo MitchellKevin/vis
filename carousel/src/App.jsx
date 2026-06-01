@@ -1,4 +1,4 @@
-import EmblaCarousel from './components/EmblaCarousel'
+import EmblaCarousel from './components/carousel/EmblaCarousel'
 import './App.css'
 
 export default function App() {
