@@ -8,9 +8,10 @@ import GlobeMap    from './GlobeMap.jsx';
 import EventFeed   from './EventFeed.jsx';
 import { TOPO_URL } from './constants.js';
 import { aggregate, loadData } from './utils.js';
-import '../../styles/joost.css';
+import { useStylesheet } from '../../hooks/useStylesheet.js';
 
 export default function WorldMap() {
+  useStylesheet('/styles/joost.css');
   const [period,        setPeriod       ] = useState('maand');
   const [allEvents,     setAllEvents    ] = useState([]);
   const [countryData,   setCountryData  ] = useState({});

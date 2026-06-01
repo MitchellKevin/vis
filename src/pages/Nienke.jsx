@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Nav from '../components/Nav.jsx';
-import '../styles/nienke.css';
+import { useStylesheet } from '../hooks/useStylesheet.js';
 
 const HOURS = 24;
 const SCALE = 30;
@@ -221,6 +221,7 @@ function TimelineSection({ compact = false }) {
 }
 
 export default function Nienke() {
+  useStylesheet('/styles/nienke.css');
   return (
     <>
       <Nav current="nienke" />

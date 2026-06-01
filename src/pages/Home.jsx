@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import Nav from '../components/Nav.jsx';
-import '../styles/index.css';
+import { useStylesheet } from '../hooks/useStylesheet.js';
 
 export default function Home() {
+  useStylesheet('/styles/index.css');
   return (
     <>
       <Nav />

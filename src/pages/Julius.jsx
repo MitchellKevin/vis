@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import Nav from '../components/Nav.jsx';
 import EmblaCarousel from '../components/carousel/EmblaCarousel.jsx';
-import '../styles/Julius.css';
+import { useStylesheet } from '../hooks/useStylesheet.js';
 
 function useBodyClass(cls) {
   useEffect(() => {
@@ -12,6 +12,8 @@ function useBodyClass(cls) {
 
 export default function Julius() {
   useBodyClass('julius-page');
+  useStylesheet('/styles/Julius.css');
+  useStylesheet('/styles/EmblaCarousel.css');
 
   return (
     <>

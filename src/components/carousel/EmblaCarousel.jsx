@@ -3,7 +3,6 @@ import useEmblaCarousel from 'embla-carousel-react'
 import { fish } from './fish'
 import FishSlide from './FishSlide'
 import CarouselControls from './CarouselControls'
-import './EmblaCarousel.css'
 
 // Houdt bij of de carousel naar links/rechts kan scrollen,
 // zodat de pijlknoppen op het juiste moment uitgeschakeld worden.

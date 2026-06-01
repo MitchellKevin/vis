@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Nav from '../components/Nav.jsx';
+import { useStylesheet } from '../hooks/useStylesheet.js';
 import FishSprite from '../components/mitchell-components/FishSprite.jsx';
 import NetChapter from '../components/mitchell-components/NetChapter.jsx';
 import DataSwitch from '../components/mitchell-components/DataSwitch.jsx';
@@ -10,11 +11,11 @@ import WorldChapter from '../components/mitchell-components/WorldChapter.jsx';
 import LanguagesChapter from '../components/mitchell-components/LanguagesChapter.jsx';
 import RadarChapter from '../components/mitchell-components/RadarChapter.jsx';
 import { initMitchell } from '../scripts/mitchell.js';
-import '../styles/mitchell.css';
-import '../styles/mitchell-week1.css';
 
 export default function Mitchell() {
   const initialized = useRef(false);
+  useStylesheet('/styles/mitchell.css');
+  useStylesheet('/styles/mitchell-week1.css');
 
   useEffect(() => {
     document.body.classList.add('mitchell-page');
