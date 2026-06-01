@@ -266,9 +266,7 @@ h2 { font: var(--text-h2); color: var(--text-primary); }
 /* Two-column body inside the panel */
 .map-body {
   display: flex;
-  flex: 1;
-  min-height: 0;
-  align-items: stretch;
+  height: 520px;        /* fixed height — globe and list are always this tall */
 }
 
 .map-globe-col {
@@ -276,19 +274,27 @@ h2 { font: var(--text-h2); color: var(--text-primary); }
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex: 0 0 58%;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: var(--space-2) 0 var(--space-2) var(--space-2);
-  align-self: stretch;
+  overflow: hidden;
 }
 
+#map-svg {
+  width: 100%;
+  height: 100%;         /* fill the column height exactly */
+  display: block;
+  cursor: grab;
+}
+#map-svg:active { cursor: grabbing; }
+
 .map-country-col {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 280px;
+  width: 280px;
   display: flex;
   flex-direction: column;
   border-left: 1px solid rgba(1, 70, 60, 0.1);
-  overflow: hidden;
-  align-self: stretch;
+  overflow: hidden;     /* clips the list so it can't grow the panel */
 }
 
 .map-country-col__header {
@@ -312,11 +318,11 @@ h2 { font: var(--text-h2); color: var(--text-primary); }
   color: var(--text-muted);
 }
 
-/* Country list inside panel — fills column height, scrollable */
+/* Country list — scrolls within the fixed column height */
 .map-country-col #country-list {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-2) var(--space-5);
+  padding: var(--space-2) var(--space-4);
   scrollbar-width: thin;
   scrollbar-color: var(--border-default) transparent;
 }
@@ -324,7 +330,7 @@ h2 { font: var(--text-h2); color: var(--text-primary); }
 @media (max-width: 768px) {
   .map-body        { flex-direction: column; }
   .map-globe-col   { padding: var(--space-4) var(--space-4) 0; justify-content: center; }
-  .map-country-col { border-left: none; border-top: 1px solid rgba(1, 70, 60, 0.1); max-height: 300px; }
+  .map-country-col { flex: 0 0 auto; width: 100%; border-left: none; border-top: 1px solid rgba(1, 70, 60, 0.1); max-height: 300px; }
 }
 
 /* ── Map tabs & projection toggle ── */
@@ -390,14 +396,6 @@ h2 { font: var(--text-h2); color: var(--text-primary); }
 .map-tab.active  { background: var(--accent-primary); border-color: var(--border-default); color: var(--text-primary); }
 .map-tab--reset  { background: var(--bg-surface); }
 
-#map-svg {
-  cursor: grab;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 490 / 460;
-  display: block;
-}
-#map-svg:active { cursor: grabbing; }
 .map-country     { transition: filter 0.2s; }
 .map-country:hover { filter: brightness(0.88) saturate(1.2); }
 
