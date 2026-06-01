@@ -15,16 +15,6 @@ export default function Home() {
           <p>Overzicht van alle visualisatieprojecten voor de Visdeurbel meesterproef.</p>
         </section>
         <div className="grid">
-          <div className="card card--wide">
-            <div className="card__body">
-              <span className="card__label">Overzicht</span>
-              <h2 className="card__title">Dashboard</h2>
-              <p className="card__desc">
-                Het volledige data-dashboard met gecombineerde inzichten uit alle visualisaties.
-              </p>
-              <Link className="card__link" to="/dashboard">Bekijken →</Link>
-            </div>
-          </div>
           <Link className="card" to="/julius">
             <span className="card__label">Julius</span>
             <h2 className="card__title">Visualisatie Julius</h2>
