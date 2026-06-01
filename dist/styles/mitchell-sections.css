@@ -25,7 +25,26 @@
 .section-wave__svg {
   display: block;
   width: 100%;
-  height: clamp(48px, 7vw, 110px);
+  height: clamp(56px, 8vw, 130px);
+}
+
+/* Subtiele, naadloze drift — verschuift precies één golf-periode (720). */
+.section-wave__path {
+  animation: section-wave-drift 16s linear infinite;
+  will-change: transform;
+}
+@keyframes section-wave-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-720px); }
+}
+/* Om en om de andere kant op, met net iets ander tempo — levendiger water. */
+.section-wave:nth-of-type(even) .section-wave__path {
+  animation-duration: 21s;
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-wave__path { animation: none; }
 }
 
 /* ── Tekst-highlights leesbaar op violet ─────────────── */
