@@ -417,6 +417,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
             id="map-svg"
             viewBox={`0 0 ${W} ${H}`}
             preserveAspectRatio="xMidYMid meet"
+            style={{ width: '100%', display: 'block', cursor: 'grab' }}
           >
             <defs />
             <rect id="map-bg" x="0" y="0" width={W} height={H} fill="#c2e8f5" display="none" />
