@@ -4,6 +4,12 @@ import { $, fmt, reduceMotion } from '../utils.js';
 import { showTooltip, hideTooltip } from '../tooltip.js';
 import { state, lifecycle, raf } from '../state.js';
 
+// ============================================================================
+// languages.js — drijvende begroetingen per taal. Elke taal is een woord;
+// de lettergrootte staat voor het aantal bezoekers. Een d3-force-simulatie
+// duwt de woorden netjes uit elkaar (geen overlap) en daarna dobberen ze zacht.
+// ============================================================================
+
 export function initLanguages() {
   const { languagesData } = state;
   const { cleanups } = lifecycle;
@@ -15,6 +21,7 @@ export function initLanguages() {
   if (!list.length) { stage.innerHTML = '<p class="stage-fallback">Geen taaldata.</p>'; return; }
   const total = d3.sum(list, d => d.n);
   const maxN = d3.max(list, d => d.n);
+  // Lettergrootte 15..70px, geschaald op √bezoekers (eerlijke oppervlakte).
   const fs = d3.scaleSqrt().domain([0, maxN]).range([15, 70]);
   // Geen paars-familie: die valt weg op de violette sectie-achtergrond.
   const palette = [C.green, C.greenMid, C.teal, C.pink, C.goldDeep];
@@ -43,6 +50,9 @@ export function initLanguages() {
     .on('mouseleave blur', () => hideTooltip())
     .on('focus', (e, d) => { const bb = e.currentTarget.getBoundingClientRect(); showTooltip(`<strong>${d.name}</strong>${fmt(d.n)} bezoekers`, bb.left + bb.width / 2, bb.top); });
 
+  // Force-simulatie: x/y trekken zacht naar het midden, charge duwt licht af,
+  // en collide voorkomt dat woorden over elkaar vallen. Elke 'tick' updaten we
+  // de posities.
   const sim = d3.forceSimulation(list)
     .force('x', d3.forceX(cx).strength(0.04))
     .force('y', d3.forceY(cy).strength(0.06))

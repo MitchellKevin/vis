@@ -25,7 +25,7 @@
 .section-wave__svg {
   display: block;
   width: 100%;
-  height: clamp(56px, 8vw, 130px);
+  height: clamp(40px, 6vw, 92px);
 }
 
 /* Subtiele, naadloze drift — verschuift precies één golf-periode (720). */

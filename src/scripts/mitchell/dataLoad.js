@@ -2,8 +2,16 @@ import { MONTH_SHORT_NL } from './constants.js';
 import { generateMonthly } from './utils.js';
 import { state } from './state.js';
 
+// ============================================================================
+// dataLoad.js — haalt de dataset op en vult `state`.
+//   • loadData()      — fetcht een JSON-bestand en kopieert alles naar state.
+//   • synthesizeYear()— verzint een heel jaar uit de maand-snapshot (de echte
+//                       jaardata is te groot voor de browser).
+// ============================================================================
+
 // Bouwt nep-jaardata uit de maand-snapshot — vermenigvuldigt tellers
-// en plakt 365 dagen aan elkaar met een ruwe seizoensgolf.
+// en plakt 365 dagen aan elkaar met een ruwe seizoensgolf. `live` wordt
+// in-place aangepast (en ook teruggegeven).
 export function synthesizeYear(live) {
   const SCALE = 12;
   const DAYS = 365;
@@ -100,9 +108,12 @@ export function synthesizeYear(live) {
   return live;
 }
 
+// Haalt een dataset op (week/maand) en spiegelt alles naar `state`. Een
+// optionele `transform` (zoals synthesizeYear) past de data eerst aan.
 export async function loadData(url, transform) {
   const live = await fetch(url).then(r => r.json());
   if (transform) transform(live);
+  // Tellers resetten en per soort vullen vanuit live.species.
   state.visData.forEach(v => { v.count = 0; });
   Object.entries(live.species || {}).forEach(([naam, count]) => {
     const v = state.visData.find(d => d.naam === naam);
@@ -121,7 +132,9 @@ export async function loadData(url, transform) {
   state.languagesData   = live.languages || null;
   state.screensData     = live.screens   || null;
   state.orientationData = live.orientation || null;
+  // TOTAL = geüploade vissen uit de trechter, of anders de som per soort.
   state.TOTAL = (state.funnelData && state.funnelData.uploadedFish) || state.visData.reduce((s, v) => s + v.count, 0);
+  // Per soort een nep-maandverloop verzinnen + sorteren op aantal (grootst eerst).
   state.visData.forEach(v => { v.monthly = generateMonthly(v.count); });
   state.visData.sort((a, b) => b.count - a.count);
 }

@@ -1,4 +1,11 @@
-// Stijl-tokens (hex-spiegels van visdeurbel-tokens.css)
+// ============================================================================
+// constants.js — vaste data & instellingen die door meerdere charts gedeeld
+// worden: kleuren, fonts, maandnamen, de vissoorten, landcoördinaten,
+// browserfamilies en begroetingen per taal. Puur data, geen logica.
+// ============================================================================
+
+// Stijl-tokens (hex-spiegels van visdeurbel-tokens.css). We spiegelen ze hier
+// in JS omdat de charts (canvas/SVG) niet bij de CSS-variabelen kunnen.
 export const C = {
   green:    '#01463c',
   greenMid: '#015a4e',
@@ -20,7 +27,9 @@ export const MONTH_LONG_NL  = ['januari', 'februari', 'maart', 'april', 'mei', '
 
 export const UTRECHT = [5.117, 52.09];
 
-// Vissoorten voor de radar — waarnemingen worden uit de data geladen.
+// Vissoorten — basis voor radar, aquarium en net. `count` start op 0 en wordt
+// uit de geladen data gevuld (dataLoad.js). De overige velden bepalen kleur,
+// gewicht (voor biomassa), silhouet-vorm en waar de vis "hoort" te zwemmen.
 export const visData = [
   { naam: 'Blankvoorn', count: 0, color: C.teal,   weight: 0.3,  shape: 'round', diepte: 'mid',   habitat: 'open' },
   { naam: 'Brasem',     count: 0, color: '#34b3a0', weight: 1.8,  shape: 'round', diepte: 'bodem', habitat: 'zand' },

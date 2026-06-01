@@ -4,6 +4,12 @@ import { $, fmt, mulberry32, reduceMotion } from '../utils.js';
 import { ensureTintFilter, fishImagePath } from '../fishImage.js';
 import { state, lifecycle, raf } from '../state.js';
 
+// ============================================================================
+// radar.js — een sonar/radar. Elke vissoort is een "ping": hoe vaker gezien,
+// hoe dichter bij het midden. De draaiende sweep onthult de pings één voor één
+// zodra hij eroverheen veegt. Klik op een ping voor details rechtsonder.
+// ============================================================================
+
 export function initRadar() {
   const { visData } = state;
   const { cleanups } = lifecycle;
@@ -98,12 +104,16 @@ export function initRadar() {
     p.elem = g;
   });
 
+  // De sweep draait rond; zodra zijn hoek (bijna) samenvalt met die van een
+  // ping, "ontdekken" we die ping en faden we hem zichtbaar (één keer, via de
+  // revealed-set).
   let angle = -Math.PI / 2, raf2 = 0, running = false;
   const revealed = new Set();
   function tick() {
     angle += reduceMotion ? 0.03 : 0.01;
     sweep.attr('transform', `rotate(${angle * 180 / Math.PI} ${cx} ${cy})`);
     pings.forEach((p, i) => {
+      // da = hoekverschil tussen ping en sweep; klein = sweep is er net.
       const da = (Math.atan2(p.y - cy, p.x - cx) - angle + Math.PI * 4) % (Math.PI * 2);
       if (!revealed.has(i) && da < 0.18) { revealed.add(i); p.elem.transition().duration(300).attr('opacity', 1); }
     });

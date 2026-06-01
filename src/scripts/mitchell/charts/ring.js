@@ -4,6 +4,14 @@ import { $, fmt, reduceMotion } from '../utils.js';
 import { showTooltip, hideTooltip } from '../tooltip.js';
 import { state } from '../state.js';
 
+// ============================================================================
+// ring.js — de ringkalender. Elke stip is een tijdslot (uur of dag); de hoek
+// is het tijdstip (met de klok mee vanaf bovenaan) en de afstand tot het
+// midden + kleur/grootte tonen hoe druk het was.
+// Bij 'jaar' is de ring inzoombaar: jaar → maand → dag (drawYear/Month/Day).
+// Bij 'week'/'maand' is er één platte ring (drawFlat).
+// ============================================================================
+
 export function initRing() {
   const { weekHours, weekDayLabels, weekDays, periodLabel, currentPeriod, TOTAL } = state;
   const W = 680, H = 680, cx = W / 2, cy = H / 2;
@@ -35,6 +43,8 @@ export function initRing() {
     });
   }
 
+  // `view` houdt bij welk zoomniveau getoond wordt; draw() kiest de juiste
+  // teken-functie op basis hiervan. Klikken op een wig past `view` aan.
   let view = isYear ? { level: 'year' } : { level: 'flat' };
   draw();
 
@@ -98,6 +108,9 @@ export function initRing() {
 
     const dots = svg.append('g');
     for (let i = 0; i < SLOTS; i++) {
+      // Per uur-slot: norm = drukte t.o.v. het drukste uur (0..1).
+      // a = hoek (tijd, met de klok mee vanaf boven), r = afstand tot midden
+      // (drukker = verder naar buiten), kleur loopt op van flauw → groen → paars.
       const cnt  = data[i] || 0, norm = cnt / maxV;
       const a    = (i / SLOTS) * 2 * Math.PI - Math.PI / 2;
       const r    = innerR + 14 + norm * (outerR - innerR - 20);

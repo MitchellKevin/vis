@@ -2,6 +2,13 @@ import gsap from 'gsap';
 import { C } from './constants.js';
 import { reduceMotion } from './utils.js';
 
+// ============================================================================
+// swimFish.js — het kleine "gids-visje" dat met je meescrolt.
+// Het zoekt elke frame de grafiek die het dichtst bij het midden van het scherm
+// staat en cirkelt daar met een soepele beweging omheen (GSAP). Buiten beeld
+// dobbert het rechtsonder rond. Wordt overgeslagen bij prefers-reduced-motion.
+// ============================================================================
+
 // Scroll-vis — gids die om de actieve grafiek heen zwemt
 export function initSwimFish() {
   if (reduceMotion) return () => {};
@@ -53,6 +60,8 @@ export function initSwimFish() {
     const vw = window.innerWidth;
     const viewCy = vh / 2;
 
+    // Kies de grafiek-stage die het dichtst bij het verticale midden van het
+    // scherm staat — daar zwemt de vis omheen.
     let active = null, activeBox = null, bestDist = Infinity;
     getStages().forEach(s => {
       const r = s.getBoundingClientRect();
@@ -69,12 +78,15 @@ export function initSwimFish() {
       const radX = clamp(activeBox.width  / 2 + 70, 170, vw * 0.45);
       const radY = clamp(activeBox.height / 2 + 50, 130, vh * 0.45);
 
+      // Scroll-voortgang door dit hoofdstuk (0..1) bepaalt de hoek, plus een
+      // langzame tijd-component — zo draait de vis rond terwijl je scrolt.
       const ch = active.closest('.chapter') || active;
       const chR = ch.getBoundingClientRect();
       const span = chR.height + vh;
       const chT  = clamp((vh - chR.top) / span, 0, 1);
       const angle = chT * Math.PI * 2.6 + tt * 0.35;
 
+      // Punt op de ellips-baan rond het midden van de stage (radX/radY = straal).
       targetX = sCx + Math.cos(angle) * radX;
       targetY = sCy + Math.sin(angle) * radY;
       tx = -Math.sin(angle) * radX;
@@ -88,6 +100,8 @@ export function initSwimFish() {
     targetX = clamp(targetX, 40, vw - 40);
     targetY = clamp(targetY, 60, vh - 60);
 
+    // Soepel naar het doel toe bewegen (lerp). Eerste frame: meteen op plek
+    // zetten (k = 1) zodat hij niet vanuit de hoek aan komt schieten.
     const k = initialized ? 0.09 : 1;
     curX += (targetX - curX) * k;
     curY += (targetY - curY) * k;

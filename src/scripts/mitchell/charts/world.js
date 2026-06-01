@@ -5,6 +5,13 @@ import { $, fmt, reduceMotion } from '../utils.js';
 import { showTooltip, hideTooltip } from '../tooltip.js';
 import { state, lifecycle } from '../state.js';
 
+// ============================================================================
+// world.js — de wereldkaart. Toont per land een stip (grootte = aantal bel-
+// oproepen) en bogen vanuit Utrecht. Er is een wereld- en een Europa-weergave;
+// die laatste zoomt in met een eigen Mercator-projectie. Gebruikt d3-geo +
+// TopoJSON (state.worldTopo) voor de landgrenzen.
+// ============================================================================
+
 // Bereik waarbinnen we landen en punten als 'Europa' beschouwen.
 const EUROPE_LNG = [-15, 35], EUROPE_LAT = [34, 65];
 
@@ -97,6 +104,8 @@ export function initWorld() {
     // Bij Europa kleinere bollen zodat de clusters rond NL/DE/BE niet
     // over elkaar heen lopen.
     const rRange = view === 'europe' ? [2.5, 13] : [2, 18];
+    // scaleSqrt: de oppervlakte (niet de straal) schaalt mee met het aantal,
+    // zodat de stippen visueel eerlijk te vergelijken zijn.
     const rScale = d3.scaleSqrt().domain([0, maxC]).range(rRange);
     // Geen paars-familie hier: die zou wegvallen op de violette sectie.
     const colorFor = (v) => { const r = v / maxC; return r > 0.45 ? C.pink : r > 0.12 ? C.goldDeep : C.teal; };

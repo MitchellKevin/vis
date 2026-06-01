@@ -3,6 +3,14 @@ import { C } from '../constants.js';
 import { $, fmt, rng, reduceMotion } from '../utils.js';
 import { state, lifecycle, raf } from '../state.js';
 
+// ============================================================================
+// hero.js — de intro: duizenden deeltjes vormen samen één grote vis.
+// Werking: we tekenen een vis-silhouet offscreen, lezen de pixels uit als
+// puntenwolk, en animeren elk deeltje van een willekeurige startplek naar zijn
+// plek in de vis. Bij scrollen "exploderen" ze weer uit elkaar. Alles op een
+// <canvas> (sneller dan duizenden SVG-elementen).
+// ============================================================================
+
 export function initHero(sectionEl) {
   const { TOTAL, periodLabel } = state;
   const { cleanups } = lifecycle;
@@ -42,6 +50,11 @@ export function initHero(sectionEl) {
     return out;
   }
 
+  // Aantal deeltjes: zoveel als er oproepen waren, met een plafond (mobiel
+  // lager voor de prestaties). Elk deeltje krijgt: zijn doelplek in de vis
+  // (fx/fy), een willekeurige startplek (ca/cr = hoek/straal), een vertraging
+  // en duur voor het "samenkomen", een explosie-richting (ea/er), grootte en
+  // een kleur op basis van zijn x-positie in de vis.
   const N = Math.min(target || 6000, window.innerWidth < 700 ? 6500 : 13000);
   const parts = buildFishPoints(N).map(fp => ({
     fx: fp.fx, fy: fp.fy,
@@ -68,6 +81,8 @@ export function initHero(sectionEl) {
   const ro = new ResizeObserver(resize); ro.observe(stage);
 
   function draw(elapsed) {
+    // s = scroll-voortgang door de hero (0 = bovenaan, 1 = grotendeels weg).
+    // Stuurt het uiteenspatten van de vis en het vervagen van de tekst.
     const rct = sectionEl.getBoundingClientRect();
     const s = clamp(-rct.top / (rct.height * 0.85), 0, 1);
     const maxR = Math.hypot(W, H) * 0.62;
@@ -79,13 +94,18 @@ export function initHero(sectionEl) {
     // blijven op de lichte achtergrond.
     ctx.globalCompositeOperation = 'source-over';
     for (const p of parts) {
+      // ef = "vorm-voortgang" van dit deeltje (0 = startplek, 1 = in de vis).
       const ft = clamp((elapsed - p.delay) / p.dur, 0, 1), ef = easeOut(ft);
+      // fh* = doelplek in de vis, cl* = willekeurige startplek; we interpoleren
+      // ertussen op basis van ef → de wolk trekt samen tot een vis.
       const fhx = cx + p.fx * scale, fhy = cy + p.fy * scale;
       const clx = cx + Math.cos(p.ca) * p.cr * maxR, cly = cy + Math.sin(p.ca) * p.cr * maxR;
       let x = clx + (fhx - clx) * ef, y = cly + (fhy - cly) * ef;
       const wob = (1 - s) * ef;
       x += Math.sin(elapsed * 0.0011 + p.ph) * 3 * wob;
       y += Math.cos(elapsed * 0.0009 + p.ph) * 3 * wob;
+      // Bij scrollen (s > 0): elk deeltje schiet zijn eigen richting op én zakt
+      // naar beneden — de vis spat uiteen en "valt weg".
       if (s > 0) { x += Math.cos(p.ea) * p.er * maxR * 0.9 * expEase; y += Math.sin(p.ea) * p.er * maxR * 0.55 * expEase + expEase * expEase * H * 0.5; }
       const a = ef * (1 - smoothstep(0.6, 1, s));
       if (a <= 0.01) continue;

@@ -1,3 +1,12 @@
+// ============================================================================
+// fishImage.js — helpers om de vis-PNG's in te kleuren met de soort-kleur.
+// ----------------------------------------------------------------------------
+// De foto's zijn grijs/neutraal; we "tinten" ze luminantie-behoudend zodat ze
+// de soort-kleur krijgen maar hun textuur/details houden. Twee varianten:
+//   • ensureTintFilter — voor SVG (radar, net) via een feColorMatrix-filter.
+//   • (in aquarium.js) makeSprite — voor canvas, per pixel.
+// ============================================================================
+
 // Map vissoort-naam naar PNG-bestandspad in public/images/.
 export function fishImagePath(naam) {
   return `/images/${naam.toLowerCase()}.png`;

@@ -4,6 +4,12 @@ import { $, $$, fmt, reduceMotion } from '../utils.js';
 import { ensureTintFilter, fishImagePath } from '../fishImage.js';
 import { state, lifecycle } from '../state.js';
 
+// ============================================================================
+// net.js — een "net" met bellen (circle-packing). Elke bel is een vissoort;
+// de grootte hangt af van de gekozen weergave: aantal, gemiddeld gewicht, of
+// biomassa (aantal × gewicht). Bovenaan zakt een net-patroon in beeld.
+// ============================================================================
+
 export function initNet() {
   const { visData } = state;
   const { cleanups } = lifecycle;
@@ -33,6 +39,7 @@ export function initNet() {
   const defs = svg.append('defs');
   let currentStat = 'biomass';
 
+  // De drie weergaven: waarop wordt de belgrootte gebaseerd?
   const statFn = { count: d => d.count, weight: d => d.weight, biomass: d => d.count * d.weight };
   const statLabel = {
     count:   v => `${fmt(v.count)} waarnemingen`,
@@ -45,8 +52,12 @@ export function initNet() {
     biomass: 'Verdeeld op biomassa: aantal × gewicht.',
   };
 
+  // Berekent voor de gekozen weergave de positie + straal van elke bel met
+  // d3.pack (circle-packing) en animeert ze met data-join (enter/update/exit)
+  // naar hun nieuwe plek — zo "morphen" de bellen bij het wisselen van weergave.
   function renderPack(stat) {
     const packData = visData.map(v => ({ ...v, value: statFn[stat](v) }));
+    // d3.pack stopt cirkels (gesomd op `value`) zo compact mogelijk in het vlak.
     const pack = d3.pack().size([W - 40, H - 100]).padding(8);
     const root = d3.hierarchy({ children: packData }).sum(d => d.value);
     const nodes = pack(root).leaves();

@@ -3,6 +3,13 @@ import { fishImagePath, hexToRgb01 } from '../fishImage.js';
 import { showTooltip, hideTooltip } from '../tooltip.js';
 import { state, lifecycle, raf } from '../state.js';
 
+// ============================================================================
+// aquarium.js — het "kijkglas": ~80 vissen zwemmen rond op een <canvas>,
+// evenredig verdeeld per soort. Elke vis is een ingekleurde PNG (makeSprite).
+// Klik laat ze schrikken; chips onderaan filteren soorten in/uit; een teller
+// telt op naar het totaal.
+// ============================================================================
+
 export function initAquarium() {
   const { TOTAL, visData } = state;
   const { cleanups } = lifecycle;
@@ -144,11 +151,12 @@ export function initAquarium() {
     grd.addColorStop(0, 'rgba(30,172,176,0.10)'); grd.addColorStop(1, 'rgba(30,172,176,0)');
     ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
     sample.forEach(f => {
-      f.x += f.vx; f.y += f.vy + Math.sin(f.wig) * 0.04; f.wig += 0.08;
-      f.vx += (50 - f.x) * 0.00006; f.vy += (50 - f.y) * 0.00006;
-      f.vx += (Math.random() - 0.5) * 0.01; f.vy += (Math.random() - 0.5) * 0.006;
-      f.vx *= 0.992; f.vy *= 0.992;
-      if (f.x < -5) f.x = 105; if (f.x > 105) f.x = -5;
+      // Beweging per vis (posities zijn in 0..100 = procent van het kijkglas):
+      f.x += f.vx; f.y += f.vy + Math.sin(f.wig) * 0.04; f.wig += 0.08; // koers + lichte golf
+      f.vx += (50 - f.x) * 0.00006; f.vy += (50 - f.y) * 0.00006;        // zachte trek naar het midden
+      f.vx += (Math.random() - 0.5) * 0.01; f.vy += (Math.random() - 0.5) * 0.006; // beetje dwalen
+      f.vx *= 0.992; f.vy *= 0.992;                                       // wrijving (afremmen)
+      if (f.x < -5) f.x = 105; if (f.x > 105) f.x = -5;                   // links/rechts doorlopen
       if (f.y < -5) f.y = 105; if (f.y > 105) f.y = -5;
       if (!f.visible) return;
       const sprite = makeSprite(f.naam, f.color);
