@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 // Beheert welke vissen aangevinkt zijn (toggle per id).
-export function useCheckedFish() {
+export function useFishChecklist() {
   const [checked, setChecked] = useState(new Set())
 
   function toggleFish(id) {

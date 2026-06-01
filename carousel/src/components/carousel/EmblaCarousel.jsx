@@ -1,15 +1,15 @@
 import useEmblaCarousel from 'embla-carousel-react'
-import { fish } from '../data/fish'
-import { useCarouselButtons } from '../hooks/useCarouselButtons'
-import { useCheckedFish } from '../hooks/useCheckedFish'
+import { fish } from '../../data/fish'
+import { useCarouselNav } from './useCarouselNav'
+import { useFishChecklist } from './useFishChecklist'
 import FishSlide from './FishSlide'
 import CarouselControls from './CarouselControls'
 import './EmblaCarousel.css'
 
 export default function EmblaCarousel() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: 'start', loop: false })
-  const { canScrollPrev, canScrollNext, scrollPrev, scrollNext } = useCarouselButtons(emblaApi)
-  const { isChecked, toggleFish } = useCheckedFish()
+  const { canScrollPrev, canScrollNext, scrollPrev, scrollNext } = useCarouselNav(emblaApi)
+  const { isChecked, toggleFish } = useFishChecklist()
 
   return (
     <section className="embla">

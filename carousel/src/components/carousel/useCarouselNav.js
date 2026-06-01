@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 // Houdt bij of de carousel naar links/rechts kan scrollen,
 // zodat de pijlknoppen op het juiste moment uitgeschakeld worden.
-export function useCarouselButtons(emblaApi) {
+export function useCarouselNav(emblaApi) {
   const [canScrollPrev, setCanScrollPrev] = useState(false)
   const [canScrollNext, setCanScrollNext] = useState(true)
 
