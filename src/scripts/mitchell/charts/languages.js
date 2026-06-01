@@ -16,7 +16,8 @@ export function initLanguages() {
   const total = d3.sum(list, d => d.n);
   const maxN = d3.max(list, d => d.n);
   const fs = d3.scaleSqrt().domain([0, maxN]).range([15, 70]);
-  const palette = [C.green, C.bell, C.teal, C.pink, C.goldDeep];
+  // Geen paars-familie: die valt weg op de violette sectie-achtergrond.
+  const palette = [C.green, C.greenMid, C.teal, C.pink, C.goldDeep];
 
   const W = 900, H = 540, cx = W / 2, cy = H / 2;
   list.forEach((d, i) => {

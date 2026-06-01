@@ -1,6 +1,6 @@
 export default function NetChapter(){
     return(
-         <section id="ch-net" className="chapter chapter--dark" aria-label="Het net">
+         <section id="ch-net" className="chapter" aria-label="Het net">
         <div className="chapter-inner">
           <div className="chapter-text">
             <p className="eyebrow reveal">Het net</p>

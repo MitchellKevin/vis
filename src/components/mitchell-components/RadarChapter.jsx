@@ -1,6 +1,6 @@
 export default function RadarChapter() {
   return (
-    <section id="ch-radar" className="chapter chapter--dark" aria-label="Visradar">
+    <section id="ch-radar" className="chapter" aria-label="Visradar">
       <div className="chapter-inner">
         <div className="chapter-text">
           <p className="eyebrow reveal">Sonar</p>

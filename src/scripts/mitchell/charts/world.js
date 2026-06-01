@@ -48,8 +48,8 @@ export function initWorld() {
       const sphere = { type: 'Sphere' };
       projection = d3.geoNaturalEarth1().fitExtent([[m, m], [W - m, H - m]], sphere);
       svg.append('path').attr('d', d3.geoPath(projection)(sphere))
-        .attr('fill', 'rgba(253,247,239,0.03)')
-        .attr('stroke', 'rgba(253,247,239,0.12)').attr('stroke-width', 0.8);
+        .attr('fill', 'rgba(1,70,60,0.04)')
+        .attr('stroke', 'rgba(1,70,60,0.18)').attr('stroke-width', 0.8);
     }
     const path = d3.geoPath(projection);
 
@@ -60,7 +60,7 @@ export function initWorld() {
     const main = svg.append('g').attr('clip-path', `url(#${clipId})`);
 
     main.append('path').attr('d', path(d3.geoGraticule10()))
-      .attr('fill', 'none').attr('stroke', 'rgba(253,247,239,0.05)').attr('stroke-width', 0.5);
+      .attr('fill', 'none').attr('stroke', 'rgba(1,70,60,0.08)').attr('stroke-width', 0.5);
 
     // Bij Europa alleen landen tekenen waarvan het zwaartepunt binnen het
     // Europa-bereik valt — zo zien we niet de hele wereld klein in beeld.
@@ -75,8 +75,8 @@ export function initWorld() {
         })
       : allCountries;
     main.append('g').selectAll('path').data(countries).join('path')
-      .attr('d', path).attr('fill', 'rgba(253,247,239,0.06)')
-      .attr('stroke', 'rgba(253,247,239,0.16)').attr('stroke-width', 0.4);
+      .attr('d', path).attr('fill', 'rgba(1,70,60,0.07)')
+      .attr('stroke', 'rgba(1,70,60,0.22)').attr('stroke-width', 0.4);
 
     // bel oproepen per land → punten
     const counts = geoData.countries || {};
@@ -98,7 +98,8 @@ export function initWorld() {
     // over elkaar heen lopen.
     const rRange = view === 'europe' ? [2.5, 13] : [2, 18];
     const rScale = d3.scaleSqrt().domain([0, maxC]).range(rRange);
-    const colorFor = (v) => { const r = v / maxC; return r > 0.45 ? C.pink : r > 0.12 ? C.bell : C.teal; };
+    // Geen paars-familie hier: die zou wegvallen op de violette sectie.
+    const colorFor = (v) => { const r = v / maxC; return r > 0.45 ? C.pink : r > 0.12 ? C.goldDeep : C.teal; };
 
     // Bogen alleen in wereld-view — bij Europa zijn ze te kort en chaotisch
     const [ux, uy] = projection(UTRECHT);
@@ -115,9 +116,9 @@ export function initWorld() {
         const arc = arcLayer.append('path')
           .attr('class', 'world-arc')
           .attr('d', `M${x0},${y0} Q${cxp},${cyp} ${ux},${uy}`)
-          .attr('fill', 'none').attr('stroke', C.purple).attr('stroke-width', 1.1)
+          .attr('fill', 'none').attr('stroke', C.green).attr('stroke-width', 1.1)
           .attr('opacity', 0).attr('stroke-linecap', 'round');
-        arc.transition().delay(reduceMotion ? 0 : 600 + i * 90).duration(700).attr('opacity', 0.5);
+        arc.transition().delay(reduceMotion ? 0 : 600 + i * 90).duration(700).attr('opacity', 0.45);
       });
     }
 
@@ -133,7 +134,7 @@ export function initWorld() {
       g.append('circle').attr('class', 'world-dot-glow').attr('r', 0).attr('fill', col).attr('opacity', 0.15);
       const core = g.append('circle').attr('class', 'world-dot-core').attr('r', 0)
         .attr('fill', col).attr('opacity', 0.92)
-        .attr('stroke', 'rgba(253,247,239,0.55)').attr('stroke-width', 0.6);
+        .attr('stroke', 'rgba(1,70,60,0.45)').attr('stroke-width', 0.6);
       g.select('.world-dot-glow').transition().delay(reduceMotion ? 0 : i * 18).duration(500).attr('r', r * 1.9);
       core.transition().delay(reduceMotion ? 0 : i * 18).duration(500).attr('r', r);
 

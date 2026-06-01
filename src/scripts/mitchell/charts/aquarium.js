@@ -55,16 +55,23 @@ export function initAquarium() {
     cc.drawImage(img, 0, 0, w, h);
     // Luminantie-behoudend tinten: grijswaarde × doelkleur. Texturen van de
     // foto blijven leesbaar maar alles krijgt de soort-kleur.
-    const [tr, tg, tb] = hexToRgb01(color);
+    // De soort-kleur wordt eerst richting wit gemengd (L) en de helderheid
+    // licht opgetild (lift), zodat de vissen lichter oplichten op de donkere
+    // kijkglas-achtergrond.
+    const L = 0.4, lift = 1.12;
+    const [r0, g0, b0] = hexToRgb01(color);
+    const tr = r0 + (1 - r0) * L;
+    const tg = g0 + (1 - g0) * L;
+    const tb = b0 + (1 - b0) * L;
     const pixW = c.width, pixH = c.height;
     const data = cc.getImageData(0, 0, pixW, pixH);
     const arr = data.data;
     for (let i = 0; i < arr.length; i += 4) {
       if (arr[i + 3] === 0) continue;
       const y = 0.299 * arr[i] + 0.587 * arr[i + 1] + 0.114 * arr[i + 2];
-      arr[i]     = y * tr;
-      arr[i + 1] = y * tg;
-      arr[i + 2] = y * tb;
+      arr[i]     = Math.min(255, y * tr * lift);
+      arr[i + 1] = Math.min(255, y * tg * lift);
+      arr[i + 2] = Math.min(255, y * tb * lift);
     }
     cc.putImageData(data, 0, 0);
     sprites[key] = c;

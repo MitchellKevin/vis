@@ -29,6 +29,12 @@ export function ensureTintFilter(svg, color) {
   if (defs.empty()) defs = svg.append('defs');
   if (defs.select('#' + id).empty()) {
     const [r, g, b] = hexToRgb01(color);
+    // Lichtere tint (zelfde als in het aquarium): meng de soort-kleur richting
+    // wit (L) en til de helderheid wat op (lift), zodat de vissen lichter ogen.
+    const L = 0.4, lift = 1.12;
+    const lr = (r + (1 - r) * L) * lift;
+    const lg = (g + (1 - g) * L) * lift;
+    const lb = (b + (1 - b) * L) * lift;
     const filter = defs.append('filter').attr('id', id)
       .attr('color-interpolation-filters', 'sRGB');
     // Stap 1: alle RGB-kanalen krijgen dezelfde grijswaarde
@@ -37,11 +43,11 @@ export function ensureTintFilter(svg, color) {
        0.299 0.587 0.114 0 0
        0.299 0.587 0.114 0 0
        0     0     0     1 0`);
-    // Stap 2: schaal elk kanaal naar de doelkleur (0 → 0, 1 → target)
+    // Stap 2: schaal elk kanaal naar de (lichtere) doelkleur
     const ct = filter.append('feComponentTransfer');
-    ct.append('feFuncR').attr('type', 'linear').attr('slope', r);
-    ct.append('feFuncG').attr('type', 'linear').attr('slope', g);
-    ct.append('feFuncB').attr('type', 'linear').attr('slope', b);
+    ct.append('feFuncR').attr('type', 'linear').attr('slope', lr);
+    ct.append('feFuncG').attr('type', 'linear').attr('slope', lg);
+    ct.append('feFuncB').attr('type', 'linear').attr('slope', lb);
   }
   return id;
 }

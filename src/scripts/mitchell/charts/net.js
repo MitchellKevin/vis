@@ -25,7 +25,7 @@ export function initNet() {
     netGroup.append('path').attr('class', 'net-rope').attr('d', `M 0 ${y} Q ${W / 2} ${y + r}, ${W} ${y}`);
   }
   netGroup.append('line').attr('x1', 0).attr('y1', 0).attr('x2', W).attr('y2', 0)
-    .attr('stroke', 'rgb(253 247 239 / 0.7)').attr('stroke-width', 2);
+    .attr('stroke', 'rgb(1 70 60 / 0.45)').attr('stroke-width', 2);
   netGroup.attr('transform', 'translate(0,-200)')
     .transition().delay(reduceMotion ? 0 : 300).duration(reduceMotion ? 0 : 1400).attr('transform', 'translate(0,0)');
 
@@ -67,12 +67,12 @@ export function initNet() {
       grad.append('stop').attr('offset', '50%').attr('stop-color', d.data.color).attr('stop-opacity', 0.55);
       grad.append('stop').attr('offset', '100%').attr('stop-color', d.data.color).attr('stop-opacity', 0.85);
       g.append('circle').attr('class', 'bub-main').attr('r', d.r).attr('fill', `url(#${gradId})`)
-        .attr('stroke', 'rgb(253 247 239 / 0.3)').attr('stroke-width', 1);
+        .attr('stroke', 'rgb(1 70 60 / 0.28)').attr('stroke-width', 1);
       g.append('circle').attr('class', 'bub-shine').attr('cx', -d.r * 0.3).attr('cy', -d.r * 0.3).attr('r', d.r * 0.25)
         .attr('fill', 'rgb(253 247 239 / 0.45)');
       g.append('g').attr('class', 'bub-fish').style('color', d.data.color);
       g.append('text').attr('class', 'bub-label').attr('text-anchor', 'middle')
-        .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('fill', C.off);
+        .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('fill', C.green);
     });
 
     const all = enter.merge(sel);

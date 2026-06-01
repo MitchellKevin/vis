@@ -1,6 +1,6 @@
 export default function HeroChapter() {
   return (
-    <section id="ch-hero" className="chapter chapter--hero chapter--dark" aria-label="Intro">
+    <section id="ch-hero" className="chapter chapter--hero" aria-label="Intro">
       <div className="hero-stage" id="heroStage" aria-hidden="true"></div>
       <div className="hero-overlay">
         <p className="hero-eyebrow">De Visdeurbel in cijfers</p>

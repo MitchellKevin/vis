@@ -18,7 +18,8 @@ export function initHero(sectionEl) {
   const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
   const easeOut = (t) => 1 - Math.pow(1 - t, 3);
   const easeIn = (t) => t * t * t;
-  const heroCol = d3.interpolateRgbBasis([C.teal, C.bell, C.purple, C.pink, C.goldDeep]);
+  // Palet leesbaar op de lichte (violette) achtergrond — donkergroen + accenten.
+  const heroCol = d3.interpolateRgbBasis([C.green, C.teal, C.pink, C.goldDeep, C.greenMid]);
 
   // Vis-silhouet → puntenwolk (offscreen tekenen, pixels uitlezen)
   function buildFishPoints(n) {
@@ -41,13 +42,13 @@ export function initHero(sectionEl) {
     return out;
   }
 
-  const N = Math.min(target || 6000, window.innerWidth < 700 ? 4500 : 9000);
+  const N = Math.min(target || 6000, window.innerWidth < 700 ? 6500 : 13000);
   const parts = buildFishPoints(N).map(fp => ({
     fx: fp.fx, fy: fp.fy,
     ca: rng() * Math.PI * 2, cr: 0.28 + rng() * 0.82,
     delay: rng() * 850, dur: 1400 + rng() * 900,
     ea: rng() * Math.PI * 2, er: 0.4 + rng() * 0.95,
-    size: 1.3 + rng() * 1.3, ph: rng() * Math.PI * 2,
+    size: 2.1 + rng() * 2.3, ph: rng() * Math.PI * 2,
     col: heroCol(clamp(fp.fx + 0.5, 0, 1)),
   }));
 
@@ -74,7 +75,9 @@ export function initHero(sectionEl) {
     const cx = W / 2, cy = H * 0.5;
     const expEase = easeIn(s);
     ctx.clearRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'lighter';
+    // Normale blending (geen additive glow) zodat de deeltjes leesbaar
+    // blijven op de lichte achtergrond.
+    ctx.globalCompositeOperation = 'source-over';
     for (const p of parts) {
       const ft = clamp((elapsed - p.delay) / p.dur, 0, 1), ef = easeOut(ft);
       const fhx = cx + p.fx * scale, fhy = cy + p.fy * scale;
@@ -86,7 +89,7 @@ export function initHero(sectionEl) {
       if (s > 0) { x += Math.cos(p.ea) * p.er * maxR * 0.9 * expEase; y += Math.sin(p.ea) * p.er * maxR * 0.55 * expEase + expEase * expEase * H * 0.5; }
       const a = ef * (1 - smoothstep(0.6, 1, s));
       if (a <= 0.01) continue;
-      ctx.globalAlpha = a * 0.92;
+      ctx.globalAlpha = a;
       ctx.fillStyle = p.col;
       ctx.fillRect(x - p.size / 2, y - p.size / 2, p.size, p.size);
     }

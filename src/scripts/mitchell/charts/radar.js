@@ -12,23 +12,23 @@ export function initRadar() {
 
   for (let i = 1; i <= 4; i++) {
     svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', R * i / 4)
-      .attr('fill', 'none').attr('stroke', 'rgba(253,247,239,0.1)').attr('stroke-dasharray', '2 6');
+      .attr('fill', 'none').attr('stroke', 'rgba(1,70,60,0.14)').attr('stroke-dasharray', '2 6');
   }
   [['x1', cx - R, 'y1', cy, 'x2', cx + R, 'y2', cy],
    ['x1', cx, 'y1', cy - R, 'x2', cx, 'y2', cy + R]].forEach(([k1, v1, k2, v2, k3, v3, k4, v4]) => {
     svg.append('line').attr(k1, v1).attr(k2, v2).attr(k3, v3).attr(k4, v4)
-      .attr('stroke', 'rgba(253,247,239,0.08)');
+      .attr('stroke', 'rgba(1,70,60,0.1)');
   });
 
   const grad = svg.append('defs').append('linearGradient').attr('id', 'radarSweep')
     .attr('x1', 0).attr('y1', 0).attr('x2', 1).attr('y2', 0);
-  grad.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(192,168,255,0.0)');
-  grad.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(192,168,255,0.5)');
+  grad.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(1,70,60,0.0)');
+  grad.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(1,70,60,0.22)');
 
   const sweep = svg.append('path')
     .attr('d', `M ${cx} ${cy} L ${cx + R} ${cy} A ${R} ${R} 0 0 0 ${cx + Math.cos(-Math.PI / 4) * R} ${cy + Math.sin(-Math.PI / 4) * R} Z`)
     .attr('fill', 'url(#radarSweep)').attr('opacity', 0.6);
-  svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 5).attr('fill', C.purple);
+  svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 5).attr('fill', C.green);
 
   // Afstand tot het midden = inverse van waarnemingen: vaakst gezien dicht bij
   // het scherm, zeldzaam aan de rand. Hoeken willekeurig met rejection sampling
@@ -84,7 +84,7 @@ export function initRadar() {
       .attr('x', labelRight ? 26 : -26).attr('y', 4)
       .attr('text-anchor', labelRight ? 'start' : 'end')
       .attr('font-family', FONT_BODY).attr('font-size', 12).attr('font-weight', 700)
-      .attr('fill', C.off).attr('opacity', 0.85)
+      .attr('fill', C.green).attr('opacity', 0.85)
       .text(labelText);
 
     const showDetail = () => {

@@ -1,0 +1,79 @@
+/* ============================================================================
+ * Mitchell — sectiekleuren + golf-overgangen (visdeurbel-sfeer)
+ * ----------------------------------------------------------------------------
+ * Achtergronden roteren door violet (#c0a8ff) → beige (#f8e7cd) → wit (#fdf7ef),
+ * met een golf-divider (SectionWave) tussen elke sectie. De viz-secties zijn
+ * herkleurd naar donkergroen-op-licht (zie de chart-scripts); hier staan de
+ * tekst/knop-overrides die daarbij horen. `.mitchell-page` ervoor zodat dit
+ * de bestaande ID/klasse-regels wint, ongeacht laadvolgorde.
+ * ========================================================================== */
+
+/* ── Sectie-achtergronden ────────────────────────────── */
+.mitchell-page #ch-hero,
+.mitchell-page #ch-world,
+.mitchell-page #ch-languages      { background: var(--color-purple); }
+
+.mitchell-page .fact-carousel,
+.mitchell-page #ch-aquarium,
+.mitchell-page #ch-net            { background: var(--color-gold-light); }
+
+.mitchell-page #ch-ring,
+.mitchell-page #ch-radar          { background: var(--color-off-white); }
+
+/* ── Golf-overgang ───────────────────────────────────── */
+.section-wave { width: 100%; line-height: 0; }
+.section-wave__svg {
+  display: block;
+  width: 100%;
+  height: clamp(48px, 7vw, 110px);
+}
+
+/* ── Tekst-highlights leesbaar op violet ─────────────── */
+.mitchell-page #ch-world .lede strong,
+.mitchell-page #ch-world .world-stat strong,
+.mitchell-page #ch-languages .chapter-stat strong { color: var(--color-green-dark); }
+
+/* losse off-white tekstjes terug naar donker */
+.mitchell-page .world-top,
+.mitchell-page .net-info,
+.mitchell-page .net-controls-label { color: var(--text-muted); }
+
+/* ── Toggles (wereldkaart + net) → lichte outline ────── */
+.mitchell-page .world-toggle,
+.mitchell-page .net-toggle {
+  border-color: var(--color-green-dark);
+  background: rgb(1 70 60 / 0.04);
+}
+.mitchell-page .world-toggle-btn,
+.mitchell-page .net-toggle-btn { color: var(--color-green-dark); }
+.mitchell-page .world-toggle-btn:hover,
+.mitchell-page .net-toggle-btn:hover { background: rgb(1 70 60 / 0.08); }
+.mitchell-page .world-toggle-btn.is-active,
+.mitchell-page .net-toggle-btn.active {
+  background: var(--color-green-dark);
+  color: var(--color-off-white);
+}
+
+/* ── Net — touwen donker ip off-white ────────────────── */
+.mitchell-page .net-rope { stroke: rgb(1 70 60 / 0.22); }
+
+/* ── Hero op violet — donkergroene tekst, geen halo ──── */
+/* Halo weg zodat de vis-puntenwolk volledig zichtbaar blijft; tekst leesbaar
+ * via lichte text-shadows. */
+.mitchell-page #ch-hero .hero-overlay::before { display: none; }
+.mitchell-page #ch-hero .hero-eyebrow {
+  color: var(--color-green-dark);
+  text-shadow: 0 1px 8px rgb(253 247 239 / 0.8);
+}
+.mitchell-page #ch-hero .hero-title {
+  color: var(--color-green-dark);
+  text-shadow: 0 2px 16px rgb(253 247 239 / 0.55);
+}
+.mitchell-page #ch-hero .hero-sub,
+.mitchell-page #ch-hero .hero-lede {
+  color: var(--color-green-dark);
+  text-shadow: 0 1px 10px rgb(253 247 239 / 0.75);
+}
+.mitchell-page #ch-hero .hero-scroll { color: rgb(1 70 60 / 0.6); }
+.mitchell-page #ch-hero .hero-scroll-dot { border-color: rgb(1 70 60 / 0.5); }
+.mitchell-page #ch-hero .hero-scroll-dot::after { background: var(--color-green-dark); }
