@@ -64,78 +64,6 @@
   --layout-gutter:    var(--space-6);
 }
 
-/* ── Reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  background: var(--bg-page);
-  color: var(--text-primary);
-  font: var(--text-p2);
-}
-
-/* ── Dev nav (vdb-nav) ── */
-.vdb-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-6);
-  background: var(--bg-page);
-  border-bottom: 1px solid rgba(1, 70, 60, 0.12);
-  font: var(--text-p2);
-}
-.vdb-nav__home { color: var(--text-primary); text-decoration: none; font-weight: 700; }
-.vdb-nav__divider { color: var(--text-muted); }
-.vdb-nav__links { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-.vdb-nav__link {
-  color: var(--text-muted);
-  text-decoration: none;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-button);
-  transition: background 0.15s, color 0.15s;
-}
-.vdb-nav__link:hover { color: var(--text-primary); }
-.vdb-nav__link[aria-current=page] {
-  background: var(--accent-primary);
-  color: var(--text-primary);
-  font-weight: 700;
-}
-
-/* ── Navbar ── */
-.navbar {
-  background: var(--bg-inverse);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-6);
-  height: var(--space-10);
-  gap: var(--space-5);
-}
-.nav-brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--text-on-inverse);
-  font: var(--text-nav);
-  text-decoration: none;
-}
-.nav-logo { font-size: 1.3rem; }
-.nav-links { display: flex; align-items: center; gap: var(--space-1); }
-.nav-links a {
-  color: rgba(253, 247, 239, 0.75);
-  text-decoration: none;
-  font: var(--text-nav-bold);
-  padding: var(--space-1) var(--space-2);
-  transition: color 0.2s;
-}
-.nav-links a:hover { color: var(--text-on-inverse); }
-.nav-lang {
-  background: rgba(253, 247, 239, 0.15);
-  padding: var(--space-1) var(--space-4);
-  border-radius: var(--radius-button);
-  border: 1px solid var(--color-off-white);
-  color: var(--text-on-inverse) !important;
-}
-
 /* ── Page header ── */
 .page-header {
   background: var(--bg-inverse);
@@ -629,8 +557,6 @@ h2 { font: var(--text-h2); color: var(--text-primary); }
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .stats-bar    { grid-template-columns: repeat(2, 1fr); }
-  .navbar       { padding: 0 var(--space-4); }
-  .nav-links    { display: none; }
   .page-header  { padding: var(--space-7) var(--space-4); }
   .page-content { padding: 0 var(--space-4) var(--space-9); }
 }

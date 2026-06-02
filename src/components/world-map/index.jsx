@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 
-import Nav         from './Nav.jsx';
+import Nav         from '../Nav.jsx';
 import StatsBar    from './StatsBar.jsx';
 import GlobeMap    from './GlobeMap.jsx';
 import EventFeed   from './EventFeed.jsx';
@@ -67,22 +67,6 @@ export default function WorldMap() {
   return (
     <>
       <Nav current="joost" />
-
-      {/* Brand navbar */}
-      <nav className="navbar">
-        <div className="nav-brand">
-          <span className="nav-logo">🐟</span>
-          <span className="nav-name">Visdeurbel</span>
-        </div>
-        <div className="nav-links">
-          <a href="#">Over</a>
-          <a href="#">Waarom</a>
-          <a href="#">De vissen</a>
-          <a href="#">Community</a>
-          <a href="#">FAQ</a>
-          <a href="#" className="nav-lang">English</a>
-        </div>
-      </nav>
 
       {/* Page header */}
       <header className="page-header">
