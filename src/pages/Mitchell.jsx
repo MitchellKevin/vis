@@ -35,25 +35,39 @@ export default function Mitchell() {
 
   return (
     <>
+      {/* Sla de navigatie over en spring direct naar de inhoud (alleen
+          zichtbaar zodra hij toetsenbord-focus krijgt). */}
+      <a className="sr-skip" href="#mitchell-main">Direct naar de inhoud</a>
       <Nav current="mitchell" />
+      {/* Decoratief: vis-symbolen en het meescrollende visje — voor SR verborgen. */}
       <FishSprite />
       <DataSwitch />
       <div className="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
-      <HeroChapter />
-      <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
-      <DataCarousel />
-      <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
-      <RingChapter />
-      <SectionWave top="var(--color-off-white)" bottom="var(--color-purple)" />
-      <WorldChapter />
-      <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
-      <Aquarium />
-      <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
-      <RadarChapter />
-      <SectionWave top="var(--color-off-white)" bottom="var(--color-purple)" />
-      <LanguagesChapter />
-      <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
-      <NetChapter />
+      <main id="mitchell-main" aria-label="Datavisualisatie over de Visdeurbel, door Mitchell">
+        {/* Korte uitleg voor schermlezers: de grafieken zijn visueel, maar de
+            cijfers en conclusies staan als tekst bij elke sectie. */}
+        <p className="sr-only">
+          Dit is een scrollende datavisualisatie over de Visdeurbel. De grafieken
+          zijn visueel; bij elke sectie staat de uitleg en staan de cijfers in
+          tekst. Gebruik de schakelaar bovenaan om tussen week, maand en jaar te
+          wisselen.
+        </p>
+        <HeroChapter />
+        <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
+        <DataCarousel />
+        <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
+        <RingChapter />
+        <SectionWave top="var(--color-off-white)" bottom="var(--color-purple)" />
+        <WorldChapter />
+        <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
+        <Aquarium />
+        <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
+        <RadarChapter />
+        <SectionWave top="var(--color-off-white)" bottom="var(--color-purple)" />
+        <LanguagesChapter />
+        <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
+        <NetChapter />
+      </main>
     </>
   );
 }

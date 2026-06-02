@@ -8,6 +8,39 @@
  * de bestaande ID/klasse-regels wint, ongeacht laadvolgorde.
  * ========================================================================== */
 
+/* ── Toegankelijkheid: skip-link + visueel verborgen tekst ── */
+/* .sr-only: onzichtbaar op het scherm, wél voorgelezen door schermlezers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* Skip-link: verborgen tot hij toetsenbord-focus krijgt, dan springt hij in beeld. */
+.sr-skip {
+  position: fixed;
+  left: var(--space-4);
+  top: -64px;
+  z-index: 10000;
+  background: var(--color-green-dark);
+  color: var(--color-off-white);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-button);
+  font: var(--text-button);
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.sr-skip:focus {
+  top: var(--space-4);
+  outline: 2px solid var(--color-purple);
+  outline-offset: 2px;
+}
+
 /* ── Sectie-achtergronden ────────────────────────────── */
 .mitchell-page #ch-hero,
 .mitchell-page #ch-world,
