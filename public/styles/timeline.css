@@ -6,8 +6,7 @@
 }
 
 section {
-  padding: 5em 3em;
-  margin-bottom: 10em;
+  padding: 10em 3em;
   > p:nth-of-type(2){
     font:  var(--text-p2-bold);
     margin-bottom: 0;
@@ -171,11 +170,22 @@ section:nth-of-type(2){
 
 /* MARK: Variatie 3 */
 section:nth-of-type(3){
-  background: var(--color-purple);
+  background: var(--color-green-dark);
+  > p, h2 {
+    color: var(--color-gold-light);
+  }
   table{
     background: var(--color-gold-light);
+    width: 100%;
     caption{
       font: var(--text-p2-bold);
+    }
+    /* tr:nth-of-type(2n){
+      background-color: var(--color-off-white);
+    } */
+    td img{
+      max-width: 50px;
+      transform: scaleX(-1);
     }
     & *{
       text-align: start;
