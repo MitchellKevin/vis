@@ -22,7 +22,7 @@ export default function Home() {
             <p className="card__desc">Persoonlijk visualisatieproject van Julius.</p>
             <span className="card__link">Bekijken →</span>
           </Link>
-          <Link className="card" to="/joost">
+          <Link className="card" to="/world-map">
             <span className="card__label">Joost</span>
             <h2 className="card__title">Visualisatie Joost</h2>
             <p className="card__desc">Persoonlijk visualisatieproject van Joost.</p>
