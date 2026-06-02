@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visdeurbel — Presentation Week 1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=PT+Sans:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles/visdeurbel-tokens.css" />
+    <link rel="stylesheet" href="styles/nav-shared.css" />
+    <link rel="stylesheet" href="styles/presentation.css" />
+  </head>
+  <body>
+    <nav class="vdb-nav">
+      <a class="vdb-nav__home" href="index.html">← Visdeurbel</a>
+      <span class="vdb-nav__divider">/</span>
+      <div class="vdb-nav__links">
+        <a class="vdb-nav__link" href="Julius.html">Julius</a>
+        <a class="vdb-nav__link" href="joost.html">Joost</a>
+        <a class="vdb-nav__link" href="mitchell-week2.html">Mitchell</a>
+        <a class="vdb-nav__link" href="nienke.html">Nienke</a>
+        <a class="vdb-nav__link" href="Dashboard/index.html">Dashboard</a>
+        <a class="vdb-nav__link is-active" href="presentation.html">Presentation</a>
+      </div>
+    </nav>
+
+    <header class="site-header container">
+      <span class="logo">Visdeurbel</span>
+      <span class="presentation-tag text-nav-caps">Week 1 en 2</span>
+    </header>
+
+    <main class="container presentation">
+      <section class="hero card card--hero">
+        <div class="hero__content">
+          <p class="eyebrow text-nav-caps">Procesverslag</p>
+          <h1>Week 1 en 2 — onze start, experimenten en eerste inzichten</h1>
+          <p class="hero__intro">
+            In de eerste week verkenden we de opdracht, onderzochten we verschillende
+            visualisatie-richtingen en legden we de basis voor een toegankelijke en
+            speelse Visdeurbel-ervaring.
+          </p>
+        </div>
+        <aside class="hero__aside">
+          <p class="text-p2-bold">Team Vis</p>
+          <p>Joost, Mitchell, Julius en Nienke</p>
+        </aside>
+      </section>
+
+      <section class="content-grid">
+        <article class="card section-card">
+          <p class="eyebrow text-nav-caps">Projectstart</p>
+          <h2>De briefing en context</h2>
+          <p>
+            We begonnen met de vorming van de projectgroepen en de eerste briefing
+            van opdrachtgever Cyd Stumpel. Daarin kregen we uitleg over de Visdeurbel
+            rondom de Weerdsluis in Utrecht: een interactief concept waarbij bezoekers
+            vissen kunnen spotten en de sluis helpen bedienen.
+          </p>
+          <p>
+            Ook bespraken we welke data beschikbaar is via Umami-analytics, zoals
+            bezoekerslocaties, browser- en OS-data, tijdstippen van activiteit en
+            vismeldingen of uploads. Daarnaast kwamen de technische randvoorwaarden
+            aan bod: de bestaande WordPress/PHP-omgeving, JSON-export van data en de
+            nadruk op toegankelijkheid en WCAG.
+          </p>
+        </article>
+
+        <article class="card section-card section-card--image">
+          <p class="eyebrow text-nav-caps">Team Vis</p>
+          <h2>Wie wij zijn</h2>
+          <p>
+            Wij zijn Team Vis: een groep makers die samen werkt aan concept, techniek
+            en visuele uitwerking. Iedereen bracht eigen ideeën mee, waardoor we snel
+            konden schakelen tussen schetsen, prototypes en feedbackmomenten.
+          </p>
+          <ul class="list">
+            <li>Joost, 21 jaar, HBO-ICT</li>
+            <li>Mitchell, 22 jaar, Communication & Multimedia Design</li>
+            <li>Julius 22 jaar, Communication & Multimedia Design</li>
+            <li>Nienke, 19 jaar, Communication & Multimedia Design</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="card section-card">
+        <p class="eyebrow text-nav-caps">Onderzoek & conceptontwikkeling</p>
+        <h2>Ontwerpverkenning</h2>
+        <div class="image-row">
+            <img src="./images/schetsen-1.jpeg" alt="">
+            <img src="./images/schetsen-2.jpeg" alt="">
+            <img src="./images/schetsen-3.jpeg" alt="">
+        </div>
+        <p>
+          In de eerste week onderzochten we meerdere richtingen voor het visualiseren
+          van de data, waaronder een interactieve wereldkaart, tijdlijn,
+          aquariumconcept, dashboards, radar- en ringvisualisaties, en viskaarten met
+          detailpagina’s.
+        </p>
+        <div class="two-col">
+          <div>
+            <h3>Waar we op letten</h3>
+            <ul class="list">
+              <li>Variatie in schetsen en iteraties.</li>
+              <li>Aansluiting op de huisstijl van de Visdeurbel.</li>
+              <li>Toegankelijkheid en visuele duidelijkheid.</li>
+              <li>Interactie en engagement.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Feedback die we meenamen</h3>
+            <ul class="list">
+              <li>Laat meer iteraties zien.</li>
+              <li>Geef duidelijke context in visualisaties.</li>
+              <li>Maak mobile first sterker.</li>
+              <li>Werk met een gezamenlijke style guide.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+      
+        <article class="card section-card">
+          <p class="eyebrow text-nav-caps">Technische experimenten</p>
+          <h2>Datavisualisaties</h2>
+          <p>
+            We maken zo veel mogelijk interactieve prototypes met D3.js en Canvas API,
+            zoals een 3D-wereldbol met bezoekersdata, een ringkalender op uur- en
+            dagdata, radar- en netwerkvisualisaties, een interactieve tijdlijn van
+            visactiviteit en bubble- of pack-diagrammen.
+          </p>
+          <ul class="list">
+            <li>D3.js en SVG-animaties.</li>
+            <li>TopoJSON en Canvas rendering.</li>
+            <li>Async data loading met fetch.</li>
+            <li>IntersectionObserver en responsive layouts.</li>
+          </ul>
+        </article>
+
+
+      <section class="card section-card">
+        <p class="eyebrow text-nav-caps">Interactie & engagement</p>
+        <h2>Speelse onderdelen</h2>
+        <p>
+          Naast de visualisaties onderzochten we ook interactie voor meer
+          betrokkenheid. We werkten aan een concept waarin gebruikers op vissen
+          kunnen klikken, een detailpagina met visinformatie openen en vissen kunnen
+          aankleden met verzamelbare items.
+        </p>
+        <p>
+          Het doel hiervan is de website speelser te maken en de retention van
+          bezoekers te verhogen.
+        </p>
+      </section>
+
+
+        <article class="card section-card">
+          <p class="eyebrow text-nav-caps">Volgende stappen</p>
+          <h2>Week 3</h2>
+          <ul class="list">
+            <li>Het huidige project omzetten naar React</li>
+            <li>Prototypes verder uitwerken.</li>
+            <li>Eerste stappen zetten naar toegankelijkheid</li>
+            <li>Start maken aan de readme / overdracht.</li>
+          </ul>
+        </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer__inner">
+        <p>Visdeurbel — Meesterproef Minor Web 2026</p>
+      </div>
+    </footer>
+  </body>
+</html>

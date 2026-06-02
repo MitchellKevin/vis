@@ -1,0 +1,382 @@
+/* ============================================================================
+ * Visdeurbel — Design Tokens
+ * ----------------------------------------------------------------------------
+ * Extracted from Figma file qZHuYUoqOr02S5jao29b7a
+ *   "Visdeurbel - website design - v2 - 2026 (Voor de Minor)"
+ *
+ * Drop this file into your project and import it as the FIRST stylesheet,
+ * before any component styles:
+ *
+ *   <link rel="stylesheet" href="visdeurbel-tokens.css">
+ *
+ * Then reference the tokens in your component CSS:
+ *
+ *   .btn-primary {
+ *     background: var(--accent-primary);
+ *     color: var(--text-primary);
+ *     border: 1px solid var(--border-default);
+ *     border-radius: var(--radius-button);
+ *     padding: var(--space-3) var(--space-4);
+ *     font: var(--text-button);
+ *   }
+ *
+ * Companion: visdeurbel-style-guide.md — the human/AI-readable spec.
+ * ========================================================================== */
+
+
+/* ----------------------------------------------------------------------------
+ * 1. Fonts
+ * ------------------------------------------------------------------------- */
+
+/* Bricolage Grotesque (display) + PT Sans (body) — both on Google Fonts.
+ * Either keep this @import here, or add this to your <head> instead (faster):
+ *
+ *   <link rel="preconnect" href="https://fonts.googleapis.com">
+ *   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ *   <link rel="stylesheet"
+ *         href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=PT+Sans:wght@400;700&display=swap">
+ */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=PT+Sans:wght@400;700&display=swap');
+
+
+/* ----------------------------------------------------------------------------
+ * 2. Tokens — :root (light mode is the default)
+ * ------------------------------------------------------------------------- */
+
+:root {
+
+  /* --- 2.1 Brand palette (raw) ----------------------------------------- */
+
+  --color-green-dark:        #01463c;  /* Figma: "Donker groen"             */
+  --color-green-dark-mode:   #033932;  /* Figma: "Donkergroen - DarkMode"   */
+  --color-teal:              #1eacb0;  /* Figma: "Blauwgroen"               */
+  --color-purple:            #c0a8ff;  /* Figma: "Paars"                    */
+  --color-purple-bell:       #9b74ff;  /* Figma: "Deurbel ring"             */
+  --color-purple-deep:       #a172ff;  /* gradient stop only                */
+  --color-purple-dark-mode:  #292435;  /* Figma: "Paars - DarkMode"         */
+  --color-pink:              #ff80b9;  /* Figma: "Roze"                     */
+  --color-gold:              #f0af00;  /* Figma: "Goud"                     */
+  --color-gold-light:        #f8e7cd;  /* Figma: "Licht Goud - Achtergrond" */
+  --color-off-white:         #fdf7ef;  /* Figma: "Off-white"                */
+
+
+  /* --- 2.2 Semantic palette (use these by default) --------------------- */
+
+  --bg-page:                 var(--color-off-white);
+  --bg-surface:              var(--color-gold-light);
+  --bg-inverse:              var(--color-green-dark);
+
+  --text-primary:            var(--color-green-dark);
+  --text-on-inverse:         var(--color-off-white);
+  --text-muted:              rgb(1 70 60 / 0.7);  /* green-dark @ 70% */
+
+  --border-default:          var(--color-green-dark);
+
+  --accent-primary:          var(--color-purple);
+  --accent-primary-strong:   var(--color-purple-bell);
+  --accent-secondary:        var(--color-off-white);
+  --accent-highlight:        var(--color-pink);
+  --accent-warning:          var(--color-gold);
+
+
+  /* --- 2.3 Gradients --------------------------------------------------- */
+
+  --gradient-data-bg:        linear-gradient(180deg,
+                               var(--color-gold-light) 9%,
+                               var(--color-off-white) 100%);
+  --gradient-purple:         linear-gradient(180deg,
+                               var(--color-purple) 0%,
+                               var(--color-purple-deep) 78%);
+
+
+  /* --- 2.4 Typography -------------------------------------------------- */
+
+  /* font-family stacks */
+  --font-display:  'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body:     'PT Sans', system-ui, sans-serif;
+
+  /* font-size, line-height, weight, family — packed as `font` shorthand
+   * so a single `font: var(--text-h1)` sets everything in one go. */
+
+  /* Desktop scale */
+  --text-h1:        800 54px/1.25 var(--font-display);
+  --text-h2:        800 36px/1.25 var(--font-display);
+  --text-h3:        800 27px/1.25 var(--font-display);
+  --text-p1:        400 20px/1.5  var(--font-body);
+  --text-p1-bold:   700 20px/1.5  var(--font-body);
+  --text-p2:        400 16px/1.25 var(--font-body);
+  --text-p2-bold:   700 16px/1.25 var(--font-body);
+  --text-button:    800 20px/1    var(--font-display);
+  --text-nav:       800 16px/1    var(--font-display);
+  --text-nav-bold:  700 16px/24px var(--font-display);
+  --text-nav-caps:  800 16px/1    var(--font-display);
+  --text-subnav:    400 16px/24px var(--font-body);
+
+  /* Mobile scale — values are also exposed directly in case you need them */
+  --text-h1-m:        800 32px/1.25 var(--font-display);
+  --text-h2-m:        800 28px/1.25 var(--font-display);
+  --text-h3-m:        800 20px/1.25 var(--font-display);
+  --text-p1-m:        400 18px/1.5  var(--font-body);
+  --text-p1-bold-m:   700 18px/1.5  var(--font-body);
+  --text-p2-m:        400 14px/1.25 var(--font-body);
+  --text-button-m:    800 18px/1    var(--font-display);
+
+
+  /* --- 2.5 Spacing scale (8px base) ------------------------------------ */
+
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:  10px;   /* button vertical padding */
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;   /* menu bar height */
+  --space-11: 80px;
+
+
+  /* --- 2.6 Border radii ------------------------------------------------ */
+
+  --radius-card:    16px;
+  --radius-button:  25px;
+  --radius-pill:    40px;
+  --radius-full:    9999px;
+
+
+  /* --- 2.7 Layout ------------------------------------------------------ */
+
+  --layout-max-width:  1392px;
+  --layout-gutter:     24px;
+  --layout-columns:    12;
+  --breakpoint-mobile: 768px;
+}
+
+
+/* ----------------------------------------------------------------------------
+ * 3. Dark mode — override semantic tokens only
+ *
+ * Activate by adding data-theme="dark" to <html> (or <body>).
+ * If you'd rather follow the OS preference automatically, see the
+ * @media block at the bottom of this file.
+ * ------------------------------------------------------------------------- */
+
+[data-theme='dark'] {
+  --bg-page:               var(--color-green-dark-mode);
+  --bg-surface:            var(--color-purple-dark-mode);
+  --bg-inverse:            var(--color-off-white);
+
+  --text-primary:          var(--color-off-white);
+  --text-on-inverse:       var(--color-green-dark);
+  --text-muted:            rgb(253 247 239 / 0.7);
+
+  --border-default:        var(--color-off-white);
+
+  --accent-primary:        var(--color-purple-bell);
+  --accent-primary-strong: var(--color-purple);
+  --accent-secondary:      var(--color-green-dark);
+}
+
+
+/* ----------------------------------------------------------------------------
+ * 4. Mobile typography — auto-swap below 768px
+ *
+ * After this media query, `var(--text-h1)` resolves to the mobile size.
+ * Means components don't need to know about breakpoints — they just use
+ * the desktop token names and get the right value at every viewport.
+ * ------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  :root {
+    --text-h1:       var(--text-h1-m);
+    --text-h2:       var(--text-h2-m);
+    --text-h3:       var(--text-h3-m);
+    --text-p1:       var(--text-p1-m);
+    --text-p1-bold:  var(--text-p1-bold-m);
+    --text-p2:       var(--text-p2-m);
+    --text-button:   var(--text-button-m);
+    --layout-gutter: 16px;
+  }
+}
+
+
+/* ----------------------------------------------------------------------------
+ * 5. Base / reset
+ *
+ * Sets sensible defaults so the tokens "just work" on a plain HTML page.
+ * Remove or override if you already have a reset.
+ * ------------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { color-scheme: light dark; }
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: var(--text-p1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1 { font: var(--text-h1); margin: 0 0 var(--space-6); }
+h2 { font: var(--text-h2); margin: 0 0 var(--space-5); }
+h3 { font: var(--text-h3); margin: 0 0 var(--space-4); }
+p  { margin: 0 0 var(--space-4); }
+
+a {
+  color: inherit;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+
+/* ----------------------------------------------------------------------------
+ * 6. Optional utility classes
+ *
+ * If you prefer utility-style markup over writing component CSS, use these.
+ * If you're using Tailwind or your own component system, you can delete
+ * this whole section.
+ * ------------------------------------------------------------------------- */
+
+/* Typography utilities */
+.text-h1        { font: var(--text-h1); }
+.text-h2        { font: var(--text-h2); }
+.text-h3        { font: var(--text-h3); }
+.text-p1        { font: var(--text-p1); }
+.text-p1-bold   { font: var(--text-p1-bold); }
+.text-p2        { font: var(--text-p2); }
+.text-p2-bold   { font: var(--text-p2-bold); }
+.text-button    { font: var(--text-button); }
+.text-nav       { font: var(--text-nav); }
+.text-nav-caps  { font: var(--text-nav-caps); text-transform: uppercase; }
+.text-subnav    { font: var(--text-subnav); }
+
+/* Layout container */
+.container {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin-inline: auto;
+  padding-inline: var(--layout-gutter);
+}
+
+
+/* ----------------------------------------------------------------------------
+ * 7. Component starters — match the Figma spec 1:1
+ *
+ * These are the *exact* values from the Figma components. Use as-is, or
+ * copy into your component library and rename.
+ * ------------------------------------------------------------------------- */
+
+/* --- Button — primary (the signature pill with outline) ----------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);                  /* 10px between icon + label    */
+  height: 44px;
+  padding: var(--space-3) var(--space-4); /* 10px 16px                  */
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-button);
+  background: var(--accent-primary);
+  color: var(--text-primary);
+  font: var(--text-button);
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.btn:hover  { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+.btn--secondary {
+  background: var(--accent-secondary);
+}
+
+/* Dark-mode variant overrides land automatically via the semantic tokens
+ * — but the "secondary on dark" needs a one-off because secondary swaps
+ * to dark-green in dark mode. */
+
+
+/* --- Card — Tip / "Visdeurbel bel" -------------------------------------- */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-7);
+  padding: var(--space-7) var(--space-6); /* 32px 24px */
+  background: var(--bg-surface);
+  border-radius: var(--radius-card);
+  color: var(--text-primary);
+  max-width: 448px;                       /* match Figma component */
+}
+
+
+/* --- Header / Menu bar -------------------------------------------------- */
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: var(--space-10);                /* 64px */
+  padding: var(--space-6) var(--space-6) 0;
+  background: transparent;
+}
+
+
+/* --- Footer ------------------------------------------------------------- */
+
+.site-footer {
+  background: var(--bg-inverse);
+  color: var(--text-on-inverse);
+  padding: var(--space-11) var(--space-6) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-11);
+}
+
+
+/* --- Pill toggle (Vis-Check style switch) ------------------------------- */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 5px var(--space-4) 5px 5px;
+  gap: 13px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+
+/* ----------------------------------------------------------------------------
+ * 8. (Optional) Follow OS dark-mode preference
+ *
+ * Uncomment this block if you want dark mode to kick in automatically
+ * based on the user's OS setting, instead of requiring data-theme="dark".
+ * If you uncomment, you'll usually still want a manual toggle that sets
+ * data-theme="light" or data-theme="dark" to override the OS preference.
+ * ------------------------------------------------------------------------- */
+
+/*
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg-page:               var(--color-green-dark-mode);
+    --bg-surface:            var(--color-purple-dark-mode);
+    --bg-inverse:            var(--color-off-white);
+    --text-primary:          var(--color-off-white);
+    --text-on-inverse:       var(--color-green-dark);
+    --text-muted:            rgb(253 247 239 / 0.7);
+    --border-default:        var(--color-off-white);
+    --accent-primary:        var(--color-purple-bell);
+    --accent-primary-strong: var(--color-purple);
+    --accent-secondary:      var(--color-green-dark);
+  }
+}
+*/
