@@ -32,6 +32,7 @@ section {
   img{
     object-fit: contain;
     width: 50px;
+    transform: scaleX(-1);
   }
   overflow: hidden;
 }
@@ -100,6 +101,10 @@ section {
   background-size: contain;
   background-position: center top;
   anchor-name: --fish-anchor;
+
+  img{
+    transform: scaleX(-1);
+  }
 }
 
 .bar-fill:hover {
