@@ -9,6 +9,9 @@ import PinkTimeline
 import TableTimeline
   from '../components/timeline/table.jsx';
 
+import TableStyled
+  from '../components/timeline/table-styled.jsx';
+
 import { useStylesheet }
   from '../hooks/useStylesheet.js';
 
@@ -26,6 +29,8 @@ export default function Nienke() {
         <PinkTimeline />
 
         <TableTimeline />
+
+        <TableStyled />
 
       </main>
     </>
