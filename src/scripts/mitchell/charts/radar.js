@@ -104,10 +104,17 @@ export function initRadar() {
     p.elem = g;
   });
 
+  // Radar samenvatting
+  const topSpecies = visData.slice().sort((a, b) => (b.count || 0) - (a.count || 0))[0];
+  const summaryEl = $('#radarSummary');
+  if (summaryEl && topSpecies) {
+    summaryEl.textContent = `De radar detecteert ${visData.length} vissoorten. Meest gesignaleerd: ${topSpecies.naam} (${fmt(topSpecies.count)} waarnemingen).`;
+  }
+
   let angle = -Math.PI / 2, raf2 = 0, running = false;
   const revealed = new Set();
   function tick() {
-    angle += reduceMotion ? 0.03 : 0.01;
+    angle += reduceMotion() ? 0.03 : 0.01;
     sweep.attr('transform', `rotate(${angle * 180 / Math.PI} ${cx} ${cy})`);
     pings.forEach((p, i) => {
       const da = (Math.atan2(p.y - cy, p.x - cx) - angle + Math.PI * 4) % (Math.PI * 2);

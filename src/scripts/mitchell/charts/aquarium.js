@@ -37,6 +37,14 @@ export function initAquarium() {
   const total = TOTAL || visData.reduce((s, v) => s + v.count, 0) || 1;
   const tEl = $('#aquariumTotal'); if (tEl) tEl.textContent = fmt(total);
 
+  // Aquarium samenvatting
+  const sortedSpecies = visData.slice().sort((a, b) => (b.count || 0) - (a.count || 0));
+  const top3 = sortedSpecies.slice(0, 3).map(s => s.naam).join(', ');
+  const summaryEl = $('#aquariumSummary');
+  if (summaryEl) {
+    summaryEl.textContent = `In dit kijkglas zwemmen ${visData.length} soorten mee. Meest aanwezig: ${top3}.`;
+  }
+
   // Per vissoort + kleur cachen we een getint offscreen-canvas (goedkoop hertekenen).
   const sprites = {};
   const imgCache = {};
@@ -183,12 +191,12 @@ export function initAquarium() {
 
   const io = new IntersectionObserver(([entry]) => {
     if (entry.isIntersecting) {
-      if (!running && !reduceMotion) { running = true; tick(); }
+      if (!running && !reduceMotion()) { running = true; tick(); }
       if (!counter.dataset.animated) {
         counter.dataset.animated = '1';
-        if (reduceMotion) counter.textContent = `${fmt(total)} / ${fmt(total)}`; else animateCounter();
+        if (reduceMotion()) counter.textContent = `${fmt(total)} / ${fmt(total)}`; else animateCounter();
       }
-      if (reduceMotion) tick();
+      if (reduceMotion()) tick();
     } else { running = false; cancelAnimationFrame(rafId); }
   }, { threshold: 0.1 });
   io.observe(stage);

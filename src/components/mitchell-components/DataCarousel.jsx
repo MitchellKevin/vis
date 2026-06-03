@@ -90,9 +90,10 @@ export default function DataCarousel() {
   }, []);
 
   useEffect(() => {
-    if (!emblaApi) return;
+    if (!emblaApi || !facts.length) return;
     const onSelect = () => {
-      setSelected(emblaApi.selectedScrollSnap());
+      const snap = emblaApi.selectedScrollSnap();
+      setSelected(snap);
       setNav({ prev: emblaApi.canScrollPrev(), next: emblaApi.canScrollNext() });
       setShowNote(false);
     };

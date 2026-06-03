@@ -33,7 +33,7 @@ export function initNet() {
   netGroup.append('line').attr('x1', 0).attr('y1', 0).attr('x2', W).attr('y2', 0)
     .attr('stroke', 'rgb(1 70 60 / 0.45)').attr('stroke-width', 2);
   netGroup.attr('transform', 'translate(0,-200)')
-    .transition().delay(reduceMotion ? 0 : 300).duration(reduceMotion ? 0 : 1400).attr('transform', 'translate(0,0)');
+    .transition().delay(reduceMotion() ? 0 : 300).duration(reduceMotion() ? 0 : 1400).attr('transform', 'translate(0,0)');
 
   const bubbleGroup = svg.append('g').attr('transform', 'translate(20, 80)');
   const defs = svg.append('defs');
@@ -61,7 +61,7 @@ export function initNet() {
     const pack = d3.pack().size([W - 40, H - 100]).padding(8);
     const root = d3.hierarchy({ children: packData }).sum(d => d.value);
     const nodes = pack(root).leaves();
-    const D = reduceMotion ? 0 : 1;
+    const D = reduceMotion() ? 0 : 1;
 
     const sel = bubbleGroup.selectAll('.net-bubble').data(nodes, d => d.data.naam);
     sel.exit().transition().duration(500 * D).attr('transform', d => `translate(${d.x}, ${d.y}) scale(0)`).remove();
@@ -103,7 +103,7 @@ export function initNet() {
       g.select('.bub-label').transition().duration(800 * D)
         .attr('y', d.r * 0.55).attr('font-size', Math.min(d.r * 0.32, 18)).attr('opacity', d.r > 28 ? 0.92 : 0);
     });
-    enter.transition().delay((d, i) => (reduceMotion ? 0 : 200 + i * 70)).duration(900 * D).ease(d3.easeCubicOut)
+    enter.transition().delay((d, i) => (reduceMotion() ? 0 : 200 + i * 70)).duration(900 * D).ease(d3.easeCubicOut)
       .attr('transform', d => `translate(${d.x}, ${d.y}) scale(1)`);
     sel.transition().duration(800 * D).ease(d3.easeCubicInOut)
       .attr('transform', d => `translate(${d.x}, ${d.y}) scale(1)`);

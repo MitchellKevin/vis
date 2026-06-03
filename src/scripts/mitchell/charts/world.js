@@ -127,7 +127,7 @@ export function initWorld() {
           .attr('d', `M${x0},${y0} Q${cxp},${cyp} ${ux},${uy}`)
           .attr('fill', 'none').attr('stroke', C.green).attr('stroke-width', 1.1)
           .attr('opacity', 0).attr('stroke-linecap', 'round');
-        arc.transition().delay(reduceMotion ? 0 : 600 + i * 90).duration(700).attr('opacity', 0.45);
+        arc.transition().delay(reduceMotion() ? 0 : 600 + i * 90).duration(700).attr('opacity', 0.45);
       });
     }
 
@@ -138,14 +138,14 @@ export function initWorld() {
       const r = rScale(p.count), col = colorFor(p.count);
       const g = dotLayer.append('g')
         .attr('class', 'world-dot').attr('transform', `translate(${x},${y})`)
-        .attr('tabindex', 0).attr('role', 'img')
+        .attr('tabindex', i < 5 ? 0 : -1).attr('role', 'img')
         .attr('aria-label', `${p.name}: ${fmt(p.count)} bel oproepen`);
       g.append('circle').attr('class', 'world-dot-glow').attr('r', 0).attr('fill', col).attr('opacity', 0.15);
       const core = g.append('circle').attr('class', 'world-dot-core').attr('r', 0)
         .attr('fill', col).attr('opacity', 0.92)
         .attr('stroke', 'rgba(1,70,60,0.45)').attr('stroke-width', 0.6);
-      g.select('.world-dot-glow').transition().delay(reduceMotion ? 0 : i * 18).duration(500).attr('r', r * 1.9);
-      core.transition().delay(reduceMotion ? 0 : i * 18).duration(500).attr('r', r);
+      g.select('.world-dot-glow').transition().delay(reduceMotion() ? 0 : i * 18).duration(500).attr('r', r * 1.9);
+      core.transition().delay(reduceMotion() ? 0 : i * 18).duration(500).attr('r', r);
 
       const pct = ((p.count / geoData.total) * 100);
       const pctStr = pct >= 0.1 ? pct.toFixed(1) : '<0,1';

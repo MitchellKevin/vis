@@ -60,7 +60,7 @@ export function initLanguages() {
     .force('collide', d3.forceCollide(d => d.rad).strength(0.9))
     .on('tick', () => node.attr('transform', d => `translate(${d.x},${d.y})`));
 
-  if (reduceMotion) {
+  if (reduceMotion()) {
     sim.stop(); for (let i = 0; i < 220; i++) sim.tick();
     node.attr('transform', d => `translate(${d.x},${d.y})`);
   } else {

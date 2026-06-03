@@ -119,7 +119,7 @@ export function initHero(sectionEl) {
     if (overlay) { overlay.style.opacity = String(1 - smoothstep(0, 0.55, s)); overlay.style.transform = `translateY(${-s * 40}px)`; }
   }
 
-  if (reduceMotion) {
+  if (reduceMotion()) {
     draw(99999);
     cleanups.push(() => ro.disconnect());
     return;

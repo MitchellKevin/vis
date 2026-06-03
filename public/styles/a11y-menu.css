@@ -1,0 +1,114 @@
+.a11y-menu {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 9999;
+  font-family: var(--font-body, 'PT Sans', sans-serif);
+}
+
+.a11y-menu-toggle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-green, #01463c);
+  color: var(--color-off-white, #fdf7ef);
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(1, 70, 60, 0.25);
+  transition: all 0.2s ease;
+}
+
+.a11y-menu-toggle:hover {
+  background: var(--color-green-mid, #0a5c54);
+  box-shadow: 0 4px 12px rgba(1, 70, 60, 0.35);
+}
+
+.a11y-menu-toggle:focus {
+  outline: 2px solid var(--color-bell, #c74e4e);
+  outline-offset: 2px;
+}
+
+.a11y-menu-panel {
+  position: absolute;
+  bottom: 60px;
+  left: 0;
+  background: var(--color-off-white, #fdf7ef);
+  border: 2px solid var(--color-green, #01463c);
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 220px;
+  box-shadow: 0 4px 16px rgba(1, 70, 60, 0.2);
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.a11y-menu-panel h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-green, #01463c);
+}
+
+.a11y-menu-panel label {
+  display: block;
+  margin: 10px 0;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--color-green, #01463c);
+}
+
+.a11y-menu-panel input[type="checkbox"],
+.a11y-menu-panel select {
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.a11y-menu-panel select {
+  font-size: 14px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-green, #01463c);
+  border-radius: 4px;
+  background: white;
+  color: var(--color-green, #01463c);
+}
+
+/* Font size multiplier disabled - causes issues with SVG text in visualizations */
+
+body.a11y-reduce-motion,
+body.a11y-reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+body.a11y-high-contrast {
+  --color-green: #000;
+  --color-bell: #000;
+  --color-pink: #000;
+  --color-teal: #000;
+  --color-gold-deep: #000;
+  --color-off-white: #fff;
+  color: #000;
+  background-color: #fff;
+}
+
+body.a11y-high-contrast * {
+  border-color: #000 !important;
+  color: #000 !important;
+  background-color: #fff !important;
+}

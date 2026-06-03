@@ -10,9 +10,10 @@ export const $$ = (s, p = document) => Array.from(p.querySelectorAll(s));
 // Getal netjes met Nederlandse duizendtal-puntjes tonen (49736 → "49.736").
 export const fmt = n => new Intl.NumberFormat('nl-NL').format(Math.round(n));
 
-// True als de bezoeker "verminderde beweging" heeft aangezet in zijn OS.
+// True als de bezoeker "verminderde beweging" heeft aangezet in zijn OS of via a11y menu.
 // Charts gebruiken dit om animaties over te slaan / direct eindstand te tonen.
-export const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const reduceMotion = () =>
+  window.__reduceMotion === true || matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Mulberry32: een kleine, snelle "seeded" random-generator. Met dezelfde seed
 // krijg je dezelfde reeks getallen — zo zien posities er bij elke render gelijk

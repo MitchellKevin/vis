@@ -107,6 +107,14 @@ export function initRing() {
     }
 
     const dots = svg.append('g');
+    // Collect active dots for summary
+    const activeDots = [];
+    for (let i = 0; i < SLOTS; i++) {
+      const cnt = data[i] || 0;
+      if (cnt > 0) activeDots.push({ i, cnt });
+    }
+    activeDots.sort((a, b) => b.cnt - a.cnt);
+
     for (let i = 0; i < SLOTS; i++) {
       // Per uur-slot: norm = drukte t.o.v. het drukste uur (0..1).
       // a = hoek (tijd, met de klok mee vanaf boven), r = afstand tot midden
@@ -119,8 +127,8 @@ export function initRing() {
         .attr('class', 'ring-dot')
         .attr('cx', cx + Math.cos(a) * r).attr('cy', cy + Math.sin(a) * r).attr('r', 0)
         .attr('fill', color).attr('opacity', cnt > 0 ? 0.25 + norm * 0.75 : 0.08)
-        .attr('tabindex', cnt > 0 ? 0 : -1);
-      dot.transition().delay(reduceMotion ? 0 : i * 2).duration(reduceMotion ? 0 : 250).attr('r', 1.2 + norm * 5.5);
+        .attr('tabindex', -1);
+      dot.transition().delay(reduceMotion() ? 0 : i * 2).duration(reduceMotion() ? 0 : 250).attr('r', 1.2 + norm * 5.5);
       if (cnt > 0) {
         const label   = weekDayLabels[Math.floor(i / 24)] || '';
         const tooltip = `<strong>${label} ${String(i % 24).padStart(2, '0')}:00</strong>${fmt(cnt)} bel oproepen`;
@@ -134,6 +142,18 @@ export function initRing() {
     }
 
     drawCenter(fmt(TOTAL), 'bel oproepen', periodLabel || '18 apr – 18 mei 2026', null);
+
+    // Samenvatting voor de ring calendar
+    const busySlot = activeDots[0];
+    if (busySlot) {
+      const busyDayIdx = Math.floor(busySlot.i / 24);
+      const busyHour = busySlot.i % 24;
+      const busyDay = weekDayLabels[busyDayIdx] || '';
+      const summary = $('#ringSummary');
+      if (summary) {
+        summary.textContent = `In ${periodLabel || 'deze periode'} ging de Visdeurbel ${fmt(TOTAL)}× bel. Drukste uur: ${busyDay} ${String(busyHour).padStart(2, '0')}:00 (${fmt(busySlot.cnt)} bel oproepen).`;
+      }
+    }
   }
 
   // Jaar — buitenste ring zijn maanden, dots binnen elke wig zijn dagen
@@ -179,7 +199,7 @@ export function initRing() {
         const dot = wedge.append('circle')
           .attr('cx', cx + Math.cos(a) * r).attr('cy', cy + Math.sin(a) * r).attr('r', 0)
           .attr('fill', color).attr('opacity', day.total > 0 ? 0.25 + norm * 0.75 : 0.08);
-        dot.transition().delay(reduceMotion ? 0 : (idx * 24 + di * 2)).duration(reduceMotion ? 0 : 220).attr('r', 1.3 + norm * 4);
+        dot.transition().delay(reduceMotion() ? 0 : (idx * 24 + di * 2)).duration(reduceMotion() ? 0 : 220).attr('r', 1.3 + norm * 4);
         if (day.total > 0) {
           const tip = `<strong>${day.dayOfMonth} ${m.short}</strong>${fmt(day.total)} bel oproepen`;
           dot.on('mouseenter mousemove', e => showTooltip(tip, e.clientX, e.clientY))
@@ -189,6 +209,12 @@ export function initRing() {
     });
 
     drawCenter(fmt(TOTAL), 'bel oproepen', 'klik een maand om in te zoomen', null);
+
+    const busyMonth = months.reduce((max, m, i) => m.total > max.total ? { ...m, i } : max, { total: 0 });
+    const summary = $('#ringSummary');
+    if (summary && busyMonth.total) {
+      summary.textContent = `Het jaar had ${fmt(TOTAL)} bel oproepen verdeeld over ${months.length} maanden. Drukste maand: ${busyMonth.long} (${fmt(busyMonth.total)} oproepen).`;
+    }
   }
 
   // Maand — wedges per dag, dots per uur (zoals plat, maar voor één maand)
@@ -243,12 +269,18 @@ export function initRing() {
       const dot = dots.append('circle')
         .attr('cx', cx + Math.cos(a) * r).attr('cy', cy + Math.sin(a) * r).attr('r', 0)
         .attr('fill', color).attr('opacity', cnt > 0 ? 0.25 + norm * 0.75 : 0.08);
-      dot.transition().delay(reduceMotion ? 0 : i * 1).duration(reduceMotion ? 0 : 200).attr('r', 1.2 + norm * 5);
+      dot.transition().delay(reduceMotion() ? 0 : i * 1).duration(reduceMotion() ? 0 : 200).attr('r', 1.2 + norm * 5);
     }
 
     drawCenter(`${month.long} ${month.year}`, `${fmt(month.total)} bel oproepen`, '← terug naar jaar', () => {
       view = { level: 'year' }; draw();
     });
+
+    const busyDay = days.reduce((max, d, i) => d.total > max.total ? { ...d, i } : max, { total: 0 });
+    const summary = $('#ringSummary');
+    if (summary && busyDay.total) {
+      summary.textContent = `In ${month.long} ${month.year} was het ${fmt(month.total)} bel oproepen. Drukste dag: ${String(busyDay.dayOfMonth)} (${fmt(busyDay.total)} oproepen).`;
+    }
   }
 
   // Dag — 24 uur-wedges met één bal per uur
@@ -285,7 +317,7 @@ export function initRing() {
       const dot = svg.append('circle')
         .attr('cx', cx + Math.cos(aLabel) * r).attr('cy', cy + Math.sin(aLabel) * r).attr('r', 0)
         .attr('fill', color).attr('opacity', cnt > 0 ? 0.3 + norm * 0.7 : 0.1);
-      dot.transition().delay(reduceMotion ? 0 : h * 18).duration(reduceMotion ? 0 : 260).attr('r', 4 + norm * 9);
+      dot.transition().delay(reduceMotion() ? 0 : h * 18).duration(reduceMotion() ? 0 : 260).attr('r', 4 + norm * 9);
       if (cnt > 0) {
         const tip = `<strong>${day.dayOfMonth} ${month.short} ${String(h).padStart(2, '0')}:00</strong>${fmt(cnt)} bel oproepen`;
         dot.attr('cursor', 'pointer')
@@ -297,5 +329,11 @@ export function initRing() {
     drawCenter(`${day.dayOfMonth} ${month.long}`, `${fmt(day.total)} bel oproepen`, `← terug naar ${month.short}`, () => {
       view = { level: 'month', monthIndex: mIdx }; draw();
     });
+
+    const busyHour = hours.indexOf(Math.max(...hours));
+    const summary = $('#ringSummary');
+    if (summary) {
+      summary.textContent = `Op ${day.dayOfMonth} ${month.long} ${month.year} waren het ${fmt(day.total)} bel oproepen. Drukste uur: ${String(busyHour).padStart(2, '0')}:00 (${fmt(hours[busyHour])} oproepen).`;
+    }
   }
 }
