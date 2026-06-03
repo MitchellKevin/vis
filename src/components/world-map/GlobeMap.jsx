@@ -26,13 +26,13 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
   const initialized    = useRef(false);
 
   // ── React state (drives re-render of tabs / tooltip / legend) ────────────
-  const [mode,     setMode    ] = useState('choropleth');
+  const [mode,     setMode    ] = useState('choropleth_flows');
   const [projType, setProjType] = useState('globe');        // 'globe' | 'map'
   const [tooltip,  setTooltip ] = useState({ visible: false, x: 0, y: 0, name: '', rows: [] });
   const [legend,   setLegend  ] = useState(null);
 
   // Refs that mirror state — used inside D3 callbacks to avoid stale closures
-  const modeRef     = useRef('choropleth');
+  const modeRef     = useRef('choropleth_flows');
   const projTypeRef = useRef('globe');
 
   // ── Auto-rotate helpers ──────────────────────────────────────────────────
@@ -199,8 +199,8 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
 
     const countriesG = svg.select('#countries-g');
 
-    // Cancel flow animation when leaving flows mode
-    if (md !== 'flows' && flowRafRef.current) {
+    // Cancel flow animation when leaving flows or choropleth_flows mode
+    if (md !== 'flows' && md !== 'choropleth_flows' && flowRafRef.current) {
       cancelAnimationFrame(flowRafRef.current);
       flowRafRef.current  = null;
       flowStateRef.current = null;

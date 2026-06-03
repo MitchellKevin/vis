@@ -16,50 +16,56 @@ export const UTRECHT = [5.1214, 52.0908];
 
 // ── Map mode definitions ──────────────────────────────────────────────────────
 export const MAP_MODES = [
-  { key: 'choropleth', label: 'Bezoeken'  },
-  { key: 'bubble',     label: 'Bellen'    },
-  { key: 'uploadrate', label: 'Upload %'  },
-  { key: 'pies',       label: 'Taarten'   },
-  { key: 'flows',      label: 'Lijnen'    },
-  { key: 'device',     label: 'Apparaat'  },
-  { key: 'fish',       label: 'Vis soort' },
-  { key: 'time',       label: 'Tijdstip'  },
-  { key: 'os',         label: 'OS'        },
-  { key: 'browser',    label: 'Browser'   },
+  { key: 'choropleth',       label: 'Bezoeken'        },
+  { key: 'bubble',           label: 'Bellen'          },
+  { key: 'uploadrate',       label: 'Upload %'        },
+  { key: 'pies',             label: 'Taarten'         },
+  { key: 'flows',            label: 'Lijnen'          },
+  { key: 'choropleth_flows', label: 'Bezoeken+Lijnen' },
+  { key: 'device',           label: 'Apparaat'        },
+  { key: 'fish',             label: 'Vis soort'       },
+  { key: 'time',             label: 'Tijdstip'        },
+  { key: 'os',               label: 'OS'              },
+  { key: 'browser',          label: 'Browser'         },
 ];
 
-// ── Design colours ────────────────────────────────────────────────────────────
+// ── Design colours (all from visdeurbel-tokens.css brand palette) ────────────
 export const C = {
-  land:      '#d4ede9',
-  landHover: '#b0d9d4',
-  water:     '#c2e8f5',
-  waterDeep: '#7abcd8',
-  green:     '#1eacb0',
-  greenDark: '#01463c',
-  coral:     '#ff80b9',
-  stroke:    'rgba(1,70,60,0.2)',
-  graticule: 'rgba(1,70,60,0.07)',
+  land:      '#c8ebe6',  // tint of --color-green-dark (light)
+  landHover: '#a8d9d4',  // tint of --color-teal (mid)
+  water:     '#c0e8f5',  // tint of --color-teal (blue-ish)
+  waterDeep: '#1eacb0',  // --color-teal
+  green:     '#1eacb0',  // --color-teal
+  greenDark: '#01463c',  // --color-green-dark
+  coral:     '#ff80b9',  // --color-pink
+  stroke:    'rgba(1,70,60,0.2)',   // --color-green-dark @ 20%
+  graticule: 'rgba(1,70,60,0.07)', // --color-green-dark @ 7%
 };
 
+// Fish species — all from brand palette
 export const FISH_COLORS = {
-  Baars:      '#2196F3',
-  Brasem:     '#FF9800',
-  Karper:     '#9C27B0',
-  Snoekbaars: '#F44336',
-  Paling:     '#795548',
-  unknown:    '#9E9E9E',
+  Baars:      '#1eacb0',  // --color-teal
+  Brasem:     '#f0af00',  // --color-gold
+  Karper:     '#9b74ff',  // --color-purple-bell
+  Snoekbaars: '#ff80b9',  // --color-pink
+  Paling:     '#01463c',  // --color-green-dark
+  unknown:    '#c0a8ff',  // --color-purple
 };
 
+// OS — official platform brand colors kept (they identify the OS, not our UI)
+// "Overig" uses our brand muted purple
 export const OS_COLORS = {
-  Windows:   '#0078D4',
-  macOS:     '#999999',
-  iOS:       '#A2AAAD',
-  Android:   '#3DDC84',
-  Linux:     '#E95420',
+  Windows:    '#0078D4',
+  macOS:      '#999999',
+  iOS:        '#A2AAAD',
+  Android:    '#3DDC84',
+  Linux:      '#E95420',
   'Chrome OS':'#FBBC04',
-  Overig:    '#B0BEC5',
+  Overig:     '#c0a8ff',  // --color-purple
 };
 
+// Browser — official browser brand colors kept (identity colors)
+// "Overig" uses our brand muted purple
 export const BROWSER_COLORS = {
   Chrome:  '#4285F4',
   Safari:  '#006CFF',
@@ -67,7 +73,7 @@ export const BROWSER_COLORS = {
   Firefox: '#FF7139',
   Samsung: '#1428A0',
   Opera:   '#FF1B2D',
-  Overig:  '#B0BEC5',
+  Overig:  '#c0a8ff',  // --color-purple
 };
 
 // ── Lookup tables ─────────────────────────────────────────────────────────────
