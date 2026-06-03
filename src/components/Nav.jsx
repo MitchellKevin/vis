@@ -13,7 +13,7 @@ export default function Nav({ current }) {
         >Julius</NavLink>
         <NavLink
           className="vdb-nav__link"
-          to="/world-map"
+          to="/joost"
           aria-current={current === 'joost' ? 'page' : undefined}
         >Joost</NavLink>
         <NavLink
