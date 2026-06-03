@@ -16,8 +16,6 @@ export const UTRECHT = [5.1214, 52.0908];
 
 // ── Map mode definitions ──────────────────────────────────────────────────────
 export const MAP_MODES = [
-  { key: 'choropleth',       label: 'Bezoeken'        },
-  { key: 'choropleth_flows', label: 'Bezoeken+Lijnen' },
   { key: 'fish',             label: 'Vis soort'       },
   { key: 'time',             label: 'Tijdstip'        },
 ];

@@ -110,13 +110,12 @@ export function buildTooltipRows(c, mode, colors) {
   const n   = v => Number(v).toLocaleString('nl-NL');
   const pct = (a, b) => b > 0 ? ` (${Math.round(a / b * 100)}%)` : '';
   const row = (label, val, color = '') => ({ label, val, color });
-  const base = row('Bezoeken', n(c.events));
   if (mode === 'fish') {
     const entries = Object.entries(c.fish).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    if (!entries.length) return [base, row('Vis', 'Geen data')];
-    return [base, ...entries.map(([name, count]) =>
-      row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#c0a8ff'),  // --color-purple fallback
-    )];
+    if (!entries.length) return [row('Vis', 'Geen data')];
+    return entries.map(([name, count]) =>
+      row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#c0a8ff'),
+    );
   }
 
   if (mode === 'time') {
@@ -135,7 +134,6 @@ export function buildTooltipRows(c, mode, colors) {
       else             bk.avond++;
     });
     return [
-      base,
       row('⏰ Gem. tijdstip',  hl(c.avgHour)),
       row('🌙 Nacht (0–6u)',    n(bk.nacht)   + pct(bk.nacht,   c.events), '#9b74ff'),  // --color-purple-bell
       row('🌅 Ochtend (6–12u)', n(bk.ochtend) + pct(bk.ochtend, c.events), '#f0af00'),  // --color-gold
@@ -144,23 +142,7 @@ export function buildTooltipRows(c, mode, colors) {
     ];
   }
 
-  if (mode === 'os') {
-    const entries = Object.entries(c.os || {}).sort((a, b) => b[1] - a[1]);
-    if (!entries.length) return [base, row('OS', 'Geen data')];
-    return [base, ...entries.map(([name, count]) =>
-      row(name, n(count) + pct(count, c.events), '#c0a8ff'),
-    )];
-  }
-
-  if (mode === 'browser') {
-    const entries = Object.entries(c.browser || {}).sort((a, b) => b[1] - a[1]);
-    if (!entries.length) return [base, row('Browser', 'Geen data')];
-    return [base, ...entries.map(([name, count]) =>
-      row(name, n(count) + pct(count, c.events), '#c0a8ff'),
-    )];
-  }
-
-  return [base];
+  return [];
 }
 
 // ── Country fill colour for the current mode ──────────────────────────────────
@@ -168,16 +150,6 @@ export function getCountryFill(d, countryData, maxEvents, mode, colors) {
   const { C, FISH_COLORS } = colors;
   const c = countryData[d.id];
 
-  if (mode === 'choropleth') {
-    if (!c) return C.land;
-    // Dynamic import of d3 avoided here — caller should pass d3 or use inline
-    // This function is used inside D3 callbacks so d3 is available in calling scope
-    return null; // sentinel — caller uses its own scale
-  }
-  if (mode === 'uploadrate') {
-    if (!c || c.events === 0) return C.land;
-    return null; // sentinel — caller uses its own scale
-  }
   if (mode === 'fish')    { if (!c || !c.topFish)    return C.land; return FISH_COLORS[c.topFish]    || '#c0a8ff'; }
   if (mode === 'time') {
     if (!c || c.avgHour === null) return C.land;
@@ -187,7 +159,5 @@ export function getCountryFill(d, countryData, maxEvents, mode, colors) {
     if (h < 18) return '#1eacb0';  // --color-teal
     return '#ff80b9';              // --color-pink
   }
-  if (mode === 'os')      { if (!c || !c.topOS)      return C.land; return '#c0a8ff'; }
-  if (mode === 'browser') { if (!c || !c.topBrowser)  return C.land; return '#c0a8ff'; }
   return C.land;
 }
