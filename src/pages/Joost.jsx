@@ -2,10 +2,10 @@ import { useRef } from 'react';
 import Nav              from '../components/Nav.jsx';
 import StatsBar         from '../components/world-map/StatsBar.jsx';
 import GlobeMap         from '../components/world-map/GlobeMap.jsx';
-import EventFeed        from '../components/world-map/EventFeed.jsx';
+// EventFeed removed
 import PageHeader       from '../components/world-map/PageHeader.jsx';
 import PeriodToggle     from '../components/world-map/PeriodToggle.jsx';
-import MapLegendSection from '../components/world-map/MapLegendSection.jsx';
+// MapLegendSection removed
 import PageFooter       from '../components/world-map/PageFooter.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
 import useJoostData     from '../components/world-map/useJoostData.js';
@@ -61,15 +61,7 @@ export default function Joost() {
             )}
           </section>
 
-          <MapLegendSection />
-
-          <section className="section">
-            <h2 className="section-heading">Recente events</h2>
-            <p className="section-sub">De 50 meest recente events uit de dataset.</p>
-            <div className="card">
-              <EventFeed allEvents={allEvents} />
-            </div>
-          </section>
+          {/* External legend and recent events removed */}
 
         </div>
 

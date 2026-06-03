@@ -106,41 +106,11 @@ export async function loadData(period) {
 
 // ── Tooltip rows builder ──────────────────────────────────────────────────────
 export function buildTooltipRows(c, mode, colors) {
-  const { C, FISH_COLORS, OS_COLORS, BROWSER_COLORS } = colors;
+  const { C, FISH_COLORS } = colors;
   const n   = v => Number(v).toLocaleString('nl-NL');
   const pct = (a, b) => b > 0 ? ` (${Math.round(a / b * 100)}%)` : '';
   const row = (label, val, color = '') => ({ label, val, color });
   const base = row('Bezoeken', n(c.events));
-
-  if (['choropleth', 'bubble', 'flows'].includes(mode)) {
-    return [
-      base,
-      row('🐟 Gespot',   n(c.uploaded)  + pct(c.uploaded,  c.events), C.green),
-      row('👋 Gesloten', n(c.dismissed) + pct(c.dismissed, c.events), C.coral),
-      row('Steden', c.topCities || '—'),
-    ];
-  }
-
-  if (['uploadrate', 'pies'].includes(mode)) {
-    const upPct  = c.events > 0 ? Math.round(c.uploaded  / c.events * 100) : 0;
-    const disPct = c.events > 0 ? Math.round(c.dismissed / c.events * 100) : 0;
-    return [
-      base,
-      row('🐟 Gespot',   `${n(c.uploaded)} — ${upPct}%`,   C.green),
-      row('👋 Gesloten', `${n(c.dismissed)} — ${disPct}%`, C.coral),
-    ];
-  }
-
-  if (mode === 'device') {
-    const other = c.events - c.mobile - c.desktop;
-    return [
-      base,
-      row('💻 Desktop/laptop', n(c.desktop) + pct(c.desktop, c.events), '#f0af00'),  // --color-gold
-      row('📱 Mobiel/tablet',  n(c.mobile)  + pct(c.mobile,  c.events), '#9b74ff'),  // --color-purple-bell
-      ...(other > 0 ? [row('❓ Overig', n(other) + pct(other, c.events), '#1eacb0')] : []),  // --color-teal
-    ];
-  }
-
   if (mode === 'fish') {
     const entries = Object.entries(c.fish).sort((a, b) => b[1] - a[1]).slice(0, 5);
     if (!entries.length) return [base, row('Vis', 'Geen data')];
@@ -178,7 +148,7 @@ export function buildTooltipRows(c, mode, colors) {
     const entries = Object.entries(c.os || {}).sort((a, b) => b[1] - a[1]);
     if (!entries.length) return [base, row('OS', 'Geen data')];
     return [base, ...entries.map(([name, count]) =>
-      row(name, n(count) + pct(count, c.events), OS_COLORS[name] || '#c0a8ff'),  // --color-purple fallback
+      row(name, n(count) + pct(count, c.events), '#c0a8ff'),
     )];
   }
 
@@ -186,7 +156,7 @@ export function buildTooltipRows(c, mode, colors) {
     const entries = Object.entries(c.browser || {}).sort((a, b) => b[1] - a[1]);
     if (!entries.length) return [base, row('Browser', 'Geen data')];
     return [base, ...entries.map(([name, count]) =>
-      row(name, n(count) + pct(count, c.events), BROWSER_COLORS[name] || '#c0a8ff'),  // --color-purple fallback
+      row(name, n(count) + pct(count, c.events), '#c0a8ff'),
     )];
   }
 
@@ -195,7 +165,7 @@ export function buildTooltipRows(c, mode, colors) {
 
 // ── Country fill colour for the current mode ──────────────────────────────────
 export function getCountryFill(d, countryData, maxEvents, mode, colors) {
-  const { C, FISH_COLORS, OS_COLORS, BROWSER_COLORS } = colors;
+  const { C, FISH_COLORS } = colors;
   const c = countryData[d.id];
 
   if (mode === 'choropleth') {
@@ -217,7 +187,7 @@ export function getCountryFill(d, countryData, maxEvents, mode, colors) {
     if (h < 18) return '#1eacb0';  // --color-teal
     return '#ff80b9';              // --color-pink
   }
-  if (mode === 'os')      { if (!c || !c.topOS)      return C.land; return OS_COLORS[c.topOS]        || '#c0a8ff'; }
-  if (mode === 'browser') { if (!c || !c.topBrowser)  return C.land; return BROWSER_COLORS[c.topBrowser] || '#c0a8ff'; }
+  if (mode === 'os')      { if (!c || !c.topOS)      return C.land; return '#c0a8ff'; }
+  if (mode === 'browser') { if (!c || !c.topBrowser)  return C.land; return '#c0a8ff'; }
   return C.land;
 }

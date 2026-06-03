@@ -17,16 +17,9 @@ export const UTRECHT = [5.1214, 52.0908];
 // ── Map mode definitions ──────────────────────────────────────────────────────
 export const MAP_MODES = [
   { key: 'choropleth',       label: 'Bezoeken'        },
-  { key: 'bubble',           label: 'Bellen'          },
-  { key: 'uploadrate',       label: 'Upload %'        },
-  { key: 'pies',             label: 'Taarten'         },
-  { key: 'flows',            label: 'Lijnen'          },
   { key: 'choropleth_flows', label: 'Bezoeken+Lijnen' },
-  { key: 'device',           label: 'Apparaat'        },
   { key: 'fish',             label: 'Vis soort'       },
   { key: 'time',             label: 'Tijdstip'        },
-  { key: 'os',               label: 'OS'              },
-  { key: 'browser',          label: 'Browser'         },
 ];
 
 // ── Design colours (all from visdeurbel-tokens.css brand palette) ────────────
@@ -52,29 +45,6 @@ export const FISH_COLORS = {
   unknown:    '#c0a8ff',  // --color-purple
 };
 
-// OS — official platform brand colors kept (they identify the OS, not our UI)
-// "Overig" uses our brand muted purple
-export const OS_COLORS = {
-  Windows:    '#0078D4',
-  macOS:      '#999999',
-  iOS:        '#A2AAAD',
-  Android:    '#3DDC84',
-  Linux:      '#E95420',
-  'Chrome OS':'#FBBC04',
-  Overig:     '#c0a8ff',  // --color-purple
-};
-
-// Browser — official browser brand colors kept (identity colors)
-// "Overig" uses our brand muted purple
-export const BROWSER_COLORS = {
-  Chrome:  '#4285F4',
-  Safari:  '#006CFF',
-  Edge:    '#0078D4',
-  Firefox: '#FF7139',
-  Samsung: '#1428A0',
-  Opera:   '#FF1B2D',
-  Overig:  '#c0a8ff',  // --color-purple
-};
 
 // ── Lookup tables ─────────────────────────────────────────────────────────────
 export const UNKNOWN_VALS = ['unknown', 'Unknown', 'onbekend', 'Onbekend', 'Overig'];

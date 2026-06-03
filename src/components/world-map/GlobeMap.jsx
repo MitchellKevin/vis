@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
-import { C, FISH_COLORS, OS_COLORS, BROWSER_COLORS, CENTROIDS, UTRECHT, MAP_MODES, W, H, R } from './constants.js';
+import { C, FISH_COLORS, CENTROIDS, UTRECHT, MAP_MODES, W, H, R } from './constants.js';
 import { flag, buildTooltipRows } from './utils.js';
 import { MODE_RENDERERS } from './mapModes.js';
 import MapTooltip  from './MapTooltip.jsx';
 import MapLegend   from './MapLegend.jsx';
 import CountryList from './CountryList.jsx';
 
-const COLORS = { C, FISH_COLORS, OS_COLORS, BROWSER_COLORS };
+const COLORS = { C, FISH_COLORS };
 
 export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotateTo }) {
   // ── D3 refs (not React state — mutations shouldn't trigger re-render) ────
@@ -199,8 +199,8 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
 
     const countriesG = svg.select('#countries-g');
 
-    // Cancel flow animation when leaving flows or choropleth_flows mode
-    if (md !== 'flows' && md !== 'choropleth_flows' && flowRafRef.current) {
+    // Cancel flow animation when leaving choropleth_flows mode
+    if (md !== 'choropleth_flows' && flowRafRef.current) {
       cancelAnimationFrame(flowRafRef.current);
       flowRafRef.current  = null;
       flowStateRef.current = null;
@@ -213,7 +213,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       isVisible, stopAutoRotate,
       showTT, hideTT,
       flowRafRef, flowStateRef, modeRef,
-      C, FISH_COLORS, OS_COLORS, BROWSER_COLORS,
+      C, FISH_COLORS,
       CENTROIDS, UTRECHT, W, H,
     };
 
