@@ -1,71 +1,78 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CENTROIDS } from './constants.js';
 import { flag } from './utils.js';
 
 export default function CountryList({ countryData, onFlyTo }) {
+  const [expanded, setExpanded] = useState(false);
   const barRefs = useRef([]);
 
-  // All countries with at least 1 uploaded fish, sorted by uploaded descending
   const sorted = Object.values(countryData)
     .filter(c => c.uploaded > 0)
     .sort((a, b) => b.uploaded - a.uploaded);
 
-  const top = sorted[0]?.uploaded || 1;
+  const top  = sorted[0]?.uploaded || 1;
+  const top3 = sorted.slice(0, 3);
+  const rest = sorted.slice(3);
 
-  // Animate bars in after render / data change
   useEffect(() => {
     requestAnimationFrame(() => {
       barRefs.current.forEach(el => {
         if (el) el.style.width = el.dataset.w + '%';
       });
     });
-  }, [countryData]);
+  }, [countryData, expanded]);
 
-  if (!sorted.length) {
-    return <div style={{ padding: '16px', color: 'var(--text-muted)' }}>Geen data beschikbaar.</div>;
-  }
+  if (!sorted.length) return null;
+
+  const renderCard = (c, globalIndex) => {
+    const barPct = ((c.uploaded / top) * 100).toFixed(1);
+    const coords = CENTROIDS[c.code];
+    return (
+      <div
+        key={c.numId}
+        className="country-card"
+        onClick={coords ? () => onFlyTo(coords[0], coords[1]) : undefined}
+        style={coords ? { cursor: 'pointer' } : {}}
+      >
+        <span className="country-card__rank">#{globalIndex + 1}</span>
+        <span className="country-card__flag">{flag(c.code)}</span>
+        <div className="country-card__info">
+          <span className="country-card__name">{c.name}</span>
+          <div className="country-card__bar-wrap">
+            <div
+              className="country-card__bar"
+              data-w={barPct}
+              ref={el => barRefs.current[globalIndex] = el}
+              style={{ width: 0 }}
+            />
+          </div>
+        </div>
+        <span className="country-card__count">🐟 {c.uploaded.toLocaleString('nl-NL')}</span>
+      </div>
+    );
+  };
 
   return (
-    <div id="country-list">
-      {sorted.map((c, i) => {
-        const barPct = ((c.uploaded / top) * 100).toFixed(1);
-        const coords = CENTROIDS[c.code];
+    <>
+      {/* Always visible: top 3 */}
+      {top3.map((c, i) => renderCard(c, i))}
 
-        return (
-          <div
-            key={c.numId}
-            className="country-row"
-            style={coords ? { cursor: 'pointer' } : {}}
-            onClick={coords ? () => onFlyTo(coords[0], coords[1]) : undefined}
-          >
-            {/* Rank */}
-            <div className="country-rank">#{i + 1}</div>
+      {/* Expandable rest — animated via .open class */}
+      {rest.length > 0 && (
+        <div className={`country-card-rest${expanded ? ' open' : ''}`}>
+          {rest.map((c, i) => renderCard(c, i + 3))}
+        </div>
+      )}
 
-            {/* Flag */}
-            <div className="country-flag">{flag(c.code)}</div>
-
-            {/* Name + bar */}
-            <div className="country-info">
-              <div className="country-name">{c.name}</div>
-              <div className="country-bars">
-                <div className="bar-row">
-                  <div
-                    className="bar-segment bar-green"
-                    data-w={barPct}
-                    ref={el => barRefs.current[i] = el}
-                    style={{ width: 0 }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Uploaded count */}
-            <div className="country-count">
-              🐟 {c.uploaded.toLocaleString('nl-NL')}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+      {/* Button always right below */}
+      {rest.length > 0 && (
+        <button
+          className="see-more-btn"
+          onClick={() => setExpanded(e => !e)}
+        >
+          {expanded ? '↑ Minder' : 'Bekijk meer'}
+        </button>
+      )}
+    </>
   );
 }
