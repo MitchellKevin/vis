@@ -1,6 +1,6 @@
 export default function WorldChapter() {
   return (
-    <section id="ch-world" className="chapter chapter--dark" aria-label="Wereldkaart">
+    <section id="ch-world" className="chapter" aria-label="Wereldkaart">
       <div className="chapter-inner chapter-inner--wide">
         <div className="chapter-text">
           <p className="eyebrow reveal">Wereldkaart</p>

@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 
-import Nav         from './Nav.jsx';
+import Nav         from '../Nav.jsx';
 import StatsBar    from './StatsBar.jsx';
 import GlobeMap    from './GlobeMap.jsx';
-import EventFeed   from './EventFeed.jsx';
 import { TOPO_URL } from './constants.js';
 import { aggregate, loadData } from './utils.js';
 import { useStylesheet } from '../../hooks/useStylesheet.js';
@@ -68,22 +67,6 @@ export default function WorldMap() {
     <>
       <Nav current="joost" />
 
-      {/* Brand navbar */}
-      <nav className="navbar">
-        <div className="nav-brand">
-          <span className="nav-logo">🐟</span>
-          <span className="nav-name">Visdeurbel</span>
-        </div>
-        <div className="nav-links">
-          <a href="#">Over</a>
-          <a href="#">Waarom</a>
-          <a href="#">De vissen</a>
-          <a href="#">Community</a>
-          <a href="#">FAQ</a>
-          <a href="#" className="nav-lang">English</a>
-        </div>
-      </nav>
-
       {/* Page header */}
       <header className="page-header">
         <div className="header-inner">
@@ -134,33 +117,7 @@ export default function WorldMap() {
           )}
         </section>
 
-        {/* Legend */}
-        <section className="section">
-          <h2 className="section-heading">Legenda</h2>
-          <div className="card legend-list">
-            <div className="legend-item">
-              <span className="legend-pill legend-pill--green">🐟</span>
-              <span>uploadedFish — bezoeker heeft een vis gespot en geüpload</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-pill legend-pill--coral">👋</span>
-              <span>dismissedUploading — bezoeker heeft het uploadvenster gesloten</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-pill legend-pill--muted">·</span>
-              <span>Geen data — geen events uit dit land</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Event feed */}
-        <section className="section">
-          <h2 className="section-heading">Recente events</h2>
-          <p className="section-sub">De 50 meest recente events uit de dataset.</p>
-          <div className="card">
-            <EventFeed allEvents={allEvents} />
-          </div>
-        </section>
+        {/* External legend and recent events removed */}
 
       </div>
 
