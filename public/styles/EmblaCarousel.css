@@ -1,0 +1,288 @@
+.embla {
+  width: 100%;
+  background: var(--bg-inverse);
+  padding: var(--space-9) 0 var(--space-7);
+  overflow: hidden;
+}
+
+.embla__viewport {
+  overflow: hidden;
+  padding: 0 var(--space-6);
+}
+
+.embla__container {
+  display: flex;
+  gap: var(--space-7);
+}
+
+/* Each slide is ~40% wide so ~2.5 are visible */
+.embla__slide {
+  flex: 0 0 38%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+@media (max-width: 768px) {
+  .embla__slide {
+    flex: 0 0 72%;
+  }
+}
+
+/* Klikbare wrapper om de visafbeelding (opent de info-dialog) */
+.embla__slide__img-btn {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Fish image */
+.embla__slide__img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  object-position: center bottom;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Pill — toggle-switch style (een <label> om een verborgen checkbox) */
+.embla__slide__pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  /* equal padding both sides so name stays centered while knob moves */
+  padding: 5px 44px;
+  border: 1px solid var(--color-off-white);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-on-inverse);
+  font: var(--text-nav);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 300ms ease;
+}
+
+/* Native checkbox visueel verbergen, maar wél bedienbaar/voorgelezen.
+   Klikken op de label toggelt 'm; Tab + Spatie werkt via het toetsenbord. */
+.embla__slide__checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Focus-ring op de pill wanneer de verborgen checkbox toetsenbordfocus heeft */
+.embla__slide__pill:has(.embla__slide__checkbox:focus-visible) {
+  outline: 2px solid var(--color-purple);
+  outline-offset: 2px;
+}
+
+.embla__slide__pill:hover {
+  background: rgb(253 247 239 / 0.08);
+}
+
+.embla__slide__pill--checked {
+  border-color: var(--color-purple);
+}
+
+/* The sliding knob (circle) */
+.embla__slide__knob {
+  position: absolute;
+  top: 50%;
+  /* start: left side */
+  left: 5px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-gold-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* animate position + color + ring */
+  transition: left 300ms ease, background-color 300ms ease, box-shadow 300ms ease;
+}
+
+/* Checked: knob slides to the right */
+.embla__slide__pill--checked .embla__slide__knob {
+  left: calc(100% - 33px);
+  background: var(--color-purple);
+  box-shadow: 0 0 0 3px var(--color-off-white);
+}
+
+.embla__slide__name {
+  pointer-events: none;
+}
+
+/* Checkmark inside knob — fades in after the knob has moved */
+.embla__slide__checkmark {
+  opacity: 0;
+  transition: opacity 150ms ease 0ms;
+}
+
+.embla__slide__pill--checked .embla__slide__checkmark {
+  opacity: 1;
+  transition: opacity 150ms ease 200ms; /* delay = halfway through slide */
+}
+
+/* Controls row */
+.embla__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-6) 0;
+}
+
+.embla__arrows {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.embla__arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-off-white);
+  background: transparent;
+  color: var(--text-on-inverse);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms ease, opacity 150ms ease;
+}
+
+.embla__arrow:hover:not(:disabled) {
+  background: rgb(253 247 239 / 0.1);
+}
+
+.embla__arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Horizontal divider line */
+.embla__line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-off-white);
+  opacity: 0.3;
+}
+
+/* ── Vis-info dialog ─────────────────────────────────────────────────────── */
+
+.fish-dialog {
+  /* géén padding op de dialog zelf: anders telt een klik in dat gebied als
+   * klik op de dialog en sluit hij ongewild. Padding zit op __content. */
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  /* midden van het scherm — margin:auto centreert binnen de top-layer */
+  margin: auto;
+  width: min(620px, calc(100% - var(--space-7)));
+  max-width: none;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.fish-dialog::backdrop {
+  background: rgb(1 70 60 / 0.6);
+}
+
+.fish-dialog__content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-9) var(--space-8) var(--space-8);
+  text-align: center;
+}
+
+.fish-dialog__img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+}
+
+.fish-dialog__content h2 { margin: 0; font: var(--text-h2); }
+.fish-dialog__content p  { margin: 0; }
+
+.fish-dialog__lead {
+  font: var(--text-p1);
+  color: var(--text-muted);
+  max-width: 42ch;
+}
+
+/* Stats-rij: meldingen / aandeel / positie naast elkaar */
+.fish-dialog__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-6);
+  margin: var(--space-2) 0 0;
+  padding: var(--space-6) 0 0;
+  width: 100%;
+  border-top: 1px solid rgb(1 70 60 / 0.15);
+}
+
+.fish-dialog__stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.fish-dialog__stat dt {
+  font: var(--text-nav-caps);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.fish-dialog__stat dd {
+  margin: 0;
+  font: var(--text-h3);
+}
+
+.fish-dialog__period {
+  font: var(--text-p2);
+  color: var(--text-muted);
+}
+
+.fish-dialog__close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fish-dialog__close:hover {
+  background: rgb(1 70 60 / 0.08);
+}

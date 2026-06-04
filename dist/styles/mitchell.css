@@ -1,0 +1,702 @@
+/* ============================================================================
+ * Mitchell — Visdeurbel data-verhaal
+ * Styling volgt STYLEGUIDE.md: Bricolage Grotesque + PT Sans, tokenpalet,
+ * geen letter-spacing, geen puur zwart/wit. Tokens komen uit
+ * visdeurbel-tokens.css (globaal geladen in main.jsx).
+ * ========================================================================== */
+
+/* ── Basis ───────────────────────────────────────────── */
+body.mitchell-page {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: var(--text-p1);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.mitchell-page { scroll-behavior: auto; }
+  body.mitchell-page *,
+  body.mitchell-page *::before,
+  body.mitchell-page *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.mitchell-page :where(svg, canvas) { display: block; max-width: 100%; }
+.fish-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* ── Typografie ──────────────────────────────────────── */
+.mitchell-page h2 { font: var(--text-h2); color: var(--text-primary); margin: 0 0 var(--space-4); }
+.mitchell-page h3 { font: var(--text-h3); color: var(--text-primary); margin: 0 0 var(--space-3); }
+
+.mitchell-page .eyebrow {
+  font: var(--text-p2-bold);
+  color: var(--color-teal);
+  margin: 0 0 var(--space-3);
+}
+.mitchell-page .lede {
+  font: var(--text-p1);
+  color: var(--text-muted);
+  max-width: 46ch;
+  margin: 0 auto;
+}
+.mitchell-page .lede strong,
+.mitchell-page .world-stat strong,
+.mitchell-page .shoal-stat strong,
+.mitchell-page .chapter-stat strong { color: var(--color-purple-bell); font-weight: 700; }
+
+.world-stat, .shoal-stat, .chapter-stat {
+  font: var(--text-p1);
+  color: var(--text-muted);
+  margin: var(--space-4) auto 0;
+}
+.world-top {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font: var(--text-p2);
+  color: rgb(253 247 239 / 0.7);
+}
+
+/* ── Hoofdstuk-frame ─────────────────────────────────── */
+.chapter {
+  position: relative;
+  min-height: 100vh;
+  padding: var(--space-11) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+.chapter-inner { width: 100%; max-width: 1100px; margin: 0 auto; }
+.chapter-inner--wide { max-width: 1240px; }
+.chapter-text { max-width: 52ch; margin: 0 auto; text-align: center; }
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.visible .reveal { opacity: 1; transform: none; }
+.visible .reveal:nth-child(2) { transition-delay: 0.1s; }
+.visible .reveal:nth-child(3) { transition-delay: 0.2s; }
+.visible .reveal:nth-child(4) { transition-delay: 0.3s; }
+
+/* Donkere (inverse) hoofdstukken — zelfde palet, omgekeerd */
+.chapter--dark {
+  background: var(--color-green-dark);
+  color: var(--color-off-white);
+}
+.chapter--dark h2 { color: var(--color-off-white); }
+.chapter--dark .eyebrow { color: var(--color-purple); }
+.chapter--dark .lede,
+.chapter--dark .world-stat,
+.chapter--dark .chapter-stat { color: rgb(253 247 239 / 0.82); }
+.chapter--dark .lede strong,
+.chapter--dark .world-stat strong,
+.chapter--dark .chapter-stat strong { color: var(--color-purple); }
+
+.stage-fallback { font: var(--text-p2); color: var(--text-muted); text-align: center; }
+
+/* ── Gedeelde tooltip ────────────────────────────────── */
+.fish-tooltip {
+  position: fixed;
+  background: var(--color-green-dark);
+  color: var(--color-off-white);
+  padding: var(--space-2) var(--space-3);
+  font: var(--text-p2);
+  border-radius: var(--radius-card);
+  border: 1px solid rgb(253 247 239 / 0.25);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 12px));
+  transition: opacity 0.15s ease;
+  z-index: 80;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.fish-tooltip.visible { opacity: 1; }
+.fish-tooltip strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--color-purple);
+}
+
+/* ── Maand/Week-schakelaar (sticky) ──────────────────── */
+.data-switch {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: 60;
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-off-white);
+  border: 1px solid var(--color-green-dark);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 6px 24px rgb(1 70 60 / 0.22);
+  transition: opacity 0.2s ease;
+}
+.data-switch.is-loading { opacity: 0.55; pointer-events: none; }
+.data-switch__btn {
+  font: var(--text-p2-bold);
+  color: var(--color-green-dark);
+  padding: var(--space-2) var(--space-5);
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.data-switch__btn:hover { background: rgb(1 70 60 / 0.08); }
+.data-switch__btn.is-active,
+.data-switch__btn.is-active:hover { background: var(--color-purple); color: var(--color-green-dark); }
+.data-switch__btn:focus-visible { outline: 2px solid var(--color-purple-bell); outline-offset: 2px; }
+
+@media (max-width: 768px) {
+  .data-switch { bottom: var(--space-4); right: 50%; transform: translateX(50%); }
+}
+
+/* ── Ringkalender ────────────────────────────────────── */
+.ring-stage { width: min(94vw, 680px); aspect-ratio: 1 / 1; margin: var(--space-8) auto 0; }
+.ring-stage svg { width: 100%; height: 100%; }
+.ring-dot { cursor: pointer; transition: opacity 0.2s ease; }
+.ring-dot:hover, .ring-dot:focus-visible { filter: drop-shadow(0 0 6px currentColor); outline: none; }
+.ring-wedge .ring-label-mark {
+  fill: none;
+  stroke: var(--color-purple-bell, #c0a8ff);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  pointer-events: none;
+  /* Bij uithover: opacity faded uit, dashoffset snapt onzichtbaar terug
+     zodat de animatie niet omgekeerd wordt afgespeeld. */
+  transition: stroke-dashoffset 0s 0.3s, opacity 0.3s ease-out;
+}
+.ring-wedge:hover .ring-label-mark,
+.ring-wedge:focus-visible .ring-label-mark {
+  opacity: 0.95;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.72s cubic-bezier(.4,0,.2,1), opacity 0.18s ease-out;
+}
+.ring-wedge:hover text,
+.ring-wedge:focus-visible text {
+  opacity: 1;
+}
+
+/* ── 24-uurs getij ───────────────────────────────────── */
+.tide-stage { width: min(94vw, 600px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; }
+.tide-stage svg { width: 100%; height: 100%; }
+
+/* ── Piekdagen-rivier ────────────────────────────────── */
+.peaks-stage { width: min(96vw, 880px); aspect-ratio: 880 / 420; margin: var(--space-7) auto 0; }
+.peaks-stage svg { width: 100%; height: 100%; }
+
+/* ── De fanatici ─────────────────────────────────────── */
+.fanatics-stage { width: min(94vw, 720px); aspect-ratio: 720 / 430; margin: var(--space-7) auto 0; }
+.fanatics-stage svg { width: 100%; height: 100%; }
+
+/* ── Weekend vs doordeweeks ──────────────────────────── */
+.weekday-stage { width: min(96vw, 860px); aspect-ratio: 860 / 420; margin: var(--space-7) auto 0; }
+.weekday-stage svg { width: 100%; height: 100%; }
+
+/* ── Schermen-aquarium ───────────────────────────────── */
+.screens-stage { width: min(94vw, 900px); aspect-ratio: 900 / 540; margin: var(--space-6) auto 0; }
+.screens-stage svg { width: 100%; height: 100%; }
+.screen-win { cursor: pointer; }
+.screen-win rect { transition: filter 0.2s ease; }
+.screen-win:hover rect, .screen-win:focus-visible rect { filter: brightness(1.3); outline: none; }
+.screen-win:focus-visible rect { stroke-width: 2.5; }
+
+/* ── Koor van talen ──────────────────────────────────── */
+.lang-stage { width: min(94vw, 900px); aspect-ratio: 900 / 540; margin: var(--space-6) auto 0; }
+.lang-stage svg { width: 100%; height: 100%; }
+.lang-word { cursor: pointer; }
+.lang-word text { transition: filter 0.2s ease; }
+.lang-word:hover text:first-child,
+.lang-word:focus-visible text:first-child { filter: drop-shadow(0 0 10px currentColor); outline: none; }
+
+/* ── Draaiende globe ─────────────────────────────────── */
+.globe-stage { width: min(92vw, 600px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; }
+.globe-stage svg { width: 100%; height: 100%; }
+.globe-dot { cursor: pointer; }
+.globe-dot:focus-visible .gd-core { stroke: var(--color-off-white); stroke-width: 1.6; outline: none; }
+
+/* ── Vijver-replay ───────────────────────────────────── */
+.pond-stage {
+  position: relative;
+  width: min(96vw, 900px);
+  aspect-ratio: 900 / 420;
+  margin: var(--space-7) auto 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(30,172,176,0.10) 0%, transparent 60%),
+    #012c26;
+  border: 1px solid rgb(253 247 239 / 0.12);
+}
+.pond-canvas { position: absolute; inset: 0; }
+.pond-clock, .pond-counter {
+  position: absolute;
+  font: var(--text-p2-bold);
+  color: var(--color-off-white);
+  background: rgb(1 33 28 / 0.55);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-button);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.pond-clock { top: var(--space-4); left: var(--space-4); color: var(--color-purple); }
+.pond-counter { bottom: var(--space-4); right: var(--space-4); }
+
+/* ── Wereldkaart ─────────────────────────────────────── */
+.world-stage {
+  width: min(96vw, 1100px);
+  margin: var(--space-7) auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+.world-svg-host { width: 100%; aspect-ratio: 980 / 540; }
+.world-stage svg { width: 100%; height: 100%; }
+.world-toggle {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid rgb(253 247 239 / 0.35);
+  border-radius: var(--radius-pill);
+  background: rgb(253 247 239 / 0.06);
+}
+.world-toggle-btn {
+  font: var(--text-p2-bold);
+  color: var(--color-off-white);
+  padding: var(--space-2) var(--space-5);
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.world-toggle-btn:hover { background: rgb(253 247 239 / 0.1); }
+.world-toggle-btn.is-active { background: var(--color-purple); color: var(--color-green-dark); }
+.world-toggle-btn:focus-visible { outline: 2px solid var(--color-purple); outline-offset: 2px; }
+.world-dot { cursor: pointer; }
+.world-dot:focus-visible { outline: none; }
+.world-dot:hover .world-dot-glow,
+.world-dot:focus-visible .world-dot-glow { opacity: 0.4; }
+.world-dot:focus-visible .world-dot-core { stroke: var(--color-off-white); stroke-width: 1.6; }
+
+.world-arc { stroke-dasharray: 5 9; animation: world-arc-flow 1.3s linear infinite; }
+@keyframes world-arc-flow { to { stroke-dashoffset: -14; } }
+
+.world-utrecht-ring { animation: world-utrecht 2.7s ease-out infinite; }
+@keyframes world-utrecht {
+  0%   { r: 6;  opacity: 0.7; }
+  100% { r: 34; opacity: 0; }
+}
+
+/* ── De belstroom ────────────────────────────────────── */
+.funnel-stage { width: min(94vw, 760px); aspect-ratio: 820 / 560; margin: var(--space-7) auto 0; }
+.funnel-stage svg { width: 100%; height: 100%; }
+.funnel-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-4) var(--space-7);
+  margin: var(--space-5) auto 0;
+}
+.funnel-leg-item, .shoal-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-p2);
+  color: var(--text-primary);
+}
+.funnel-leg-item b { font-family: var(--font-display); font-weight: 800; }
+.funnel-leg-item .dot, .shoal-leg-item .dot {
+  width: 12px; height: 12px; border-radius: var(--radius-full); flex: none;
+}
+
+/* ── Apparaten-school ────────────────────────────────── */
+.shoal-stage { width: min(94vw, 900px); aspect-ratio: 9 / 5.4; margin: var(--space-6) auto 0; }
+.shoal-stage svg { width: 100%; height: 100%; }
+.shoal-bubble { cursor: pointer; }
+.shoal-bubble circle { transition: filter 0.2s ease; }
+.shoal-bubble:hover circle, .shoal-bubble:focus-visible circle {
+  filter: brightness(1.06) drop-shadow(0 0 10px currentColor);
+  outline: none;
+}
+.shoal-bubble:focus-visible circle { stroke-width: 3; }
+.shoal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3) var(--space-6);
+  margin: var(--space-5) auto 0;
+}
+
+/* ── Aquarium (kijkglas) ─────────────────────────────── */
+.aquarium-stage {
+  position: relative;
+  width: min(96vw, 1000px);
+  aspect-ratio: 16 / 10;
+  margin: var(--space-7) auto 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  cursor: crosshair;
+  background:
+    radial-gradient(ellipse at center, rgba(30,172,176,0.16) 0%, rgba(1,90,78,0.5) 50%, #012c26 100%);
+  border: 1px solid rgb(253 247 239 / 0.25);
+  box-shadow: inset 0 0 80px rgb(1 33 28 / 0.5), 0 16px 40px rgb(1 70 60 / 0.25);
+}
+.aquarium-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.aquarium-counter {
+  position: absolute;
+  bottom: var(--space-3);
+  right: var(--space-4);
+  font: var(--text-p2-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-off-white);
+  background: rgb(1 33 28 / 0.55);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-button);
+  pointer-events: none;
+}
+.aquarium-rip {
+  position: absolute;
+  width: 8px; height: 8px;
+  border: 2px solid var(--color-off-white);
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: aquarium-rip 0.9s ease-out forwards;
+}
+@keyframes aquarium-rip {
+  to { width: 220px; height: 220px; opacity: 0; }
+}
+.aquarium-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-5) auto 0;
+  max-width: 820px;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  font: var(--text-p2);
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+.filter-chip::before {
+  content: '';
+  width: 10px; height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--chip, var(--color-teal));
+}
+.filter-chip:hover { background: rgb(1 70 60 / 0.06); }
+.filter-chip:focus-visible { outline: 2px solid var(--color-purple-bell); outline-offset: 2px; }
+.filter-chip.muted { opacity: 0.4; text-decoration: line-through; }
+.aquarium-tip {
+  text-align: center;
+  font: var(--text-p2);
+  color: var(--text-muted);
+  margin: var(--space-4) auto 0;
+}
+
+/* ── Het net (circle-pack) ───────────────────────────── */
+.net-controls-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-6) auto 0;
+}
+.net-controls-label { font: var(--text-p2); color: rgb(253 247 239 / 0.7); }
+.net-toggle {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-off-white);
+  border-radius: var(--radius-pill);
+  background: rgb(253 247 239 / 0.06);
+}
+.net-toggle-btn {
+  font: var(--text-p2-bold);
+  color: var(--color-off-white);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.net-toggle-btn:hover { background: rgb(253 247 239 / 0.1); }
+.net-toggle-btn.active { background: var(--color-purple); color: var(--color-green-dark); }
+.net-toggle-btn:focus-visible { outline: 2px solid var(--color-purple); outline-offset: 2px; }
+
+.net-stage { width: min(94vw, 900px); aspect-ratio: 900 / 680; margin: var(--space-5) auto 0; }
+.net-stage svg { width: 100%; height: 100%; }
+.net-rope { stroke: rgb(253 247 239 / 0.28); stroke-width: 1; fill: none; }
+.net-bubble { cursor: pointer; transition: filter 0.2s ease; transform-box: fill-box; }
+.net-bubble:hover, .net-bubble:focus-visible {
+  filter: brightness(1.12) drop-shadow(0 0 10px currentColor);
+  outline: none;
+}
+.net-info {
+  text-align: center;
+  margin: var(--space-5) auto 0;
+  max-width: 52ch;
+  min-height: 1.4em;
+  font: var(--text-p2);
+  color: rgb(253 247 239 / 0.85);
+}
+
+/* ── Radar ───────────────────────────────────────────── */
+.radar-stage { width: min(94vw, 620px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; position: relative; }
+.radar-stage svg { width: 100%; height: 100%; }
+.radar-ping { cursor: pointer; }
+.radar-ping:hover .radar-ping-bg { opacity: 0.4; }
+.radar-ping.selected .radar-ping-bg { opacity: 0.6; animation: radar-pulse 1.4s ease-out infinite; }
+@keyframes radar-pulse {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.fish-wiggle { animation: swim-wiggle 1.6s ease-in-out infinite; transform-origin: 60% 50%; }
+@keyframes swim-wiggle {
+  0%, 100% { transform: rotate(-2deg) translateY(0); }
+  50%      { transform: rotate(2deg) translateY(-1px); }
+}
+
+.radar-detail-panel {
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  max-width: 230px;
+  background: var(--color-green-dark);
+  border: 1px solid rgb(253 247 239 / 0.25);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
+  font: var(--text-p2);
+  color: var(--color-off-white);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.radar-detail-panel.visible { opacity: 1; }
+.radar-detail-panel strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--color-purple);
+  margin-bottom: var(--space-1);
+}
+
+/* ── Hero — puntenwolk wordt vis ─────────────────────── */
+.chapter--hero {
+  padding: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 42%, rgba(30, 172, 176, 0.18), transparent 70%),
+    radial-gradient(circle at 50% 120%, rgba(155, 116, 255, 0.16), transparent 60%),
+    var(--color-green-dark);
+}
+.hero-stage { position: absolute; inset: 0; z-index: 0; }
+.hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hero-overlay {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: var(--space-6);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+.hero-overlay::before {
+  content: '';
+  position: absolute;
+  inset: -10% -8%;
+  z-index: -1;
+  background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(1, 33, 28, 0.78) 0%, rgba(1, 33, 28, 0.55) 45%, rgba(1, 33, 28, 0) 80%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font: var(--text-p2-bold);
+  color: var(--color-teal);
+  margin: 0 0 var(--space-4);
+  text-shadow: 0 1px 12px rgba(1, 33, 28, 0.7);
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(56px, 13vw, 168px);
+  line-height: 1;
+  color: var(--color-off-white);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-shadow:
+    0 0 24px rgba(1, 33, 28, 0.85),
+    0 2px 40px rgba(1, 33, 28, 0.7);
+}
+.hero-sub {
+  font: var(--text-p1-bold);
+  color: var(--color-off-white);
+  margin: var(--space-4) 0 0;
+  text-shadow:
+    0 1px 2px rgba(1, 33, 28, 0.9),
+    0 0 16px rgba(1, 33, 28, 0.75);
+}
+.hero-lede {
+  font: var(--text-p1);
+  color: var(--color-off-white);
+  max-width: 44ch;
+  margin: var(--space-5) auto 0;
+  text-shadow:
+    0 1px 2px rgba(1, 33, 28, 0.9),
+    0 0 14px rgba(1, 33, 28, 0.7);
+}
+.hero-scroll {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-11);
+  font: var(--text-p2-bold);
+  color: rgb(253 247 239 / 0.55);
+}
+.hero-scroll-dot {
+  width: 22px; height: 36px;
+  border: 1.5px solid rgb(253 247 239 / 0.5);
+  border-radius: var(--radius-pill);
+  position: relative;
+}
+.hero-scroll-dot::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 7px;
+  width: 4px; height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-purple);
+  transform: translateX(-50%);
+  animation: hero-scroll-bob 2.8s ease-in-out infinite;
+}
+@keyframes hero-scroll-bob {
+  0%, 100% { transform: translate(-50%, 0); opacity: 0.85; }
+  60%      { transform: translate(-50%, 6px); opacity: 0.35; }
+}
+
+/* ── Dieptewereld (bioluminescent) ───────────────────── */
+.depth-stage {
+  position: relative;
+  width: min(96vw, 900px);
+  aspect-ratio: 900 / 620;
+  margin: var(--space-7) auto 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  border: 1px solid rgb(253 247 239 / 0.12);
+  background:
+    radial-gradient(ellipse 70% 32% at 50% -6%, rgba(30, 172, 176, 0.22), transparent 70%),
+    linear-gradient(180deg, #04302a 0%, #02211d 45%, #010f0d 100%);
+  box-shadow: inset 0 -60px 90px rgb(0 0 0 / 0.5), 0 16px 40px rgb(1 70 60 / 0.3);
+}
+.depth-svg { width: 100%; height: 100%; display: block; }
+.depth-rays polygon { mix-blend-mode: screen; opacity: 0.5; }
+@keyframes depth-ray-sway {
+  0%, 100% { transform: translateX(0); opacity: 0.35; }
+  50%      { transform: translateX(18px); opacity: 0.6; }
+}
+.depth-snow circle { pointer-events: none; }
+.depth-fish { cursor: pointer; transition: opacity 0.35s ease; }
+.depth-fish:focus-visible { outline: none; }
+.depth-glow {
+  pointer-events: none;
+  opacity: 0.32;
+  filter: blur(16px);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: depth-glow-pulse 6s ease-in-out infinite;
+}
+@keyframes depth-glow-pulse {
+  0%, 100% { opacity: 0.22; transform: scale(0.92); }
+  50%      { opacity: 0.42; transform: scale(1.08); }
+}
+.depth-fish-body {
+  filter: drop-shadow(0 0 5px currentColor);
+  transition: filter 0.3s ease;
+}
+.depth-label {
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 0.3s ease;
+}
+.depth-svg.has-focus .depth-fish { opacity: 0.22; }
+.depth-svg.has-focus .depth-fish.active { opacity: 1; }
+.depth-fish.active .depth-glow { opacity: 0.7; }
+.depth-fish.active .depth-fish-body { filter: drop-shadow(0 0 12px currentColor) brightness(1.15); }
+.depth-fish.active .depth-label { opacity: 1; }
+.depth-detail {
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  max-width: 230px;
+  background: rgb(1 33 28 / 0.78);
+  border: 1px solid rgb(253 247 239 / 0.25);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
+  font: var(--text-p2);
+  color: var(--color-off-white);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.depth-detail.visible { opacity: 1; }
+.depth-detail strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--color-purple);
+  margin-bottom: var(--space-1);
+}
+
+/* ── Scroll-vis — slingerende gids over de pagina ────── */
+.swim-fish {
+  position: fixed;
+  left: 0; top: 0;
+  width: 60px; height: 30px;
+  z-index: 50;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 0 12px rgb(155 116 255 / 0.5));
+}
+.swim-fish svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.swim-fish-rot { width: 100%; height: 100%; transform-origin: 50% 50%; }
+.swim-fish-tail {
+  transform-box: fill-box;
+  transform-origin: 100% 50%;
+  animation: swim-tail 0.55s ease-in-out infinite;
+}
+@keyframes swim-tail {
+  0%, 100% { transform: rotate(-14deg); }
+  35%      { transform: rotate(12deg); }
+  65%      { transform: rotate(8deg); }
+}
+@media (max-width: 768px) {
+  .swim-fish { width: 46px; height: 23px; }
+}
