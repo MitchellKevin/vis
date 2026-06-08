@@ -1,5 +1,4 @@
 import gsap from 'gsap';
-import { COLORS } from './constants.js';
 import { reduceMotion } from './utils.js';
 
 // ============================================================================
@@ -11,29 +10,18 @@ import { reduceMotion } from './utils.js';
 
 // Scroll-vis — gids die om de actieve grafiek heen zwemt
 export function initSwimFish() {
-  if (reduceMotion) return () => {};
+  if (reduceMotion()) return () => {};
   document.querySelectorAll('.swim-fish').forEach(n => n.remove()); // de-dupe bij hermount
 
   const host = document.createElement('div');
   host.className = 'swim-fish';
   host.setAttribute('aria-hidden', 'true');
+  // Het gids-visje is het baars-plaatje. De baars kijkt van nature naar links;
+  // de zwemrichting wordt verderop met scaleX afgehandeld (zie -dir).
   host.innerHTML = `
     <div class="swim-fish-rot">
-      <svg viewBox="0 0 64 32">
-        <defs>
-          <linearGradient id="swimFishGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="${COLORS.teal}"/>
-            <stop offset="58%" stop-color="${COLORS.bell}"/>
-            <stop offset="100%" stop-color="${COLORS.purple}"/>
-          </linearGradient>
-        </defs>
-        <g fill="url(#swimFishGrad)">
-          <path class="swim-fish-tail" d="M18 16 L2 5 L6 16 L2 27 Z"/>
-          <ellipse cx="36" cy="16" rx="22" ry="10.5"/>
-          <path d="M34 7 q7 -8 13 -3 q-5 3 -7 7 Z"/>
-        </g>
-        <circle cx="48" cy="13" r="2.1" fill="#01211c"/>
-      </svg>
+      <img src="/images/baars.png" alt="" draggable="false"
+        style="width:100%;height:100%;object-fit:contain;display:block;" />
     </div>`;
   document.body.appendChild(host);
   const rotEl = host.querySelector('.swim-fish-rot');
@@ -116,7 +104,7 @@ export function initSwimFish() {
     const bobY = Math.sin(elapsed * 2.1 + 0.4) * 3.2;
     const yaw  = Math.sin(elapsed * 1.65 + 0.9) * 3.5;
 
-    gsap.set(host,  { x: curX + bobX, y: curY + bobY, xPercent: -50, yPercent: -50, scaleX: dir });
+    gsap.set(host,  { x: curX + bobX, y: curY + bobY, xPercent: -50, yPercent: -50, scaleX: -dir });
     gsap.set(rotEl, { rotation: lastTilt + yaw });
 
     frameId = requestAnimationFrame(tick);

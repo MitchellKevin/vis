@@ -93,6 +93,12 @@ export function initAquarium() {
     return c;
   }
 
+  // Grootte op schaal: massa schaalt met lengte³, dus zichtbare lengte ∝
+  // gewicht^(1/3). Zo staan de soorten in de juiste verhouding tot elkaar
+  // (meerval ~12 kg wordt fors, alver ~0,08 kg blijft klein). De factor 0.85
+  // bepaalt alleen de algehele schaal; de onderlinge verhoudingen blijven gelijk.
+  const sizeForWeight = (kg) => Math.cbrt(kg) * 0.85;
+
   // ~80 vissen, evenredig per soort
   const sample = [];
   visData.forEach(v => {
@@ -101,7 +107,10 @@ export function initAquarium() {
       x: Math.random() * 100, y: Math.random() * 100,
       vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.2,
       shape: v.shape, color: v.color, naam: v.naam,
-      size: v.shape === 'tiny' ? 0.6 : v.shape === 'long' ? 1.2 : 0.9,
+      size: sizeForWeight(v.weight),
+      // Lengte per individu: typische soort-lengte ± ~18% zodat ze niet allemaal
+      // exact even lang "zijn" (hoeft niet exact, moet realistisch ogen).
+      lengthCm: Math.round((v.lengte || 30) * (0.82 + Math.random() * 0.36)),
       wiggle: Math.random() * Math.PI * 2, visible: true,
     });
   });
@@ -134,7 +143,7 @@ export function initAquarium() {
       if (dist < 35) { const k = (35 - dist) / 35; f.vx += (dx / Math.max(0.1, dist)) * k * 2.5; f.vy += (dy / Math.max(0.1, dist)) * k * 1.6; }
     });
     const ripple = document.createElement('span');
-    ripple.className = 'aquarium-ripple';
+    ripple.className = 'aquarium-rip';
     ripple.style.left = (e.clientX - rect.left) + 'px';
     ripple.style.top = (e.clientY - rect.top) + 'px';
     stage.appendChild(ripple);
@@ -147,7 +156,7 @@ export function initAquarium() {
     const py = (e.clientY - rect.top) / rect.height * 100;
     let closest = null, closestDist = 4;
     sample.forEach(f => { if (!f.visible) return; const d = Math.hypot(f.x - px, f.y - py); if (d < closestDist) { closestDist = d; closest = f; } });
-    if (closest) { canvas.style.cursor = 'pointer'; showTooltip(`<strong>${closest.naam}</strong>klik om de vissen te laten schrikken`, e.clientX, e.clientY); }
+    if (closest) { canvas.style.cursor = 'pointer'; showTooltip(`<strong>${closest.naam}</strong>~${closest.lengthCm} cm<br/>klik om ze te laten schrikken`, e.clientX, e.clientY); }
     else { canvas.style.cursor = 'crosshair'; hideTooltip(); }
   });
   canvas.addEventListener('mouseleave', () => hideTooltip());
