@@ -15,7 +15,7 @@ export function initLanguages() {
   const { cleanups } = lifecycle;
   const stage = $('#langStage');
   const list = (languagesData || []).slice(0, 24).map(d => {
-    const g = GREETINGS[d.code] || ['Hallo', d.code.toUpperCase()];
+    const g = GREETINGS[d.code] || ['', d.code.toUpperCase()];
     return { code: d.code, n: d.n, greeting: g[0], name: g[1] };
   });
   if (!list.length) { stage.innerHTML = '<p class="stage-fallback">Geen taaldata.</p>'; return; }
