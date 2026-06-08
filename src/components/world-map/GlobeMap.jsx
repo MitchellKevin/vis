@@ -10,10 +10,10 @@ import CountryList from './CountryList.jsx';
 // Bundle colour tokens so helpers can receive them without a second constants import
 const COLORS = { C, FISH_COLORS };
 
-// Main interactive map component — renders an SVG globe or flat world map with drag, zoom, flow arcs and tooltips
+// Main interactive map component  renders an SVG globe or flat world map with drag, zoom, flow arcs and tooltips
 export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotateTo, defaultProjection = 'globe', containerClass = 'map-panel' }) {
 
-  // ── D3 refs (mutations don't need to trigger re-renders) ──────────────────
+  //  D3 refs (mutations don't need to trigger re-renders) 
   const svgRef         = useRef(null);  // SVG DOM element
   const projRef        = useRef(null);  // current D3 projection instance
   const pathGenRef     = useRef(null);  // current D3 geoPath generator
@@ -28,7 +28,10 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
   const flowStateRef   = useRef(null);  // latest arc point data (reprojected in redrawAll)
   const initialized    = useRef(false); // guards the init effect so it only runs once
 
-  // ── React state (drives tooltip / legend / tab re-renders) ────────────────
+  // Initial globe radius is 2x the default R so the globe fills the panel at startup
+  const INIT_R = R * 2;
+
+  //  React state (drives tooltip / legend / tab re-renders) 
   const [mode,     setMode    ] = useState('choropleth_flows');
   const [projType, setProjType] = useState(defaultProjection);
   const [tooltip,  setTooltip ] = useState({ visible: false, x: 0, y: 0, name: '', rows: [] });
@@ -38,7 +41,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
   const modeRef     = useRef('choropleth_flows');
   const projTypeRef = useRef(defaultProjection);
 
-  // ── Auto-rotate helpers ───────────────────────────────────────────────────
+  //  Auto-rotate helpers 
 
   // Pauses auto-rotation and schedules a resume 4 s later (globe mode only)
   const stopAutoRotate = useCallback(() => {
@@ -49,7 +52,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     }, 4000);
   }, []);
 
-  // ── Fly-to: called by CountryList when the user clicks a country card ─────
+  //  Fly-to: called by CountryList when the user clicks a country card 
 
   // Sets onRotateTo.current to a function that smoothly rotates the globe to the given lon/lat
   useEffect(() => {
@@ -73,7 +76,27 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     };
   });
 
-  // ── Visibility check ──────────────────────────────────────────────────────
+
+  // Returns true when a screen point (px, py in SVG coords) is inside the globe circle.
+  // In flat-map mode this always returns true so pan/zoom work everywhere.
+  function isOnGlobe(px, py) {
+    if (projTypeRef.current !== 'globe') return true;
+    const proj = projRef.current; if (!proj) return false;
+    const [cx, cy] = proj.translate();   // centre of the globe in SVG coords
+    const r = proj.scale();              // current radius in pixels
+    return Math.hypot(px - cx, py - cy) <= r;
+  }
+
+  // Converts a mouse event's client coords to SVG-space coords
+  function clientToSVG(clientX, clientY) {
+    const rect = svgRef.current.getBoundingClientRect();
+    return [
+      (clientX - rect.left) * (W / rect.width),
+      (clientY - rect.top)  * (H / rect.height),
+    ];
+  }
+
+  //  Visibility check 
 
   // Returns true if a lon/lat point is on the visible hemisphere; always true in flat mode
   function isVisible(lon, lat) {
@@ -88,7 +111,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     return dot > 0;
   }
 
-  // ── Full redraw ───────────────────────────────────────────────────────────
+  //  Full redraw 
 
   // Re-renders all SVG elements after any projection change (rotation, pan, zoom)
   function redrawAll() {
@@ -146,7 +169,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     }
   }
 
-  // ── Tooltip helpers ───────────────────────────────────────────────────────
+  //  Tooltip helpers 
 
   // Positions and populates the tooltip; clamps X so it doesn't overflow the SVG edge
   function showTT(c, event) {
@@ -162,7 +185,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
   // Hides tooltip without clearing content to avoid flicker on mouseleave
   function hideTT() { setTooltip(t => ({ ...t, visible: false })); }
 
-  // ── Flat-map helpers ──────────────────────────────────────────────────────
+  //  Flat-map helpers 
 
   // Returns the minimum Natural Earth scale that fits the world into the SVG canvas
   function getFlatMinScale() {
@@ -211,7 +234,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     }
   }
 
-  // ── Mode renderer ─────────────────────────────────────────────────────────
+  //  Mode renderer 
 
   // Invokes the renderer for the given mode, passing a shared context, then updates the legend
   const runMode = useCallback((md, cdata, mx) => {
@@ -246,7 +269,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     redrawAll();
   }, [stopAutoRotate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── SVG initialisation (runs once when topoFeatures arrive) ──────────────
+  //  SVG initialisation (runs once when topoFeatures arrive) 
 
   useEffect(() => {
     if (!svgRef.current || !topoFeatures.length || initialized.current) return;
@@ -270,7 +293,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     `);
 
     if (defaultProjection === 'map') {
-      // ── Flat map init ──────────────────────────────────────────────────────
+      //  Flat map init 
       autoRotateRef.current = false;
       // Fit Natural Earth to the canvas at 88% zoom
       const p = d3.geoNaturalEarth1().scale(1).translate([0, 0]);
@@ -311,9 +334,9 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         });
 
     } else {
-      // ── Globe init ─────────────────────────────────────────────────────────
+      //  Globe init 
       const proj = d3.geoOrthographic()
-        .scale(R).translate([W / 2, H / 2]).clipAngle(90).rotate([0, -20, 0]);
+        .scale(INIT_R).translate([W / 2, H / 2]).clipAngle(90).rotate([0, -20, 0]);
       projRef.current    = proj;
       pathGenRef.current = d3.geoPath(proj);
 
@@ -357,8 +380,10 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         .attr('fill', 'none').attr('stroke', 'rgba(27,67,50,0.2)').attr('stroke-width', 1).attr('pointer-events', 'none');
     }
 
-    // ── Drag: globe = rotate, flat = pan ──────────────────────────────────
+    //  Drag: globe = rotate, flat = pan 
     svg.on('mousedown', function (event) {
+      const [sx, sy] = clientToSVG(event.clientX, event.clientY);
+      if (!isOnGlobe(sx, sy)) return; // ignore clicks outside the globe
       draggingRef.current = true;
       dragStartRef.current = [event.clientX, event.clientY];
       if (projTypeRef.current === 'globe') rotateStartRef.current = projRef.current.rotate().slice();
@@ -382,9 +407,11 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     .on('mouseup',    () => { draggingRef.current = false; })
     .on('mouseleave', () => { draggingRef.current = false; });
 
-    // ── Touch drag (mirrors mouse drag logic for mobile) ───────────────────
+    //  Touch drag (mirrors mouse drag logic for mobile) 
     svg.on('touchstart', function (event) {
       const t = event.touches[0];
+      const [sx, sy] = clientToSVG(t.clientX, t.clientY);
+      if (!isOnGlobe(sx, sy)) return; // ignore touches outside the globe
       draggingRef.current  = true;
       dragStartRef.current = [t.clientX, t.clientY];
       if (projTypeRef.current === 'globe') rotateStartRef.current = projRef.current.rotate().slice();
@@ -406,14 +433,16 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     }, { passive: true })
     .on('touchend', () => { draggingRef.current = false; });
 
-    // ── Scroll: globe = scale, flat = zoom toward cursor ──────────────────
+    //  Scroll: globe = scale, flat = zoom toward cursor 
     svg.on('wheel', function (event) {
+      const [sx, sy] = clientToSVG(event.clientX, event.clientY);
+      if (!isOnGlobe(sx, sy)) return; // ignore scroll outside the globe
       event.preventDefault();
       stopAutoRotate();
       const p = projRef.current;
       if (projTypeRef.current === 'globe') {
         const delta = event.deltaY > 0 ? -20 : 20;
-        p.scale(Math.max(150, Math.min(800, p.scale() + delta)));
+        p.scale(Math.max(150, Math.min(1600, p.scale() + delta)));
       } else {
         const rect   = svgRef.current.getBoundingClientRect();
         const mx     = (event.clientX - rect.left) * (W / rect.width);
@@ -428,7 +457,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       redrawAll();
     }, { passive: false });
 
-    // ── Auto-rotation loop ─────────────────────────────────────────────────
+    //  Auto-rotation loop 
     let lastTs = null;
     // Advances the globe 0.012 deg per ms when auto-rotate is active
     function frame(ts) {
@@ -460,7 +489,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     cancelAnimationFrame(flowRafRef.current);
   }, []);
 
-  // ── Projection switch ─────────────────────────────────────────────────────
+  //  Projection switch 
 
   // Switches between 'globe' (orthographic) and 'map' (Natural Earth) projections
   function switchProjType(pt) {
@@ -472,7 +501,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
 
     if (pt === 'globe') {
       autoRotateRef.current = true;
-      const p = d3.geoOrthographic().scale(R).translate([W / 2, H / 2]).clipAngle(90).rotate([0, -20, 0]);
+      const p = d3.geoOrthographic().scale(INIT_R).translate([W / 2, H / 2]).clipAngle(90).rotate([0, -20, 0]);
       projRef.current    = p;
       pathGenRef.current = d3.geoPath(p);
 
@@ -536,7 +565,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     redrawAll();
   }
 
-  // ── Mode tab change ───────────────────────────────────────────────────────
+  //  Mode tab change 
 
   // Updates both React state (active tab highlight) and the ref (D3 callbacks read the ref)
   function handleModeChange(md) {
@@ -546,14 +575,14 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     runMode(md, countryData, maxEvents);
   }
 
-  // ── Reset view ────────────────────────────────────────────────────────────
+  //  Reset view 
 
-  // Resets zoom/rotation to defaults: globe returns to R scale at -20° tilt, flat refits the world
+  // Resets zoom/rotation to defaults: globe returns to R scale at -20 tilt, flat refits the world
   function handleReset() {
     stopAutoRotate();
     if (!projRef.current) return;
     if (projTypeRef.current === 'globe') {
-      projRef.current.scale(R).rotate([0, -20, 0]);
+      projRef.current.scale(INIT_R).rotate([0, -20, 0]);
       autoRotateRef.current = true;
     } else {
       const p = d3.geoNaturalEarth1().scale(1).translate([0, 0]);
@@ -565,17 +594,17 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     redrawAll();
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  //  Render 
   return (
     <div className={containerClass}>
 
-      {/* Globe SVG — positioned right, overflows intentionally */}
+      {/* Globe SVG  positioned right, overflows intentionally */}
       <div className="map-globe-col">
         <svg
           ref={svgRef}
           id="map-svg"
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio={defaultProjection === 'map' ? 'xMidYMid meet' : 'xMaxYMid meet'}
+          viewBox={defaultProjection === 'map' ? `0 0 ${W} ${H}` : `-160 0 ${W} ${H}`}
+          preserveAspectRatio={defaultProjection === 'map' ? 'xMidYMid meet' : 'xMidYMid meet'}
         >
           <defs />
           {/* Flat-map water background (hidden in globe mode) */}
@@ -587,7 +616,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         <MapTooltip tooltip={tooltip} />
       </div>
 
-      {/* Country cards — floating top-left */}
+      {/* Country cards  floating top-left */}
       <div className="map-overlay-left">
         <CountryList
           countryData={countryData}
@@ -597,12 +626,12 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         />
       </div>
 
-      {/* Legend — floating bottom-left */}
+      {/* Legend  floating bottom-left */}
       <div className="map-overlay-legend">
         <MapLegend legend={legend} />
       </div>
 
-      {/* Mode tabs — floating bottom-right */}
+      {/* Mode tabs  floating bottom-right */}
       <div className="map-tabs">
         {MAP_MODES.map(m => (
           <button
@@ -615,7 +644,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         ))}
       </div>
 
-      {/* Loading overlay — toggled via CSS by the parent when data is loading */}
+      {/* Loading overlay  toggled via CSS by the parent when data is loading */}
       <div id="loading-overlay" className="loading-overlay hidden">
         <div className="loading-inner">
           <div className="loading-fish">🐟</div>

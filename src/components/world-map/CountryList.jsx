@@ -3,8 +3,8 @@ import { CENTROIDS } from './constants.js';
 import { flag } from './utils.js';
 
 // Sidebar list of countries sorted by upload count.
-// Tab order: top-3 cards first, then "Bekijk meer", then the expanded cards.
-// CSS flex order keeps the button visually below the top cards.
+// Tab order: "Bekijk meer" button first, then the top-3 cards, then the expanded cards.
+// The button comes first in the DOM; CSS flex order pushes it visually to the bottom.
 export default function CountryList({ countryData, onFlyTo }) {
   const [expanded, setExpanded] = useState(false);
   // Refs to every bar element so we can animate width from 0 to target after render
@@ -32,6 +32,14 @@ export default function CountryList({ countryData, onFlyTo }) {
       });
     });
   }, [countryData, expanded]);
+
+  // When the list opens, move focus to the first card inside it so keyboard users land there
+  useEffect(() => {
+    if (expanded && restRef.current) {
+      const firstCard = restRef.current.querySelector('[tabindex="0"]');
+      if (firstCard) firstCard.focus();
+    }
+  }, [expanded]);
 
   // Collapse the list and return focus to the toggle button
   function handleCollapse() {
@@ -89,22 +97,18 @@ export default function CountryList({ countryData, onFlyTo }) {
     );
   };
 
-  // Wrapper uses flex-direction:column so we can control visual order with `order` while
-  // keeping the button visually below the top three cards.
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-
-      {/* Top-3 cards come first in the DOM so they are first in the Tab order. */}
-      <div style={{ order: 1 }}>
+    <>
+      {/* Top-3 always visible and tabbable — wrapped so CSS gap applies */}
+      <div className="country-list-top3">
         {top3.map((c, i) => renderCard(c, i))}
       </div>
 
-      {/* The button stays visually under the top cards, but it is now tabbed after them. */}
+      {/* Button sits here in the DOM so Tab reaches it right after the top-3 */}
       {rest.length > 0 && (
         <button
           ref={toggleBtnRef}
           className="see-more-btn"
-          style={{ order: 99 }}
           aria-expanded={expanded}
           aria-controls="country-card-rest"
           onClick={() => (expanded ? handleCollapse() : setExpanded(true))}
@@ -119,7 +123,6 @@ export default function CountryList({ countryData, onFlyTo }) {
           ref={restRef}
           id="country-card-rest"
           className={`country-card-rest${expanded ? ' open' : ''}`}
-          style={{ order: 2 }}
           aria-live="polite"
           onKeyDown={handleRestKeyDown}
         >
@@ -133,7 +136,6 @@ export default function CountryList({ countryData, onFlyTo }) {
           {rest.map((c, i) => renderCard(c, i + 3, expanded))}
         </div>
       )}
-
-    </div>
+    </>
   );
 }
