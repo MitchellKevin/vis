@@ -98,11 +98,11 @@ export function synthesizeYear(live) {
   live.daily = daily;
 
   const endDate = new Date(startDate.getTime() + (DAYS - 1) * 86400000);
-  const fmt = dt => `${dt.getUTCDate()} ${MONTH_SHORT_NL[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`;
+  const formatDate = date => `${date.getUTCDate()} ${MONTH_SHORT_NL[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
   live.period = {
     start: dayKeys[0],
     end: dayKeys[DAYS - 1],
-    label: `${fmt(startDate)} – ${fmt(endDate)}`,
+    label: `${formatDate(startDate)} – ${formatDate(endDate)}`,
   };
 
   return live;

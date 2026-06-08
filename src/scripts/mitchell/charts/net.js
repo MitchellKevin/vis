@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import { C, FONT_DISPLAY } from '../constants.js';
-import { $, $$, fmt, reduceMotion } from '../utils.js';
+import { COLORS, FONT_DISPLAY } from '../constants.js';
+import { $, $$, formatNumber, reduceMotion } from '../utils.js';
 import { ensureTintFilter, fishImagePath } from '../fishImage.js';
 import { state, lifecycle } from '../state.js';
 
@@ -20,14 +20,14 @@ export function initNet() {
 
   // het net dat van bovenaf zakt
   const netGroup = svg.append('g');
-  const meshBot = 380;
+  const meshBottom = 380;
   for (let i = 0; i <= 16; i++) {
     const x = (i / 16) * W;
     netGroup.append('path').attr('class', 'net-rope')
-      .attr('d', `M ${x} 0 Q ${x + Math.sin(i) * 12} 200, ${x + Math.sin(i + 0.5) * 30} ${meshBot}`);
+      .attr('d', `M ${x} 0 Q ${x + Math.sin(i) * 12} 200, ${x + Math.sin(i + 0.5) * 30} ${meshBottom}`);
   }
   for (let j = 0; j <= 8; j++) {
-    const y = (j / 8) * meshBot, r = 8 + j * 2;
+    const y = (j / 8) * meshBottom, r = 8 + j * 2;
     netGroup.append('path').attr('class', 'net-rope').attr('d', `M 0 ${y} Q ${W / 2} ${y + r}, ${W} ${y}`);
   }
   netGroup.append('line').attr('x1', 0).attr('y1', 0).attr('x2', W).attr('y2', 0)
@@ -42,9 +42,9 @@ export function initNet() {
   // De drie weergaven: waarop wordt de belgrootte gebaseerd?
   const statFn = { count: d => d.count, weight: d => d.weight, biomass: d => d.count * d.weight };
   const statLabel = {
-    count:   v => `${fmt(v.count)} waarnemingen`,
+    count:   v => `${formatNumber(v.count)} waarnemingen`,
     weight:  v => `~${v.weight} kg per vis`,
-    biomass: v => `${fmt(v.count * v.weight)} kg biomassa (${fmt(v.count)} × ${v.weight} kg)`,
+    biomass: v => `${formatNumber(v.count * v.weight)} kg biomassa (${formatNumber(v.count)} × ${v.weight} kg)`,
   };
   const explainer = {
     count: 'Verdeeld op aantal waarnemingen.',
@@ -61,10 +61,10 @@ export function initNet() {
     const pack = d3.pack().size([W - 40, H - 100]).padding(8);
     const root = d3.hierarchy({ children: packData }).sum(d => d.value);
     const nodes = pack(root).leaves();
-    const D = reduceMotion() ? 0 : 1;
+    const motionScale = reduceMotion() ? 0 : 1;
 
     const sel = bubbleGroup.selectAll('.net-bubble').data(nodes, d => d.data.naam);
-    sel.exit().transition().duration(500 * D).attr('transform', d => `translate(${d.x}, ${d.y}) scale(0)`).remove();
+    sel.exit().transition().duration(500 * motionScale).attr('transform', d => `translate(${d.x}, ${d.y}) scale(0)`).remove();
 
     const enter = sel.enter().append('g')
       .attr('class', 'net-bubble').attr('tabindex', 0).attr('role', 'button')
@@ -74,7 +74,7 @@ export function initNet() {
       const g = d3.select(this);
       const gradId = `bubGrad-${d.data.naam.replace(/\W/g, '')}`;
       const grad = defs.append('radialGradient').attr('id', gradId).attr('cx', '35%').attr('cy', '30%');
-      grad.append('stop').attr('offset', '0%').attr('stop-color', C.off).attr('stop-opacity', 0.7);
+      grad.append('stop').attr('offset', '0%').attr('stop-color', COLORS.off).attr('stop-opacity', 0.7);
       grad.append('stop').attr('offset', '50%').attr('stop-color', d.data.color).attr('stop-opacity', 0.55);
       grad.append('stop').attr('offset', '100%').attr('stop-color', d.data.color).attr('stop-opacity', 0.85);
       g.append('circle').attr('class', 'bub-main').attr('r', d.r).attr('fill', `url(#${gradId})`)
@@ -83,7 +83,7 @@ export function initNet() {
         .attr('fill', 'rgb(253 247 239 / 0.45)');
       g.append('g').attr('class', 'bub-fish').style('color', d.data.color);
       g.append('text').attr('class', 'bub-label').attr('text-anchor', 'middle')
-        .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('fill', C.green);
+        .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('fill', COLORS.green);
     });
 
     const all = enter.merge(sel);
@@ -98,14 +98,14 @@ export function initNet() {
       const setInfo = () => { info.textContent = `${d.data.naam} — ${statLabel[stat](d.data)}.`; };
       g.on('click', setInfo).on('mouseenter', setInfo)
         .on('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setInfo(); } });
-      g.select('.bub-main').transition().duration(800 * D).attr('r', d.r);
-      g.select('.bub-shine').transition().duration(800 * D).attr('cx', -d.r * 0.3).attr('cy', -d.r * 0.3).attr('r', d.r * 0.25);
-      g.select('.bub-label').transition().duration(800 * D)
+      g.select('.bub-main').transition().duration(800 * motionScale).attr('r', d.r);
+      g.select('.bub-shine').transition().duration(800 * motionScale).attr('cx', -d.r * 0.3).attr('cy', -d.r * 0.3).attr('r', d.r * 0.25);
+      g.select('.bub-label').transition().duration(800 * motionScale)
         .attr('y', d.r * 0.55).attr('font-size', Math.min(d.r * 0.32, 18)).attr('opacity', d.r > 28 ? 0.92 : 0);
     });
-    enter.transition().delay((d, i) => (reduceMotion() ? 0 : 200 + i * 70)).duration(900 * D).ease(d3.easeCubicOut)
+    enter.transition().delay((d, i) => (reduceMotion() ? 0 : 200 + i * 70)).duration(900 * motionScale).ease(d3.easeCubicOut)
       .attr('transform', d => `translate(${d.x}, ${d.y}) scale(1)`);
-    sel.transition().duration(800 * D).ease(d3.easeCubicInOut)
+    sel.transition().duration(800 * motionScale).ease(d3.easeCubicInOut)
       .attr('transform', d => `translate(${d.x}, ${d.y}) scale(1)`);
   }
   renderPack(currentStat);
