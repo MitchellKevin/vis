@@ -277,14 +277,29 @@
   max-height: 0;
   opacity: 0;
   transition: max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-default) transparent;
+  scrollbar-width: auto;
+  scrollbar-color: var(--color-green-dark) color-mix(in srgb, var(--color-green-dark) 15%, transparent);
 }
 .country-card-rest.open {
-  /* 3.5 cards: each ~64px + 8px gap, so ~3.5 * 72px = 252px visible */
+  /* 3.5 cards visible; fade mask applied via -webkit-mask / mask */
   max-height: 252px;
   opacity: 1;
   overflow-y: auto;
+  /* Fade out the bottom ~40px and top ~20px when scrollable */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    black 20px,
+    black calc(100% - 40px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    black 20px,
+    black calc(100% - 40px),
+    transparent 100%
+  );
 }
 .country-card-rest .country-card {
   padding: var(--space-2) var(--space-4);
@@ -607,6 +622,11 @@
 ::-webkit-scrollbar       { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-green-dark); border-radius: var(--radius-full); opacity: 0.3; }
+
+/* Thicker, more visible scrollbar specifically for the country list */
+.country-card-rest::-webkit-scrollbar       { width: 6px; }
+.country-card-rest::-webkit-scrollbar-track { background: color-mix(in srgb, var(--color-green-dark) 15%, transparent); border-radius: var(--radius-full); }
+.country-card-rest::-webkit-scrollbar-thumb { background: var(--color-green-dark); border-radius: var(--radius-full); opacity: 1; }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
