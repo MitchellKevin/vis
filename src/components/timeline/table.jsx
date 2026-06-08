@@ -23,7 +23,7 @@ export default function Table() {
     }, []);
 
     return (
-        <TimelineStatic title="Tabel">
+        <TimelineStatic title="Tabel" className="table">
             <table aria-label="Vissen per uur tabel">
                 <caption>
                     Overzicht van vissen per uur

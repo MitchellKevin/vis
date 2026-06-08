@@ -38,7 +38,7 @@ export default function OriginalTimeline() {
     );
 
     return (
-        <TimelineStatic title="Vissen per uur overzicht">
+        <TimelineStatic title="Vissen per uur overzicht" className="original">
             <p>
                 Aantal gespotte vissen per uur per maand,
                 <br />
