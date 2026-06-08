@@ -275,7 +275,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     if (!svgRef.current || !topoFeatures.length || initialized.current) return;
     initialized.current = true;
 
-    const svg = d3.select(svgRef.current).attr('viewBox', `0 0 ${W} ${H}`).attr('width', '100%');
+    const svg = d3.select(svgRef.current).attr('width', '100%'); // viewBox is set in JSX, don't override it
 
     // Inject SVG defs: ocean gradient, specular shine, drop-shadow filter
     svg.select('defs').html(`
@@ -603,7 +603,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         <svg
           ref={svgRef}
           id="map-svg"
-          viewBox={defaultProjection === 'map' ? `0 0 ${W} ${H}` : `-160 0 ${W} ${H}`}
+          viewBox={defaultProjection === 'map' ? `0 0 ${W} ${H}` : `${-W * 0.10} 0 ${W} ${H}`}
           preserveAspectRatio={defaultProjection === 'map' ? 'xMidYMid meet' : 'xMidYMid meet'}
         >
           <defs />

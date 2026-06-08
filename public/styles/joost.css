@@ -363,7 +363,7 @@
   position: absolute;
   bottom: var(--space-6);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + 80px));
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
