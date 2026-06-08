@@ -480,7 +480,7 @@ body.mitchell-page {
   0%   { transform: scale(1);   opacity: 0.5; }
   100% { transform: scale(2.2); opacity: 0; }
 }
-.fish-wiggle { animation: swim-wiggle 1.6s ease-in-out infinite; transform-origin: 60% 50%; }
+.fish-wiggle { animation: swim-wiggle 2s ease-in-out infinite; transform-origin: 20% 10%; }
 @keyframes swim-wiggle {
   0%, 100% { transform: rotate(-2deg) translateY(0); }
   50%      { transform: rotate(2deg) translateY(-1px); }
