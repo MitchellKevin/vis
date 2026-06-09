@@ -9,6 +9,8 @@ import {
     countPerHour
 } from './timeline.js';
 
+import { visData } from '../../scripts/mitchell/constants.js';
+
 export default function DayScroll() {
     const [hourData, setHourData] = useState([]);
 
@@ -44,12 +46,14 @@ export default function DayScroll() {
 
                     <tbody>
                         {hourData.map((hour, i) => {
-                            const time =
-                                String(i).padStart(2, '0') + ':00';
+                            const time = String(i).padStart(2, '0') + ':00';
+                            const visMatch = visData.find(
+                                (v) => v.naam.toLowerCase() === hour.topFish?.toLowerCase()
+                            );
+                            const length = visMatch ? visMatch.length : 1;
 
                             return (
                                 <tr key={i}>
-
                                     <th scope="row" className='timestamp'>
                                         <p>{time}</p>
                                     </th>
@@ -65,6 +69,7 @@ export default function DayScroll() {
                                                     src={`/images/${hour.topFish.toLowerCase()}.png`}
                                                     aria-hidden="true"
                                                     alt=""
+                                                    style={{ '--fish-length': length }}
                                                 />
                                                 <p className='visually-hidden'>De {hour.topFish} is het meest gespot</p>
                                             </>

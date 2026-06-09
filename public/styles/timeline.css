@@ -1,10 +1,9 @@
 :root {
+  --scroll-container-height: 400px;
   --spacing: 2rem;
   --fish-img-size: 50px;
   --bar-height: 30px;
   --triangle-height: 30px;
-
-  --scroll-container-height: 400px;
 }
 
 
@@ -51,7 +50,7 @@
         bottom: 0;
         width: 100%;
         height: calc(var(--scroll-container-height) / 1.5);
-        background: #5bcbff;
+        background: var(--color-teal);
         opacity: 0.7;
         pointer-events: none;
         z-index: 2;
@@ -64,7 +63,7 @@
           width: 100%;
           height: 20px;
 
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 20' preserveAspectRatio='none'%3E%3Cpath d='M 0 10 Q 150 15, 300 10 T 600 10 T 900 10 T 1200 10 L 1200 20 L 0 20 Z' fill='%235bcbff'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 20' preserveAspectRatio='none'%3E%3Cpath d='M 0 10 Q 150 15, 300 10 T 600 10 T 900 10 T 1200 10 L 1200 20 L 0 20 Z' fill='%231eacb0'/%3E%3C/svg%3E");
           background-size: 600px 20px;
           background-repeat: repeat-x;
 
@@ -130,8 +129,8 @@
           var(--color-pink) 30%,
           var(--color-gold) 35%,
 
-          var(--color-teal) 40%,
-          var(--color-teal) 75%,
+          lightblue 40%,
+          lightblue 75%,
 
           var(--color-gold) 80%,
           var(--color-pink) 85%,
@@ -183,7 +182,7 @@
           transform: scaleX(-1) translateX(calc(var(--fish-img-size)*-1));
           animation:
             wiggle 2s linear infinite,
-            grow ease-in-out;
+            swim ease-in-out both;
 
           animation-timeline:
             auto,
@@ -195,11 +194,11 @@
           position: absolute;
           display: flex;
           flex-direction: column;
-          align-items: end;
           right: 0;
+          color: var(--color-green-dark);
           margin-right: var(--spacing);
           padding: calc(var(--spacing)/2);
-          background: rgba(90, 90, 90, 0.2);
+          background: var(--color-off-white);
           border: 1px solid var(--color-off-white);
           border-radius: var(--radius-card);
 
@@ -260,19 +259,18 @@
     }
   }
 
-  @keyframes grow {
+  @keyframes swim {
     0% {
-      transform: scaleX(-1) scale(0.8);
+      transform: translateX(-100dvw) translateY(calc(var(--scroll-container-height)/2*-1)) scaleX(-1) scale(0.6);
     }
-
     50% {
-      transform: scaleX(-1) scale(2);
+      transform: translateX(0)  translateY(0) scaleX(-1) scale(calc(clamp(0.6, 0.6 + (var(--fish-length) * 0.05), 2.5)));
     }
-
     100% {
-      transform: scaleX(-1) scale(0.8);
+      transform: translateX(100dvw) translateY(calc(var(--scroll-container-height))) scaleX(-1) scale(0.6);
     }
   }
+
 
   @keyframes moon-rotation {
     0% {
