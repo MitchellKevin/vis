@@ -10,7 +10,7 @@ import useJoostData     from '../components/world-map/useJoostData.js';
 
 export default function Joost() {
   useStylesheet('/styles/joost.css');
-  const flyToRef    = useRef(null);
+  const flyToRef = useRef(null);
 
   const {
     period, allEvents, countryData, maxEvents,
@@ -25,38 +25,34 @@ export default function Joost() {
 
         <PageHeader />
 
+        {/* Constrained content: period toggle + stats stay inside max-width container */}
         <div className="page-content">
-
           <PeriodToggle
             period={period}
             periodLoading={periodLoading}
             onSwitch={switchPeriod}
           />
-
           <section className="section">
             <StatsBar allEvents={allEvents} countryData={countryData} loaded={statsLoaded} />
           </section>
-
-          <section className="section">
-            {loading ? (
-              <div className="map-panel" style={{ minHeight: 380, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="loading-inner">
-                  <div className="loading-fish">🐟</div>
-                  <div className="loading-text">Data laden…</div>
-                </div>
-              </div>
-            ) : (
-              <GlobeMap
-                countryData={countryData}
-                maxEvents={maxEvents}
-                topoFeatures={topoFeatures}
-                onRotateTo={flyToRef}
-              />
-            )}
-          </section>
-
-
         </div>
+
+        {/* Globe map — outside page-content so it fills the full viewport width */}
+        {loading ? (
+          <div className="map-panel map-panel--loading">
+            <div className="loading-inner">
+              <div className="loading-fish">🐟</div>
+              <div className="loading-text">Data laden…</div>
+            </div>
+          </div>
+        ) : (
+          <GlobeMap
+            countryData={countryData}
+            maxEvents={maxEvents}
+            topoFeatures={topoFeatures}
+            onRotateTo={flyToRef}
+          />
+        )}
 
         <PageFooter />
 

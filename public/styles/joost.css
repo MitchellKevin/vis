@@ -138,6 +138,14 @@
   width: 100%;
   height: 95vh;
 }
+/* Loading state for the full-bleed map panel */
+.map-panel--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 380px;
+}
+
 
 /* ── Globe — full width, starts centered right ── */
 .map-globe-col {
