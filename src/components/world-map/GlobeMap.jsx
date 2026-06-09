@@ -12,6 +12,7 @@ const COLORS = { C, FISH_COLORS };
 
 // Main interactive map component  renders an SVG globe or flat world map with drag, zoom, flow arcs and tooltips
 export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotateTo }) {
+  const containerClass = 'map-panel';
 
   //  D3 refs (mutations don't need to trigger re-renders) 
   const svgRef         = useRef(null);  // SVG DOM element
@@ -209,8 +210,8 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     // Inject SVG defs: ocean gradient, specular shine, drop-shadow filter
     svg.select('defs').html(`
       <radialGradient id="oceanGrad" cx="38%" cy="35%" r="65%">
-        <stop offset="0%"   stop-color="#C2E4F5"/>
-        <stop offset="100%" stop-color="#6BAED6"/>
+        <stop offset="0%"   stop-color="#1eacb0"/><!-- --color-teal -->
+        <stop offset="100%" stop-color="#0a6b6e"/><!-- darkened --color-teal -->
       </radialGradient>
       <radialGradient id="globeShine" cx="35%" cy="30%" r="60%">
         <stop offset="0%"   stop-color="white" stop-opacity="0.18"/>
@@ -308,7 +309,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     }, { passive: true })
     .on('touchend', () => { draggingRef.current = false; });
 
-    // Scroll to zoom
+    //  Scroll: globe = scale, flat = zoom toward cursor 
     svg.on('wheel', function (event) {
       const [sx, sy] = clientToSVG(event.clientX, event.clientY);
       if (!isOnGlobe(sx, sy)) return; // ignore scroll outside the globe
@@ -367,7 +368,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
 
   //  Render 
   return (
-    <div className="map-panel">
+    <div className={containerClass}>
 
       {/* Globe SVG  positioned right, overflows intentionally */}
       <div className="map-globe-col">
