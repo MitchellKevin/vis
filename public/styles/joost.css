@@ -52,38 +52,7 @@
   gap: var(--space-9);
 }
 
-/* ── Flat map area — independent from globe panel ── */
-.map-area2 {
-  position: relative;
-  width: 100%;
-  height: 95vh;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-card);
-  overflow: hidden;
-}
-
-.map-area2 .map-globe-col {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-}
-
-.map-area2 #map-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  cursor: grab;
-}
-.map-area2 #map-svg:active { cursor: grabbing; }
-
-/* Show country list in flat map too */
-.map-area2 .map-overlay-left  { display: flex; }
-
 /* Keep legend and filter tabs */
-.map-area2 .map-overlay-legend { left: var(--space-4); }
-.map-area2 .map-tabs { bottom: var(--space-4); right: var(--space-4); }
-
-
 
 /* ── Period toggle ── */
 .period-bar { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-6) 0 0; }
@@ -122,8 +91,6 @@
 
 /* ── Sections ── */
 .section { display: flex; flex-direction: column; gap: var(--space-4); }
-.section-heading { font: var(--text-h2); color: var(--text-primary); }
-.section-sub { font: var(--text-p2); color: var(--text-muted); margin-top: calc(-1 * var(--space-2)); }
 
 /* ── Card ── */
 .card {
@@ -171,27 +138,6 @@
   width: 100%;
   height: 95vh;
 }
-/* Full-bleed variant — sits outside .page-content so no width constraint needed */
-.map-panel--fullbleed {
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-}
-
-/* Centred loading state for the full-bleed panels */
-.map-panel--loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Tighter page-content block used for headings between full-bleed sections */
-.page-content--tight {
-  padding-top: var(--space-9);
-  padding-bottom: 0;
-  gap: 0;
-}
-
 
 /* ── Globe — full width, starts centered right ── */
 .map-globe-col {
@@ -386,34 +332,6 @@
   z-index: 10;
 }
 
-.proj-toggle {
-  display: flex;
-  background: color-mix(in srgb, var(--color-green-dark) 85%, transparent);
-  border-radius: var(--radius-button);
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-off-white) 20%, transparent);
-  backdrop-filter: blur(8px);
-  flex-shrink: 0;
-}
-.proj-btn {
-  background: transparent;
-  border: none;
-  color: color-mix(in srgb, var(--color-off-white) 75%, transparent);
-  font: var(--text-nav-bold);
-  font-size: 13px;
-  padding: var(--space-1) var(--space-4);
-  cursor: pointer;
-  transition: all 0.15s;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-}
-.proj-btn:hover  { color: var(--text-on-inverse); }
-.proj-btn.active { background: var(--accent-primary); color: var(--color-green-dark); font-weight: 700; }
-
-.map-tabs-divider { display: none; }
-
 .map-tab {
   background: color-mix(in srgb, var(--color-green-dark) 85%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-off-white) 20%, transparent);
@@ -432,11 +350,9 @@
 }
 .map-tab:hover   { color: var(--text-on-inverse); }
 .map-tab.active  { background: var(--accent-primary); border-color: var(--accent-primary); color: var(--color-green-dark); font-weight: 700; }
-.map-tab--reset  { opacity: 0.7; }
 
 .map-country     { transition: filter 0.2s; }
 .map-country:hover { filter: brightness(0.88) saturate(1.2); }
-
 
 @media (max-width: 768px) {
   .map-panel       { height: auto; min-height: 480px; }
@@ -513,20 +429,6 @@
 .map-legend-gradient { width: 110px; height: 10px; border-radius: var(--radius-full); margin: var(--space-2) 0; }
 .map-legend-gradient-labels { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 11px; }
 
-/* ── Loading overlay ── */
-.loading-overlay {
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--color-off-white) 92%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 30;
-  transition: opacity 0.5s;
-  backdrop-filter: blur(4px);
-  border-radius: var(--radius-card);
-}
-.loading-overlay.hidden { opacity: 0; pointer-events: none; }
 .loading-inner { text-align: center; }
 .loading-fish {
   font-size: 2.8rem;
@@ -539,62 +441,7 @@
 }
 .loading-text { margin-top: var(--space-3); font: var(--text-p2); color: var(--text-muted); text-transform: uppercase; }
 
-/* ── Scrollbar ── */
-.legend-list  { display: flex; flex-direction: column; gap: var(--space-6); }
-.legend-item  { display: flex; align-items: center; gap: var(--space-5); font: var(--text-p1); font-size: 18px; color: var(--text-primary); }
-.legend-pill  {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-full);
-  font-size: 24px;
-  border: 1px solid var(--border-default);
-  flex-shrink: 0;
-}
-.legend-pill--green { background: color-mix(in srgb, var(--color-teal) 15%, transparent); }
-.legend-pill--coral { background: color-mix(in srgb, var(--color-pink) 15%, transparent); }
-.legend-pill--muted { background: color-mix(in srgb, var(--color-green-dark) 7%, transparent); color: var(--text-muted); }
-
-/* ── Event feed ── */
-.event-feed { display: flex; flex-direction: column; }
-.event-item {
-  display: flex;
-  gap: var(--space-4);
-  padding: var(--space-4) 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-green-dark) 8%, transparent);
-  opacity: 0;
-  transform: translateY(6px);
-  animation: fadeUp 0.3s ease forwards;
-}
 @keyframes fadeUp { to { opacity: 1; transform: none; } }
-.event-item:last-child { border-bottom: none; }
-.event-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-default);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-.event-icon.upload  { background: color-mix(in srgb, var(--color-teal) 12%, transparent); }
-.event-icon.dismiss { background: color-mix(in srgb, var(--color-pink) 12%, transparent); }
-.event-meta  { flex: 1; min-width: 0; }
-.event-type  { font: var(--text-p2-bold); }
-.event-type.upload  { color: var(--color-teal); }
-.event-type.dismiss { color: var(--color-pink); }
-.event-detail {
-  font: var(--text-p2);
-  color: var(--text-muted);
-  margin-top: var(--space-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 /* ── Tooltip rows ── */
 .tt-row   { display: flex; align-items: center; gap: var(--space-2); padding: 2px 0; font: var(--text-p2); font-size: 12px; }
