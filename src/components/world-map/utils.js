@@ -123,6 +123,12 @@ export async function loadData(period) {
 
 // ── Tooltip rows builder ──────────────────────────────────────────────────────
 
+// Appends a top-cities row to a tooltip rows array when city data is available
+function withCities(rows, c) {
+  if (c.topCities) rows.push({ label: '📍 Steden', val: c.topCities, color: '' });
+  return rows;
+}
+
 // Builds the label/value/color rows shown inside the hover tooltip for a given mode
 export function buildTooltipRows(c, mode, colors) {
   const { C, FISH_COLORS } = colors;
@@ -133,11 +139,11 @@ export function buildTooltipRows(c, mode, colors) {
 
   // Fish mode: top-5 species with counts and percentages
   if (mode === 'fish') {
-    const entries = Object.entries(c.fish).filter(([name]) => !UNKNOWN_VALS.includes(name)).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    if (!entries.length) return [base, row('Vis', 'Geen data')];
-    return [base, ...entries.map(([name, count]) =>
-      row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#c0a8ff'),  // --color-purple fallback
-    )];
+    const entries = Object.entries(c.fish).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (!entries.length) return withCities([base, row('Vis', 'Geen data')], c);
+    return withCities([base, ...entries.map(([name, count]) =>
+      row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#c0a8ff'),
+    )], c);
   }
 
   // Time mode: average hour label + breakdown into four time-of-day buckets
@@ -157,35 +163,35 @@ export function buildTooltipRows(c, mode, colors) {
       else if (h < 18) bk.middag++;
       else             bk.avond++;
     });
-    return [
+    return withCities([
       base,
       row('⏰ Gem. tijdstip',  hl(c.avgHour)),
-      row('🌙 Nacht (0–6u)',    n(bk.nacht)   + pct(bk.nacht,   c.events), '#9b74ff'),  // --color-purple-bell
-      row('🌅 Ochtend (6–12u)', n(bk.ochtend) + pct(bk.ochtend, c.events), '#f0af00'),  // --color-gold
-      row('☀️ Middag (12–18u)', n(bk.middag)  + pct(bk.middag,  c.events), '#1eacb0'),  // --color-teal
-      row('🌆 Avond (18–24u)',  n(bk.avond)   + pct(bk.avond,   c.events), '#ff80b9'),  // --color-pink
-    ];
+      row('🌙 Nacht (0–6u)',    n(bk.nacht)   + pct(bk.nacht,   c.events), '#9b74ff'),
+      row('🌅 Ochtend (6–12u)', n(bk.ochtend) + pct(bk.ochtend, c.events), '#f0af00'),
+      row('☀️ Middag (12–18u)', n(bk.middag)  + pct(bk.middag,  c.events), '#1eacb0'),
+      row('🌆 Avond (18–24u)',  n(bk.avond)   + pct(bk.avond,   c.events), '#ff80b9'),
+    ], c);
   }
 
   // OS mode: ranked OS breakdown
   if (mode === 'os') {
     const entries = Object.entries(c.os || {}).sort((a, b) => b[1] - a[1]);
-    if (!entries.length) return [base, row('OS', 'Geen data')];
-    return [base, ...entries.map(([name, count]) =>
+    if (!entries.length) return withCities([base, row('OS', 'Geen data')], c);
+    return withCities([base, ...entries.map(([name, count]) =>
       row(name, n(count) + pct(count, c.events), '#c0a8ff'),
-    )];
+    )], c);
   }
 
   // Browser mode: ranked browser breakdown
   if (mode === 'browser') {
     const entries = Object.entries(c.browser || {}).sort((a, b) => b[1] - a[1]);
-    if (!entries.length) return [base, row('Browser', 'Geen data')];
-    return [base, ...entries.map(([name, count]) =>
+    if (!entries.length) return withCities([base, row('Browser', 'Geen data')], c);
+    return withCities([base, ...entries.map(([name, count]) =>
       row(name, n(count) + pct(count, c.events), '#c0a8ff'),
-    )];
+    )], c);
   }
 
-  return [base];
+  return withCities([base], c);
 }
 
 // ── Country fill colour for the current mode ──────────────────────────────────
