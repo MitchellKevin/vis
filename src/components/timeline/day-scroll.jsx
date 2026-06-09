@@ -21,7 +21,7 @@ export default function DayScroll() {
     }, []);
 
     return (
-        <section className='day-scroll'>
+        <section className='day-scroll' id="timeline">
             <h2>Het ritme van het water</h2>
             <p>Onder het oppervlak staat de tijd nooit stil. Scroll naar beneden en ontdek de dagelijkse planning van de vissen.</p>
             <div className='table-scroll-container'>

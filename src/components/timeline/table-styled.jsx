@@ -9,8 +9,6 @@ import {
     countPerHour
 } from './timeline.js';
 
-import TimelineStatic from './timeline-static.jsx';
-
 export default function Table() {
     const [hourData, setHourData] = useState([]);
     const maxValue = Math.max(...hourData.map(h => h.average));
@@ -22,7 +20,9 @@ export default function Table() {
     }, []);
 
     return (
-        <TimelineStatic title="Tabel met Animatie" className="scroll-driven">
+        <section className='scroll-driven'>
+            <h2>Piekuren onder water</h2>
+            <p>Hoe laat op de dag heb je de meeste kans op een vis?</p>
             <table aria-label="Vissen per uur tabel" tabIndex={0} role='grid'>
                 <caption className="visually-hidden">
                     Overzicht van vissen per uur
@@ -55,7 +55,7 @@ export default function Table() {
                                     >
                                         <span className="amount">{roundedAverage}</span>
                                         {hour.topFish && (
-                                            <img src={`/images/${hour.topFish.toLowerCase()}.png`} alt=""/>
+                                            <img src={`/images/${hour.topFish.toLowerCase()}.png`} alt="" />
                                         )}
                                     </div>
 
@@ -71,6 +71,6 @@ export default function Table() {
                     })}
                 </tbody>
             </table>
-        </TimelineStatic>
+        </section>
     );
 }
