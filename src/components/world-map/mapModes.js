@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { UNKNOWN_VALS } from './constants.js';
 
 // ── Fish species mode ─────────────────────────────────────────────────────────
 
@@ -14,7 +15,7 @@ export function renderFish(ctx) {
   overlaysG.selectAll('*').remove();
   return {
     type: 'rows', title: 'Meest geziene vis',
-    rows: Object.entries(FISH_COLORS).map(([k, v]) => ({ color: v, label: k })),
+    rows: Object.entries(FISH_COLORS).filter(([k]) => !UNKNOWN_VALS.includes(k)).map(([k, v]) => ({ color: v, label: k })),
   };
 }
 

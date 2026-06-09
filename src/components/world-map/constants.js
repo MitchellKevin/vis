@@ -41,7 +41,6 @@ export const FISH_COLORS = {
   Karper:     '#9b74ff',  // --color-purple-bell
   Snoekbaars: '#ff80b9',  // --color-pink
   Paling:     '#01463c',  // --color-green-dark
-  unknown:    '#c0a8ff',  // --color-purple
 };
 
 

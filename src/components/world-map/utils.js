@@ -14,7 +14,7 @@ export function flag(code) {
 // ── Normalise raw OS string ───────────────────────────────────────────────────
 
 // Collapses raw OS strings into canonical labels used across the UI
-function normalizeOS(raw) {
+export function normalizeOS(raw) {
   const s = (raw || '').toLowerCase();
   if (s.includes('windows'))   return 'Windows';
   if (s.includes('mac'))       return 'macOS';
@@ -28,7 +28,7 @@ function normalizeOS(raw) {
 // ── Normalise raw browser string ─────────────────────────────────────────────
 
 // Collapses raw browser strings; Edge must come before Chrome because its UA contains "chrome"
-function normalizeBrowser(raw) {
+export function normalizeBrowser(raw) {
   const s = (raw || '').toLowerCase();
   if (s.includes('edge'))                             return 'Edge';
   if (s.includes('chrome'))                          return 'Chrome';
@@ -133,7 +133,7 @@ export function buildTooltipRows(c, mode, colors) {
 
   // Fish mode: top-5 species with counts and percentages
   if (mode === 'fish') {
-    const entries = Object.entries(c.fish).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const entries = Object.entries(c.fish).filter(([name]) => !UNKNOWN_VALS.includes(name)).sort((a, b) => b[1] - a[1]).slice(0, 5);
     if (!entries.length) return [base, row('Vis', 'Geen data')];
     return [base, ...entries.map(([name, count]) =>
       row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#c0a8ff'),  // --color-purple fallback
@@ -186,4 +186,28 @@ export function buildTooltipRows(c, mode, colors) {
   }
 
   return [base];
+}
+
+// ── Country fill colour for the current mode ──────────────────────────────────
+
+// Returns the SVG fill colour for a country; returns null to signal the caller should use its own scale
+export function getCountryFill(d, countryData, maxEvents, mode, colors) {
+  const { C, FISH_COLORS } = colors;
+  const c = countryData[d.id];
+  if (mode === 'uploadrate') {
+    if (!c || c.events === 0) return C.land;
+    return null; // sentinel — caller uses its own scale
+  }
+  if (mode === 'fish')    { if (!c || !c.topFish)    return C.land; return FISH_COLORS[c.topFish]    || '#c0a8ff'; }
+  if (mode === 'time') {
+    if (!c || c.avgHour === null) return C.land;
+    const h = c.avgHour;
+    if (h < 6)  return '#9b74ff';  // --color-purple-bell
+    if (h < 12) return '#f0af00';  // --color-gold
+    if (h < 18) return '#1eacb0';  // --color-teal
+    return '#ff80b9';              // --color-pink
+  }
+  if (mode === 'os')      { if (!c || !c.topOS)      return C.land; return '#c0a8ff'; }
+  if (mode === 'browser') { if (!c || !c.topBrowser)  return C.land; return '#c0a8ff'; }
+  return C.land;
 }
