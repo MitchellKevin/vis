@@ -6,9 +6,9 @@ import { state, lifecycle } from './mitchell/state.js';
 import { loadData, synthesizeYear } from './mitchell/dataLoad.js';
 import { initSwimFish } from './mitchell/swimFish.js';
 
-import { initHero      } from './mitchell/charts/hero.js';
-import { initRing      } from './mitchell/charts/ring.js';
-import { initWorld     } from './mitchell/charts/world.js';
+import { initHero      } from './mitchell/charts/legacy/hero.js';
+import { initRing      } from './mitchell/charts/legacy/ring.js';
+import { initWorld     } from './mitchell/charts/legacy/world.js';
 import { initLanguages } from './mitchell/charts/languages.js';
 import { initRadar     } from './mitchell/charts/radar.js';
 import { initAquarium  } from './mitchell/charts/aquarium.js';

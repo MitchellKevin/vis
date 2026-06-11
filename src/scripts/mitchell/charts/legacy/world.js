@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
-import { C, FONT_DISPLAY, COUNTRY_GEO, UTRECHT } from '../constants.js';
-import { $, fmt, reduceMotion } from '../utils.js';
-import { showTooltip, hideTooltip } from '../tooltip.js';
-import { state, lifecycle } from '../state.js';
+import { COLORS, FONT_DISPLAY, COUNTRY_GEO, UTRECHT } from '../../constants.js';
+import { $, formatNumber, reduceMotion } from '../../utils.js';
+import { showTooltip, hideTooltip } from '../../tooltip.js';
+import { state, lifecycle } from '../../state.js';
 
 // ============================================================================
 // world.js — de wereldkaart. Toont per land een stip (grootte = aantal bel-
@@ -108,7 +108,7 @@ export function initWorld() {
     // zodat de stippen visueel eerlijk te vergelijken zijn.
     const rScale = d3.scaleSqrt().domain([0, maxC]).range(rRange);
     // Geen paars-familie hier: die zou wegvallen op de violette sectie.
-    const colorFor = (v) => { const r = v / maxC; return r > 0.45 ? C.pink : r > 0.12 ? C.goldDeep : C.teal; };
+    const colorFor = (v) => { const r = v / maxC; return r > 0.45 ? COLORS.pink : r > 0.12 ? COLORS.goldDeep : COLORS.teal; };
 
     // Bogen alleen in wereld-view — bij Europa zijn ze te kort en chaotisch
     const [ux, uy] = projection(UTRECHT);
@@ -125,7 +125,7 @@ export function initWorld() {
         const arc = arcLayer.append('path')
           .attr('class', 'world-arc')
           .attr('d', `M${x0},${y0} Q${cxp},${cyp} ${ux},${uy}`)
-          .attr('fill', 'none').attr('stroke', C.green).attr('stroke-width', 1.1)
+          .attr('fill', 'none').attr('stroke', COLORS.green).attr('stroke-width', 1.1)
           .attr('opacity', 0).attr('stroke-linecap', 'round');
         arc.transition().delay(reduceMotion() ? 0 : 600 + i * 90).duration(700).attr('opacity', 0.45);
       });
@@ -139,7 +139,7 @@ export function initWorld() {
       const g = dotLayer.append('g')
         .attr('class', 'world-dot').attr('transform', `translate(${x},${y})`)
         .attr('tabindex', i < 5 ? 0 : -1).attr('role', 'img')
-        .attr('aria-label', `${p.name}: ${fmt(p.count)} bel oproepen`);
+        .attr('aria-label', `${p.name}: ${formatNumber(p.count)} bel oproepen`);
       g.append('circle').attr('class', 'world-dot-glow').attr('r', 0).attr('fill', col).attr('opacity', 0.15);
       const core = g.append('circle').attr('class', 'world-dot-core').attr('r', 0)
         .attr('fill', col).attr('opacity', 0.92)
@@ -149,7 +149,7 @@ export function initWorld() {
 
       const pct = ((p.count / geoData.total) * 100);
       const pctStr = pct >= 0.1 ? pct.toFixed(1) : '<0,1';
-      const tip = `<strong>${p.name}</strong>${fmt(p.count)} bel oproepen · ${pctStr}%`;
+      const tip = `<strong>${p.name}</strong>${formatNumber(p.count)} bel oproepen · ${pctStr}%`;
       g.on('mouseenter mousemove', (e) => showTooltip(tip, e.clientX, e.clientY))
        .on('mouseleave blur', () => hideTooltip())
        .on('focus', () => { const bb = g.node().getBoundingClientRect(); showTooltip(tip, bb.left + bb.width / 2, bb.top); });
@@ -162,12 +162,12 @@ export function initWorld() {
     const labelOff = view === 'europe' ? -10 : -14;
     const labelSize = view === 'europe' ? 10 : 13;
     [0, 1, 2].forEach(k => ut.append('circle').attr('class', 'world-utrecht-ring')
-      .attr('r', ringR).attr('fill', 'none').attr('stroke', C.goldDeep).attr('stroke-width', 1.4)
+      .attr('r', ringR).attr('fill', 'none').attr('stroke', COLORS.goldDeep).attr('stroke-width', 1.4)
       .style('animation-delay', `${k * 0.9}s`));
-    ut.append('circle').attr('r', coreR).attr('fill', C.goldDeep);
+    ut.append('circle').attr('r', coreR).attr('fill', COLORS.goldDeep);
     ut.append('text').attr('x', 0).attr('y', labelOff).attr('text-anchor', 'middle')
       .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('font-size', labelSize)
-      .attr('fill', C.goldDeep).text('Utrecht');
+      .attr('fill', COLORS.goldDeep).text('Utrecht');
   }
 
   function setView(view) {
@@ -196,5 +196,5 @@ export function initWorld() {
     .filter(p => p.count > 0).sort((a, b) => b.count - a.count).slice(0, 5)
     .map(p => p.name).join(' · ');
   const stat = $('#worldStat');
-  if (stat) stat.innerHTML = `Samen goed voor <strong>${fmt(geoData.total)}</strong> bel oproepen.<br><span class="world-top">Grootste bellers: ${top5}</span>`;
+  if (stat) stat.innerHTML = `Samen goed voor <strong>${formatNumber(geoData.total)}</strong> bel oproepen.<br><span class="world-top">Grootste bellers: ${top5}</span>`;
 }

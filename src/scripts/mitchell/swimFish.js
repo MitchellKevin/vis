@@ -1,5 +1,4 @@
 import gsap from 'gsap';
-import { C } from './constants.js';
 import { reduceMotion } from './utils.js';
 
 // ============================================================================
@@ -9,122 +8,128 @@ import { reduceMotion } from './utils.js';
 // dobbert het rechtsonder rond. Wordt overgeslagen bij prefers-reduced-motion.
 // ============================================================================
 
-// Scroll-vis — gids die om de actieve grafiek heen zwemt
+// ── Instelbare waarden ──────────────────────────────────────────────────────
+const LERP = 0.09;       // hoe snel het visje naar zijn doel toe glijdt (0..1)
+const MAX_TILT = 22;     // maximale kanteling in graden
+const TILT_EASE = 0.18;  // hoe vlot de kanteling meedraait
+
+const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+
+// Alle grafiek-stages waaromheen de vis kan zwemmen (de hero heeft een eigen vis).
+function getStages() {
+  return Array.from(document.querySelectorAll('.chapter:not(.chapter--hero)'))
+    .map(ch => ch.querySelector('[class$="-stage"]') || ch.querySelector('[class*="-stage "]') || ch)
+    .filter(Boolean);
+}
+
+// De stage die het dichtst bij het verticale midden van het scherm staat.
+function getActiveStage(viewH) {
+  let best = null, bestDist = Infinity;
+  getStages().forEach(stage => {
+    const box = stage.getBoundingClientRect();
+    if (box.height < 40 || box.bottom < 0 || box.top > viewH) return; // niet (goed) in beeld
+    const midY = box.top + box.height / 2;
+    const dist = Math.abs(midY - viewH / 2);
+    if (dist < bestDist) { bestDist = dist; best = { stage, box }; }
+  });
+  return best;
+}
+
+// Een punt op de ellips-baan rond een stage, plus de bewegingsrichting (tx, ty).
+// De hoek volgt uit de scroll-voortgang door het hoofdstuk + een trage tijd-drift.
+function orbitTarget(stage, box, elapsed, viewW, viewH) {
+  const centerX = box.left + box.width / 2;
+  const centerY = box.top + box.height / 2;
+  const radiusX = clamp(box.width / 2 + 70, 170, viewW * 0.45);
+  const radiusY = clamp(box.height / 2 + 50, 130, viewH * 0.45);
+
+  const chapter = stage.closest('.chapter') || stage;
+  const chapterBox = chapter.getBoundingClientRect();
+  const scrollProgress = clamp((viewH - chapterBox.top) / (chapterBox.height + viewH), 0, 1);
+  const angle = scrollProgress * Math.PI * 2.6 + elapsed * 0.35;
+
+  return {
+    x: centerX + Math.cos(angle) * radiusX,
+    y: centerY + Math.sin(angle) * radiusY,
+    tx: -Math.sin(angle) * radiusX,
+    ty:  Math.cos(angle) * radiusY,
+  };
+}
+
+// Geen stage in beeld: dobber rustig rechtsonder rond.
+function idleTarget(elapsed, viewW, viewH) {
+  return {
+    x: viewW - 90 + Math.sin(elapsed * 0.6) * 30,
+    y: viewH - 110 + Math.sin(elapsed * 0.9) * 20,
+    tx: Math.cos(elapsed * 0.6),
+    ty: Math.sin(elapsed * 0.9),
+  };
+}
+
 export function initSwimFish() {
-  if (reduceMotion) return () => {};
+  if (reduceMotion()) return () => {};
   document.querySelectorAll('.swim-fish').forEach(n => n.remove()); // de-dupe bij hermount
 
   const host = document.createElement('div');
   host.className = 'swim-fish';
   host.setAttribute('aria-hidden', 'true');
+  // Het gids-visje is het baars-plaatje. De baars kijkt van nature naar links;
+  // de zwemrichting wordt met scaleX afgehandeld (zie -dir).
   host.innerHTML = `
     <div class="swim-fish-rot">
-      <svg viewBox="0 0 64 32">
-        <defs>
-          <linearGradient id="swimFishGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="${C.teal}"/>
-            <stop offset="58%" stop-color="${C.bell}"/>
-            <stop offset="100%" stop-color="${C.purple}"/>
-          </linearGradient>
-        </defs>
-        <g fill="url(#swimFishGrad)">
-          <path class="swim-fish-tail" d="M18 16 L2 5 L6 16 L2 27 Z"/>
-          <ellipse cx="36" cy="16" rx="22" ry="10.5"/>
-          <path d="M34 7 q7 -8 13 -3 q-5 3 -7 7 Z"/>
-        </g>
-        <circle cx="48" cy="13" r="2.1" fill="#01211c"/>
-      </svg>
+      <img src="/images/baars.png" alt="" draggable="false"
+        style="width:100%;height:100%;object-fit:contain;display:block;" />
     </div>`;
   document.body.appendChild(host);
   const rotEl = host.querySelector('.swim-fish-rot');
 
-  const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
-
-  // Zoek alle grafiek-stages waaromheen de vis kan zwemmen (skipt de hero
-  // omdat die zijn eigen grote vis heeft).
-  function getStages() {
-    return Array.from(document.querySelectorAll('.chapter:not(.chapter--hero)'))
-      .map(ch => ch.querySelector('[class$="-stage"]') || ch.querySelector('[class*="-stage "]') || ch)
-      .filter(Boolean);
-  }
-
   let curX = window.innerWidth * 0.82, curY = window.innerHeight * 0.55;
   let lastDir = 1, lastTilt = 0;
   let initialized = false;
-  let raf2 = 0;
-  const t0 = performance.now();
+  let frameId = 0;
+  const startTime = performance.now();
 
   function tick(now) {
-    const tt = (now - t0) / 1000;
-    const vh = window.innerHeight;
-    const vw = window.innerWidth;
-    const viewCy = vh / 2;
+    const elapsed = (now - startTime) / 1000;
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight;
 
-    // Kies de grafiek-stage die het dichtst bij het verticale midden van het
-    // scherm staat — daar zwemt de vis omheen.
-    let active = null, activeBox = null, bestDist = Infinity;
-    getStages().forEach(s => {
-      const r = s.getBoundingClientRect();
-      if (r.height < 40 || r.bottom < 0 || r.top > vh) return;
-      const sCy = r.top + r.height / 2;
-      const d = Math.abs(sCy - viewCy);
-      if (d < bestDist) { bestDist = d; active = s; activeBox = r; }
-    });
+    // Kies het doel: rond de actieve grafiek, of anders dobberen rechtsonder.
+    const active = getActiveStage(viewH);
+    const target = active
+      ? orbitTarget(active.stage, active.box, elapsed, viewW, viewH)
+      : idleTarget(elapsed, viewW, viewH);
 
-    let targetX, targetY, tx, ty;
-    if (active && activeBox) {
-      const sCx = activeBox.left + activeBox.width / 2;
-      const sCy = activeBox.top + activeBox.height / 2;
-      const radX = clamp(activeBox.width  / 2 + 70, 170, vw * 0.45);
-      const radY = clamp(activeBox.height / 2 + 50, 130, vh * 0.45);
+    const targetX = clamp(target.x, 40, viewW - 40);
+    const targetY = clamp(target.y, 60, viewH - 60);
 
-      // Scroll-voortgang door dit hoofdstuk (0..1) bepaalt de hoek, plus een
-      // langzame tijd-component — zo draait de vis rond terwijl je scrolt.
-      const ch = active.closest('.chapter') || active;
-      const chR = ch.getBoundingClientRect();
-      const span = chR.height + vh;
-      const chT  = clamp((vh - chR.top) / span, 0, 1);
-      const angle = chT * Math.PI * 2.6 + tt * 0.35;
-
-      // Punt op de ellips-baan rond het midden van de stage (radX/radY = straal).
-      targetX = sCx + Math.cos(angle) * radX;
-      targetY = sCy + Math.sin(angle) * radY;
-      tx = -Math.sin(angle) * radX;
-      ty =  Math.cos(angle) * radY;
-    } else {
-      targetX = vw - 90 + Math.sin(tt * 0.6) * 30;
-      targetY = vh - 110 + Math.sin(tt * 0.9) * 20;
-      tx = Math.cos(tt * 0.6); ty = Math.sin(tt * 0.9);
-    }
-
-    targetX = clamp(targetX, 40, vw - 40);
-    targetY = clamp(targetY, 60, vh - 60);
-
-    // Soepel naar het doel toe bewegen (lerp). Eerste frame: meteen op plek
-    // zetten (k = 1) zodat hij niet vanuit de hoek aan komt schieten.
-    const k = initialized ? 0.09 : 1;
-    curX += (targetX - curX) * k;
-    curY += (targetY - curY) * k;
+    // Soepel naar het doel (lerp); het eerste frame meteen op z'n plek zetten
+    // (factor 1) zodat hij niet vanuit de hoek komt aanschieten.
+    const smoothing = initialized ? LERP : 1;
+    curX += (targetX - curX) * smoothing;
+    curY += (targetY - curY) * smoothing;
     initialized = true;
 
-    const tang = Math.atan2(ty, Math.abs(tx) + 1e-4) * 180 / Math.PI;
-    const dir = tx < -0.05 ? -1 : tx > 0.05 ? 1 : lastDir;
+    // Richting (links/rechts) en kanteling uit de bewegingsrichting halen.
+    const tiltDeg = Math.atan2(target.ty, Math.abs(target.tx) + 1e-4) * 180 / Math.PI;
+    const dir = target.tx < -0.05 ? -1 : target.tx > 0.05 ? 1 : lastDir;
     lastDir = dir;
-    lastTilt += (clamp(tang, -22, 22) - lastTilt) * 0.18;
+    lastTilt += (clamp(tiltDeg, -MAX_TILT, MAX_TILT) - lastTilt) * TILT_EASE;
 
-    const bobX = Math.sin(tt * 1.3) * 2.6;
-    const bobY = Math.sin(tt * 2.1 + 0.4) * 3.2;
-    const yaw  = Math.sin(tt * 1.65 + 0.9) * 3.5;
+    // Kleine dobber + gier zodat het levendig oogt.
+    const bobX = Math.sin(elapsed * 1.3) * 2.6;
+    const bobY = Math.sin(elapsed * 2.1 + 0.4) * 3.2;
+    const yaw  = Math.sin(elapsed * 1.65 + 0.9) * 3.5;
 
-    gsap.set(host,  { x: curX + bobX, y: curY + bobY, xPercent: -50, yPercent: -50, scaleX: dir });
+    gsap.set(host,  { x: curX + bobX, y: curY + bobY, xPercent: -50, yPercent: -50, scaleX: -dir });
     gsap.set(rotEl, { rotation: lastTilt + yaw });
 
-    raf2 = requestAnimationFrame(tick);
+    frameId = requestAnimationFrame(tick);
   }
-  raf2 = requestAnimationFrame(tick);
+  frameId = requestAnimationFrame(tick);
 
   return () => {
-    cancelAnimationFrame(raf2);
+    cancelAnimationFrame(frameId);
     host.remove();
   };
 }
