@@ -3,7 +3,6 @@ import Home from './pages/Home.jsx';
 import Julius from './pages/Julius.jsx';
 import Joost from './pages/Joost.jsx';
 import Mitchell from './pages/Mitchell.jsx';
-import Nienke from './pages/Nienke.jsx';
 
 export default function App() {
   return (
@@ -13,7 +12,6 @@ export default function App() {
         <Route path="/julius" element={<Julius />} />
         <Route path="/joost" element={<Joost />} />
         <Route path="/mitchell" element={<Mitchell />} />
-        <Route path="/nienke" element={<Nienke />} />
       </Routes>
     </BrowserRouter>
   );

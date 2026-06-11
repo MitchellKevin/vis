@@ -9,8 +9,6 @@ import {
     countPerHour
 } from './timeline.js';
 
-import TimelineStatic from './timeline-static.jsx';
-
 export default function Table() {
     const [hourData, setHourData] = useState([]);
     const maxValue = Math.max(...hourData.map(h => h.average));
@@ -22,16 +20,18 @@ export default function Table() {
     }, []);
 
     return (
-        <TimelineStatic title="Tabel met Animatie">
+        <section className='scroll-driven'>
+            <h2>Piekuren onder water</h2>
+            <p>Hoe laat op de dag heb je de meeste kans op een vis?</p>
             <table aria-label="Vissen per uur tabel" tabIndex={0} role='grid'>
-                <caption className="visually-hidden" tabIndex={0}>
+                <caption className="visually-hidden">
                     Overzicht van vissen per uur
                 </caption>
 
-                <thead className="visually-hidden" tabIndex={0}>
+                <thead className="visually-hidden">
                     <tr>
-                        <th scope="col" tabIndex={0}>Tijd</th>
-                        <th scope="col" tabIndex={0}>Gemiddeld aantal vissen en meest geziene vis</th>
+                        <th scope="col">Tijd</th>
+                        <th scope="col">Gemiddeld aantal vissen en meest geziene vis</th>
                     </tr>
                 </thead>
 
@@ -43,11 +43,11 @@ export default function Table() {
 
                         return (
                             <tr key={i}>
-                                <th scope="row" className="timestamp" tabIndex={0}>
+                                <th scope="row" className="timestamp">
                                     {time}
                                 </th>
 
-                                <td aria-describedby={tooltipId} tabIndex={0}>
+                                <td aria-describedby={tooltipId}>
                                     <div
                                         className="bar-fill"
                                         style={{ width: `${(hour.average / maxValue) * 100}%` }}
@@ -55,11 +55,11 @@ export default function Table() {
                                     >
                                         <span className="amount">{roundedAverage}</span>
                                         {hour.topFish && (
-                                            <img src={`/images/${hour.topFish.toLowerCase()}.png`} alt=""/>
+                                            <img src={`/images/${hour.topFish.toLowerCase()}.png`} alt="" />
                                         )}
                                     </div>
 
-                                    <span id={tooltipId} className="tooltip" tabIndex={0}>
+                                    <span id={tooltipId} className="tooltip">
                                         {hour.topFish
                                             ? `Om ${time} worden er gemiddeld ${roundedAverage} vissen gespot. De ${hour.topFish} wordt het meest gezien.`
                                             : `Om ${time} zijn er geen visdata beschikbaar.`
@@ -71,6 +71,6 @@ export default function Table() {
                     })}
                 </tbody>
             </table>
-        </TimelineStatic>
+        </section>
     );
 }
