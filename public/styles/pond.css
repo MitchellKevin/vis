@@ -1,0 +1,215 @@
+/* ============================================================================
+ * Pond (vijver) — visvijver op de Julius-pagina.
+ * ========================================================================== */
+
+.pond {
+  max-width: var(--layout-max-width);
+  margin-inline: auto;
+  padding: var(--space-9) var(--layout-gutter) var(--space-10);
+}
+
+.pond__head {
+  text-align: center;
+  max-width: 60ch;
+  margin-inline: auto;
+}
+
+.pond__head h1 {
+  font: var(--text-h1);
+  margin-bottom: var(--space-3);
+}
+
+.pond__sub {
+  font: var(--text-p1);
+  color: var(--text-muted);
+}
+
+/* ── De vijver ────────────────────────────────────────────────────────────── */
+
+.pond__pool {
+  position: relative;
+  height: clamp(360px, 56vh, 620px);
+  margin-top: var(--space-7);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  background: linear-gradient(180deg, #7fd5d8, #0e6e72);
+  isolation: isolate;
+}
+
+/* Lichte glinstering / dieptegevoel over het water. */
+.pond__water {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgb(255 255 255 / 0.25), transparent 60%),
+    repeating-linear-gradient(180deg, transparent 0 38px, rgb(255 255 255 / 0.03) 38px 40px);
+  pointer-events: none;
+}
+
+.pond__fishes {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Eén zwemmende vis. De <li> beweegt horizontaal; de afbeelding deint zacht
+   op en neer. Beide animaties uit bij prefers-reduced-motion. */
+.pond__fish {
+  position: absolute;
+  top: var(--top);
+  width: clamp(70px, 12vw, 150px);
+  transform: scale(var(--scale));
+  transform-origin: center;
+  will-change: left;
+}
+
+.pond__fish--right {
+  left: -15%;
+  animation: pond-swim-right var(--dur) linear var(--delay) infinite;
+}
+.pond__fish--left {
+  left: 110%;
+  animation: pond-swim-left var(--dur) linear var(--delay) infinite;
+}
+
+@keyframes pond-swim-right { from { left: -15%; } to { left: 110%; } }
+@keyframes pond-swim-left  { from { left: 110%; } to { left: -15%; } }
+
+.pond__fish-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pond__fish-btn:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 4px;
+  border-radius: var(--radius-card);
+}
+
+.pond__fish-img {
+  width: 100%;
+  display: block;
+  user-select: none;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.25));
+  animation: pond-bob 4s ease-in-out infinite;
+}
+
+/* De bron-afbeeldingen kijken naar links. Vissen die naar rechts zwemmen
+   spiegelen we horizontaal zodat ze "vooruit" kijken. */
+.pond__fish--right .pond__fish-img { transform: scaleX(-1); }
+
+@keyframes pond-bob {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -8px; }
+}
+
+.pond__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  color: var(--color-off-white);
+  font: var(--text-p1);
+}
+
+/* ── Toegankelijkheid: animaties uit, vissen statisch verspreid ──────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .pond__fish--right,
+  .pond__fish--left {
+    left: var(--left);
+    animation: none;
+  }
+  .pond__fish-img { animation: none; }
+}
+
+/* ── Vis-info dialog (zelfde stijl als de carousel-pop-up) ───────────────── */
+
+.fish-dialog {
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  margin: auto;
+  width: min(620px, calc(100% - var(--space-7)));
+  max-width: none;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.fish-dialog::backdrop { background: rgb(1 70 60 / 0.6); }
+
+.fish-dialog__content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-9) var(--space-8) var(--space-8);
+  text-align: center;
+}
+
+.fish-dialog__img { width: 100%; max-height: 320px; object-fit: contain; }
+.fish-dialog__content h2 { margin: 0; font: var(--text-h2); }
+.fish-dialog__content p  { margin: 0; }
+
+.fish-dialog__lead {
+  font: var(--text-p1);
+  color: var(--text-muted);
+  max-width: 42ch;
+}
+
+.fish-dialog__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-6);
+  margin: var(--space-2) 0 0;
+  padding: var(--space-6) 0 0;
+  width: 100%;
+  border-top: 1px solid rgb(1 70 60 / 0.15);
+}
+
+.fish-dialog__stat { display: flex; flex-direction: column; gap: var(--space-1); }
+
+.fish-dialog__stat dt {
+  font: var(--text-nav-caps);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.fish-dialog__stat dd { margin: 0; font: var(--text-h3); }
+.fish-dialog__period { font: var(--text-p2); color: var(--text-muted); }
+
+.fish-dialog__close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fish-dialog__close:hover { background: rgb(1 70 60 / 0.08); }
+
+@media (max-width: 768px) {
+  .pond__head h1 { font: var(--text-h1-m); }
+}
