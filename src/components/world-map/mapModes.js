@@ -90,7 +90,7 @@ export function renderChoroplethFlows(ctx) {
 
     // Sample 80 points along the great-circle path from this country to Utrecht
     const interp = GEO_INTERP([lon, lat], UTRECHT);
-    const steps  = 80;
+    const steps  = 10; // low point count — smooth enough at globe scale, minimal per-frame work
     const rawPts = [];
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
