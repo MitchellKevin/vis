@@ -12,7 +12,6 @@ const COLORS = { C, FISH_COLORS };
 
 // Main interactive map component  renders an SVG globe or flat world map with drag, zoom, flow arcs and tooltips
 export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotateTo }) {
-  const containerClass = 'map-panel';
 
   //  D3 refs (mutations don't need to trigger re-renders) 
   const svgRef         = useRef(null);  // SVG DOM element
@@ -28,8 +27,8 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
   const flowStateRef   = useRef(null);  // latest arc point data (reprojected in redrawAll)
   const initialized    = useRef(false); // guards the init effect so it only runs once
 
-  // Initial globe radius is 2x the default R so the globe fills the panel at startup
-  const INIT_R = R * 2;
+  // Initial globe radius — 2.4x fills the panel more at startup
+  const INIT_R = Math.round(R * 2.4);
 
   //  React state (drives tooltip / legend / tab re-renders) 
   const [mode,     setMode    ] = useState('choropleth_flows');
@@ -211,7 +210,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     svg.select('defs').html(`
       <radialGradient id="oceanGrad" cx="38%" cy="35%" r="65%">
         <stop offset="0%"   stop-color="#1eacb0"/><!-- --color-teal -->
-        <stop offset="100%" stop-color="#0a6b6e"/><!-- darkened --color-teal -->
+        <stop offset="100%" stop-color="#0a6b6e"/><!-- darkened teal -->
       </radialGradient>
       <radialGradient id="globeShine" cx="35%" cy="30%" r="60%">
         <stop offset="0%"   stop-color="white" stop-opacity="0.18"/>
@@ -224,7 +223,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
 
     // Globe init
     const proj = d3.geoOrthographic()
-      .scale(INIT_R).translate([W / 2, H / 2]).clipAngle(90).rotate([0, -20, 0]);
+      .scale(INIT_R).translate([W / 2, H / 2]).clipAngle(90).rotate([-5, -52, 0]);
     projRef.current    = proj;
     pathGenRef.current = d3.geoPath(proj);
 
@@ -368,7 +367,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
 
   //  Render 
   return (
-    <div className={containerClass}>
+    <div className="map-panel">
 
       {/* Globe SVG  positioned right, overflows intentionally */}
       <div className="map-globe-col">
@@ -414,6 +413,13 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         ))}
       </div>
 
+      {/* Loading overlay  toggled via CSS by the parent when data is loading */}
+      <div id="loading-overlay" className="loading-overlay hidden">
+        <div className="loading-inner">
+          <div className="loading-fish">🐟</div>
+          <div className="loading-text">Data laden…</div>
+        </div>
+      </div>
     </div>
   );
 }
