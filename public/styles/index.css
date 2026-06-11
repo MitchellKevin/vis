@@ -4,6 +4,10 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--bg-page);
   color: var(--text-primary);
@@ -35,7 +39,11 @@ main {
   max-width: var(--layout-max-width);
   width: 100%;
   margin: 0 auto;
-  padding: var(--space-11) var(--space-6);
+  padding-block: var(--space-11);
+}
+
+section{
+  padding-inline: var(--space-6);
 }
 
 .hero {
