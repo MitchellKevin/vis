@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Nav from '../components/Nav.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
 import FishSprite from '../components/mitchell-components/FishSprite.jsx';
@@ -72,7 +72,6 @@ function AccessibilityMenu() {
 }
 
 export default function Mitchell() {
-  const initialized = useRef(false);
   useStylesheet('/styles/mitchell.css');
   useStylesheet('/styles/mitchell-week1.css');
   useStylesheet('/styles/mitchell-carousel.css');
@@ -85,8 +84,6 @@ export default function Mitchell() {
   }, []);
 
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
     const cleanup = initMitchell();
     return cleanup;
   }, []);
