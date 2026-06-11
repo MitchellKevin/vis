@@ -2,13 +2,8 @@ import { useEffect, useState } from "react";
 import { fish } from "../carousel/fish";
 import Dialog from "../carousel/dialog";
 
-// Aantal vissen in de vijver. Ze worden over de soorten verdeeld naar rato
-// van hun aandeel in de meldingen.
 const POND_FISH = 30;
 
-// Verdeel de vissen over de soorten op basis van de echte meldingen-data:
-// vaak gemelde soorten krijgen meer exemplaren, elke voorkomende soort minstens
-// één. Elk exemplaar krijgt eigen positie/snelheid/grootte om te zwemmen.
 function buildPool(species, fishByName) {
   const entries = Object.entries(species).filter(([name]) => fishByName[name]);
   const total = entries.reduce((sum, [, count]) => sum + count, 0);
@@ -18,16 +13,16 @@ function buildPool(species, fishByName) {
   entries.forEach(([name, count]) => {
     const amount = Math.max(1, Math.round((count / total) * POND_FISH));
     for (let i = 0; i < amount; i++) {
-      const scale = 0.6 + Math.random() * 0.5; // grotere vis = dichterbij
-      const duration = 16 + Math.random() * 10; // 16–26s om over te zwemmen
+      const scale = 0.6 + Math.random() * 0.5;
+      const duration = 16 + Math.random() * 10;
       pool.push({
         key: `${name}-${i}`,
         fish: fishByName[name],
-        top: 6 + Math.random() * 76, // 6–82% verticaal
-        left: Math.random() * 92, // statische x (bij reduced-motion)
+        top: 6 + Math.random() * 76,
+        left: Math.random() * 92,
         scale,
         duration,
-        delay: -Math.random() * duration, // meteen verspreid
+        delay: -Math.random() * duration,
         dir: Math.random() < 0.5 ? "right" : "left",
         z: Math.round(scale * 100),
       });
@@ -36,7 +31,7 @@ function buildPool(species, fishByName) {
   return pool;
 }
 
-export default function Vijver() {
+export default function Pond() {
   const [data, setData] = useState(null);
   const [activeFish, setActiveFish] = useState(null);
 
@@ -49,7 +44,6 @@ export default function Vijver() {
         const species = json.species ?? {};
         const fishByName = Object.fromEntries(fish.map((f) => [f.name, f]));
 
-        // Stats per soort voor in de pop-up (aantal, aandeel, rang).
         const total = Object.values(species).reduce((s, n) => s + n, 0);
         const ranked = Object.entries(species).sort((a, b) => b[1] - a[1]);
         const byName = {};
@@ -78,11 +72,11 @@ export default function Vijver() {
   const activeStat = data?.byName[activeFish?.name] ?? null;
 
   return (
-    <section className="vijver" aria-labelledby="vijver-title">
-      <header className="vijver__head">
-        <h1 id="vijver-title">Wie stond er voor de visdeurbel?</h1>
+    <section className="pond" aria-labelledby="pond-title">
+      <header className="pond__head">
+        <h1 id="pond-title">Wie stond er voor de visdeurbel?</h1>
         {data && (
-          <p className="vijver__sub">
+          <p className="pond__sub">
             {data.period?.label} · {data.total.toLocaleString("nl-NL")}{" "}
             meldingen. Elke vis in de vijver staat voor een soort die zich
             meldde — hoe vaker gemeld, hoe meer exemplaren. Tik op een vis voor
@@ -92,13 +86,13 @@ export default function Vijver() {
       </header>
 
       {/* De vijver */}
-      <div className="vijver__pool">
-        <div className="vijver__water" aria-hidden="true" />
-        <ul className="vijver__fishes" aria-label="Vissen in de vijver">
+      <div className="pond__pool">
+        <div className="pond__water" aria-hidden="true" />
+        <ul className="pond__fishes" aria-label="Vissen in de vijver">
           {(data?.pool ?? []).map((f) => (
             <li
               key={f.key}
-              className={`vijver__fish vijver__fish--${f.dir}`}
+              className={`pond__fish pond__fish--${f.dir}`}
               style={{
                 "--top": `${f.top}%`,
                 "--left": `${f.left}%`,
@@ -109,12 +103,12 @@ export default function Vijver() {
               }}
             >
               <button
-                className="vijver__fish-btn"
+                className="pond__fish-btn"
                 onClick={() => setActiveFish(f.fish)}
                 aria-label={`Meer over de ${f.fish.name}`}
               >
                 <img
-                  className="vijver__fish-img"
+                  className="pond__fish-img"
                   src={f.fish.img}
                   alt=""
                   draggable="false"
@@ -123,7 +117,7 @@ export default function Vijver() {
             </li>
           ))}
         </ul>
-        {!data && <p className="vijver__loading">Vissen worden geladen…</p>}
+        {!data && <p className="pond__loading">Vissen worden geladen…</p>}
       </div>
 
       {/* Detail-dialog: echte foto (valt terug op de PNG) + cijfers */}

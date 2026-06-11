@@ -1,34 +1,32 @@
 /* ============================================================================
- * Vijver — Concept A voor de Julius-pagina
- * Een visvijver waarin de soortmix de meldingen-data volgt (species): elke vis
- * staat voor een soort, naar rato van het aantal meldingen, en is klikbaar.
+ * Pond (vijver) — visvijver op de Julius-pagina.
  * ========================================================================== */
 
-.vijver {
+.pond {
   max-width: var(--layout-max-width);
   margin-inline: auto;
   padding: var(--space-9) var(--layout-gutter) var(--space-10);
 }
 
-.vijver__head {
+.pond__head {
   text-align: center;
   max-width: 60ch;
   margin-inline: auto;
 }
 
-.vijver__head h1 {
+.pond__head h1 {
   font: var(--text-h1);
   margin-bottom: var(--space-3);
 }
 
-.vijver__sub {
+.pond__sub {
   font: var(--text-p1);
   color: var(--text-muted);
 }
 
 /* ── De vijver ────────────────────────────────────────────────────────────── */
 
-.vijver__pool {
+.pond__pool {
   position: relative;
   height: clamp(360px, 56vh, 620px);
   margin-top: var(--space-7);
@@ -40,7 +38,7 @@
 }
 
 /* Lichte glinstering / dieptegevoel over het water. */
-.vijver__water {
+.pond__water {
   position: absolute;
   inset: 0;
   background:
@@ -49,7 +47,7 @@
   pointer-events: none;
 }
 
-.vijver__fishes {
+.pond__fishes {
   position: absolute;
   inset: 0;
   margin: 0;
@@ -59,7 +57,7 @@
 
 /* Eén zwemmende vis. De <li> beweegt horizontaal; de afbeelding deint zacht
    op en neer. Beide animaties uit bij prefers-reduced-motion. */
-.vijver__fish {
+.pond__fish {
   position: absolute;
   top: var(--top);
   width: clamp(70px, 12vw, 150px);
@@ -68,19 +66,19 @@
   will-change: left;
 }
 
-.vijver__fish--right {
+.pond__fish--right {
   left: -15%;
-  animation: vijver-swim-right var(--dur) linear var(--delay) infinite;
+  animation: pond-swim-right var(--dur) linear var(--delay) infinite;
 }
-.vijver__fish--left {
+.pond__fish--left {
   left: 110%;
-  animation: vijver-swim-left var(--dur) linear var(--delay) infinite;
+  animation: pond-swim-left var(--dur) linear var(--delay) infinite;
 }
 
-@keyframes vijver-swim-right { from { left: -15%; } to { left: 110%; } }
-@keyframes vijver-swim-left  { from { left: 110%; } to { left: -15%; } }
+@keyframes pond-swim-right { from { left: -15%; } to { left: 110%; } }
+@keyframes pond-swim-left  { from { left: 110%; } to { left: -15%; } }
 
-.vijver__fish-btn {
+.pond__fish-btn {
   display: block;
   width: 100%;
   padding: 0;
@@ -89,30 +87,30 @@
   cursor: pointer;
 }
 
-.vijver__fish-btn:focus-visible {
+.pond__fish-btn:focus-visible {
   outline: 3px solid var(--color-gold);
   outline-offset: 4px;
   border-radius: var(--radius-card);
 }
 
-.vijver__fish-img {
+.pond__fish-img {
   width: 100%;
   display: block;
   user-select: none;
   filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.25));
-  animation: vijver-bob 4s ease-in-out infinite;
+  animation: pond-bob 4s ease-in-out infinite;
 }
 
 /* De bron-afbeeldingen kijken naar links. Vissen die naar rechts zwemmen
    spiegelen we horizontaal zodat ze "vooruit" kijken. */
-.vijver__fish--right .vijver__fish-img { transform: scaleX(-1); }
+.pond__fish--right .pond__fish-img { transform: scaleX(-1); }
 
-@keyframes vijver-bob {
+@keyframes pond-bob {
   0%, 100% { translate: 0 0; }
   50%      { translate: 0 -8px; }
 }
 
-.vijver__loading {
+.pond__loading {
   position: absolute;
   inset: 0;
   display: grid;
@@ -124,12 +122,12 @@
 /* ── Toegankelijkheid: animaties uit, vissen statisch verspreid ──────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .vijver__fish--right,
-  .vijver__fish--left {
+  .pond__fish--right,
+  .pond__fish--left {
     left: var(--left);
     animation: none;
   }
-  .vijver__fish-img { animation: none; }
+  .pond__fish-img { animation: none; }
 }
 
 /* ── Vis-info dialog (zelfde stijl als de carousel-pop-up) ───────────────── */
@@ -213,5 +211,5 @@
 .fish-dialog__close:hover { background: rgb(1 70 60 / 0.08); }
 
 @media (max-width: 768px) {
-  .vijver__head h1 { font: var(--text-h1-m); }
+  .pond__head h1 { font: var(--text-h1-m); }
 }

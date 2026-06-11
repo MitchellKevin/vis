@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import Nav from '../components/Nav.jsx';
 import EmblaCarousel from '../components/carousel/EmblaCarousel.jsx';
-import Vijver from '../components/vijver/Vijver.jsx';
-import Belritme from '../components/belritme/Belritme.jsx';
+import Pond from '../components/pond/Pond.jsx';
+import Clock from '../components/clock/Clock.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
 
 function useBodyClass(cls) {
@@ -16,8 +16,8 @@ export default function Julius() {
   useBodyClass('julius-page');
   useStylesheet('/styles/Julius.css');
   useStylesheet('/styles/EmblaCarousel.css');
-  useStylesheet('/styles/vijver.css');
-  useStylesheet('/styles/belritme.css');
+  useStylesheet('/styles/pond.css');
+  useStylesheet('/styles/clock.css');
 
   return (
     <>
@@ -25,8 +25,8 @@ export default function Julius() {
 
       <main className="julius-main">
         <EmblaCarousel />
-        <Vijver />
-        <Belritme />
+        <Pond />
+        <Clock />
       </main>
     </>
   );
