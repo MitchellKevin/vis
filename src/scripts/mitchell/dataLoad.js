@@ -9,63 +9,65 @@ import { state } from './state.js';
 //                       jaardata is te groot voor de browser).
 // ============================================================================
 
-// Bouwt nep-jaardata uit de maand-snapshot — vermenigvuldigt tellers
-// en plakt 365 dagen aan elkaar met een ruwe seizoensgolf. `live` wordt
-// in-place aangepast (en ook teruggegeven).
-export function synthesizeYear(live) {
-  const SCALE = 12;
-  const DAYS = 365;
-  const scaleNum = v => (typeof v === 'number' ? Math.round(v * SCALE) : v);
-  const scaleObj = obj => {
-    if (!obj) return;
-    Object.keys(obj).forEach(k => { obj[k] = scaleNum(obj[k]); });
-  };
+const SCALE = 12;                          // maand → jaar: vermenigvuldig de tellers
+const DAYS = 365;
+const YEAR_START = Date.UTC(2025, 5, 1);   // 1 juni 2025
+const MS_PER_DAY = 86400000;
 
+// Maakt nep-jaardata uit de maand-snapshot. `live` wordt in-place aangepast
+// (en ook teruggegeven). Opgebouwd in losse, leesbare stappen:
+export function synthesizeYear(live) {
+  scaleAllCounts(live);                       // 1. alle tellers ×12
+  live.weekHours = buildYearHours(live.weekHours || []); // 2. 365 dagen aan uren
+  const { dayKeys, dayLabels } = buildCalendar();        // 3. datums + labels
+  live.weekDays = dayKeys;
+  live.weekDayLabels = dayLabels;
+  live.daily = buildDailyTotals(live.weekHours);         // 4. dagtotalen
+  live.period = buildPeriod(dayKeys);                    // 5. periode-label
+  return live;
+}
+
+// — Tellers schalen ——————————————————————————————————————————————————————————
+const scaleNum = v => (typeof v === 'number' ? Math.round(v * SCALE) : v);
+const scaleObj = obj => { if (obj) Object.keys(obj).forEach(k => { obj[k] = scaleNum(obj[k]); }); };
+// Schaal alleen de opgegeven numerieke velden van een object.
+const scaleKeys = (obj, keys) => { if (obj) keys.forEach(k => { if (typeof obj[k] === 'number') obj[k] = scaleNum(obj[k]); }); };
+
+function scaleAllCounts(live) {
   scaleObj(live.species);
   if (typeof live.totalUploads === 'number') live.totalUploads = scaleNum(live.totalUploads);
   if (typeof live.pondTotal === 'number')    live.pondTotal    = scaleNum(live.pondTotal);
 
-  if (live.funnel) {
-    ['uploadedFish', 'dismissedUploading', 'total'].forEach(k => {
-      if (typeof live.funnel[k] === 'number') live.funnel[k] = scaleNum(live.funnel[k]);
-    });
-  }
+  scaleKeys(live.funnel, ['uploadedFish', 'dismissedUploading', 'total']);
 
   if (live.geo) {
     if (typeof live.geo.total === 'number') live.geo.total = scaleNum(live.geo.total);
-    if (live.geo.countries && typeof live.geo.countries === 'object') {
-      Object.keys(live.geo.countries).forEach(k => {
-        const v = live.geo.countries[k];
-        if (typeof v === 'number') live.geo.countries[k] = scaleNum(v);
+    const countries = live.geo.countries;
+    if (countries && typeof countries === 'object') {
+      Object.keys(countries).forEach(k => {
+        const v = countries[k];
+        if (typeof v === 'number') countries[k] = scaleNum(v);
         else if (v && typeof v === 'object' && typeof v.n === 'number') v.n = scaleNum(v.n);
       });
     }
   }
 
   if (live.tech) ['device', 'browser', 'os'].forEach(cat => scaleObj(live.tech[cat]));
+  if (Array.isArray(live.languages)) live.languages.forEach(l => { if (typeof l.n === 'number') l.n = scaleNum(l.n); });
+  if (Array.isArray(live.screens))   live.screens.forEach(s => { if (typeof s.n === 'number') s.n = scaleNum(s.n); });
 
-  if (Array.isArray(live.languages)) {
-    live.languages.forEach(l => { if (typeof l.n === 'number') l.n = scaleNum(l.n); });
-  }
-  if (Array.isArray(live.screens)) {
-    live.screens.forEach(s => { if (typeof s.n === 'number') s.n = scaleNum(s.n); });
-  }
-  if (live.orientation) {
-    ['portrait', 'landscape', 'square', 'total', 'unique'].forEach(k => {
-      if (typeof live.orientation[k] === 'number') live.orientation[k] = scaleNum(live.orientation[k]);
-    });
-  }
+  scaleKeys(live.orientation, ['portrait', 'landscape', 'square', 'total', 'unique']);
+
   if (live.sessions) {
-    ['totalSessions', 'ringers', 'totalRings'].forEach(k => {
-      if (typeof live.sessions[k] === 'number') live.sessions[k] = scaleNum(live.sessions[k]);
-    });
-    if (Array.isArray(live.sessions.hist)) {
-      live.sessions.hist = live.sessions.hist.map(v => scaleNum(v));
-    }
+    scaleKeys(live.sessions, ['totalSessions', 'ringers', 'totalRings']);
+    if (Array.isArray(live.sessions.hist)) live.sessions.hist = live.sessions.hist.map(scaleNum);
   }
+}
 
-  // Rek de uurpatronen uit tot 365 dagen met een zachte seizoensgolf
-  const srcHours = live.weekHours || [];
+// — Een heel jaar aan uren maken ———————————————————————————————————————————————
+// Herhaal het uur-patroon van de snapshot over 365 dagen, met een zachte
+// seizoensgolf (piek in het voorjaar) en wat ruis, zodat het natuurlijk oogt.
+function buildYearHours(srcHours) {
   const srcDays = Math.max(1, Math.floor(srcHours.length / 24));
   const yearHours = new Array(DAYS * 24).fill(0);
   for (let d = 0; d < DAYS; d++) {
@@ -77,35 +79,37 @@ export function synthesizeYear(live) {
       yearHours[d * 24 + h] = Math.round(base * factor);
     }
   }
-  live.weekHours = yearHours;
+  return yearHours;
+}
 
-  const startDate = new Date(Date.UTC(2025, 5, 1));
+// — Datums (yyyy-mm-dd) + korte labels ("1 jun") voor 365 dagen —————————————————
+function buildCalendar() {
   const dayKeys = [], dayLabels = [];
   for (let i = 0; i < DAYS; i++) {
-    const dt = new Date(startDate.getTime() + i * 86400000);
+    const dt = new Date(YEAR_START + i * MS_PER_DAY);
     dayKeys.push(dt.toISOString().slice(0, 10));
     dayLabels.push(`${dt.getUTCDate()} ${MONTH_SHORT_NL[dt.getUTCMonth()]}`);
   }
-  live.weekDays = dayKeys;
-  live.weekDayLabels = dayLabels;
+  return { dayKeys, dayLabels };
+}
 
+// — Totaal aantal belletjes per dag ————————————————————————————————————————————
+function buildDailyTotals(yearHours) {
   const daily = {};
   for (let d = 0; d < DAYS; d++) {
-    let s = 0;
-    for (let h = 0; h < 24; h++) s += yearHours[d * 24 + h];
-    daily[d + 1] = s;
+    let sum = 0;
+    for (let h = 0; h < 24; h++) sum += yearHours[d * 24 + h];
+    daily[d + 1] = sum;
   }
-  live.daily = daily;
+  return daily;
+}
 
-  const endDate = new Date(startDate.getTime() + (DAYS - 1) * 86400000);
-  const formatDate = date => `${date.getUTCDate()} ${MONTH_SHORT_NL[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
-  live.period = {
-    start: dayKeys[0],
-    end: dayKeys[DAYS - 1],
-    label: `${formatDate(startDate)} – ${formatDate(endDate)}`,
-  };
-
-  return live;
+// — Mensvriendelijk periode-label ("1 jun 2025 – 31 mei 2026") ————————————————————
+function buildPeriod(dayKeys) {
+  const start = new Date(YEAR_START);
+  const end = new Date(YEAR_START + (DAYS - 1) * MS_PER_DAY);
+  const fmt = date => `${date.getUTCDate()} ${MONTH_SHORT_NL[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+  return { start: dayKeys[0], end: dayKeys[DAYS - 1], label: `${fmt(start)} – ${fmt(end)}` };
 }
 
 // Haalt een dataset op (week/maand) en spiegelt alles naar `state`. Een
@@ -113,27 +117,39 @@ export function synthesizeYear(live) {
 export async function loadData(url, transform) {
   const live = await fetch(url).then(r => r.json());
   if (transform) transform(live);
-  // Tellers resetten en per soort vullen vanuit live.species.
+  fillSpeciesCounts(live);
+  copyToState(live);
+}
+
+// Zet per vissoort de teller op het aantal uit live.species (rest op 0).
+function fillSpeciesCounts(live) {
   state.visData.forEach(v => { v.count = 0; });
   Object.entries(live.species || {}).forEach(([naam, count]) => {
     const v = state.visData.find(d => d.naam === naam);
     if (v) v.count = count;
   });
+}
+
+// Kopieer de geladen dataset naar de gedeelde state + leid afgeleide waarden af.
+function copyToState(live) {
   state.weekHours       = live.weekHours     || [];
   state.weekDayLabels   = live.weekDayLabels || [];
   state.weekDays        = live.weekDays      || [];
   state.periodLabel     = live.period?.label || '';
-  state.geoData         = live.geo       || null;
-  state.funnelData      = live.funnel    || null;
-  state.techData        = live.tech      || null;
-  state.dailyData       = live.daily     || null;
-  state.sessionsData    = live.sessions  || null;
-  state.pondWeekData    = live.pondWeek  || null;
-  state.languagesData   = live.languages || null;
-  state.screensData     = live.screens   || null;
+  state.geoData         = live.geo         || null;
+  state.funnelData      = live.funnel      || null;
+  state.techData        = live.tech        || null;
+  state.dailyData       = live.daily       || null;
+  state.sessionsData    = live.sessions    || null;
+  state.pondWeekData    = live.pondWeek    || null;
+  state.languagesData   = live.languages   || null;
+  state.screensData     = live.screens     || null;
   state.orientationData = live.orientation || null;
+
   // TOTAL = geüploade vissen uit de trechter, of anders de som per soort.
-  state.TOTAL = (state.funnelData && state.funnelData.uploadedFish) || state.visData.reduce((s, v) => s + v.count, 0);
+  state.TOTAL = (state.funnelData && state.funnelData.uploadedFish)
+    || state.visData.reduce((s, v) => s + v.count, 0);
+
   // Per soort een nep-maandverloop verzinnen + sorteren op aantal (grootst eerst).
   state.visData.forEach(v => { v.monthly = generateMonthly(v.count); });
   state.visData.sort((a, b) => b.count - a.count);
