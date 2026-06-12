@@ -493,10 +493,10 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       {/* Tab bar — full width across both columns */}
       <div className="map-tabs">
         <div className="proj-toggle">
-          <button className={`proj-btn${projType === 'globe' ? ' active' : ''}`} onClick={() => switchProjType('globe')} title="Wereldbol">
+          <button className={`proj-btn${projType === 'globe' ? ' active' : ''}`} type="button" aria-pressed={projType === 'globe'} onClick={() => switchProjType('globe')} title="Wereldbol">
             🌍 Bol
           </button>
-          <button className={`proj-btn${projType === 'map' ? ' active' : ''}`} onClick={() => switchProjType('map')} title="Platte kaart">
+          <button className={`proj-btn${projType === 'map' ? ' active' : ''}`} type="button" aria-pressed={projType === 'map'} onClick={() => switchProjType('map')} title="Platte kaart">
             🗺️ Kaart
           </button>
         </div>
@@ -507,13 +507,15 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
           <button
             key={m.key}
             className={`map-tab${mode === m.key ? ' active' : ''}`}
+            type="button"
+            aria-pressed={mode === m.key}
             onClick={() => handleModeChange(m.key)}
           >
             {m.label}
           </button>
         ))}
 
-        <button className="map-tab map-tab--reset" onClick={handleReset}>⊙ Reset</button>
+        <button className="map-tab map-tab--reset" type="button" onClick={handleReset}>⊙ Reset</button>
       </div>
 
       {/* Two-column body */}
@@ -526,6 +528,8 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
             id="map-svg"
             viewBox={`0 0 ${W} ${H}`}
             preserveAspectRatio="xMidYMid meet"
+            role="img"
+            aria-label="Interactieve wereldkaart met visdeurbel events per land"
           >
             <defs />
             {/* bg extends far left/right to cover tiled world copies */}

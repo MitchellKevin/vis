@@ -37,6 +37,15 @@ export default function CountryList({ countryData, onFlyTo }) {
             className="country-row"
             style={coords ? { cursor: 'pointer' } : {}}
             onClick={coords ? () => onFlyTo(coords[0], coords[1]) : undefined}
+            onKeyDown={coords ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onFlyTo(coords[0], coords[1]);
+              }
+            } : undefined}
+            role={coords ? 'button' : undefined}
+            tabIndex={coords ? 0 : undefined}
+            aria-label={coords ? `${c.name}, ${c.uploaded.toLocaleString('nl-NL')} vissen gespot` : undefined}
           >
             {/* Rank */}
             <div className="country-rank">#{i + 1}</div>

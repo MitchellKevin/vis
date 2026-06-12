@@ -100,10 +100,10 @@ export default function WorldMap() {
         <div className="period-bar">
           <span className="period-label">Periode:</span>
           <div className="period-toggle">
-            <button className={`period-btn${period === 'week'  ? ' active' : ''}`} onClick={() => switchPeriod('week') }>Deze week</button>
-            <button className={`period-btn${period === 'maand' ? ' active' : ''}`} onClick={() => switchPeriod('maand')}>Deze maand</button>
+            <button className={`period-btn${period === 'week'  ? ' active' : ''}`} type="button" aria-pressed={period === 'week'} onClick={() => switchPeriod('week') }>Deze week</button>
+            <button className={`period-btn${period === 'maand' ? ' active' : ''}`} type="button" aria-pressed={period === 'maand'} onClick={() => switchPeriod('maand')}>Deze maand</button>
           </div>
-          <span className={`period-loading${periodLoading ? ' visible' : ''}`}>Laden…</span>
+          <span className={`period-loading${periodLoading ? ' visible' : ''}`} aria-live="polite">Laden…</span>
         </div>
 
         {/* Stats */}
