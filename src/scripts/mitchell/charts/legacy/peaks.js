@@ -3,9 +3,11 @@ import { C, FONT_BODY, FONT_DISPLAY, MONTH_SHORT_NL } from '../../constants.js';
 import { $, fmt, reduceMotion } from '../../utils.js';
 import { showTooltip, hideTooltip } from '../../tooltip.js';
 import { state } from '../../state.js';
+import { legacyState } from './legacy-support.js';
 
 export function initPeaks() {
-  const { dailyData, weekDayLabels, weekDays } = state;
+  const { weekDayLabels, weekDays } = state;
+  const { dailyData } = legacyState;
   const stage = $('#peaksStage');
   if (!dailyData) { stage.innerHTML = '<p class="stage-fallback">Geen dagdata.</p>'; return; }
   const entries = Object.entries(dailyData).sort((a, b) => (+a[0]) - (+b[0]))

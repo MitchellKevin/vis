@@ -1,8 +1,9 @@
 import { $, fmt, reduceMotion } from '../../utils.js';
-import { state, lifecycle, raf } from '../../state.js';
+import { lifecycle, raf } from '../../state.js';
+import { legacyState } from './legacy-support.js';
 
 export function initPond() {
-  const { pondWeekData } = state;
+  const { pondWeekData } = legacyState;
   const { cleanups } = lifecycle;
   const stage = $('#pondStage');
   const week = pondWeekData;

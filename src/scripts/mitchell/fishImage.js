@@ -4,7 +4,7 @@
 // De foto's zijn grijs/neutraal; we "tinten" ze luminantie-behoudend zodat ze
 // de soort-kleur krijgen maar hun textuur/details houden. Twee varianten:
 //   • ensureTintFilter — voor SVG (radar, net) via een feColorMatrix-filter.
-//   • (in aquarium.js) makeSprite — voor canvas, per pixel.
+//   • (in aquarium.js) buildSprite — voor canvas, per pixel.
 // ============================================================================
 
 // Map vissoort-naam naar PNG-bestandspad in public/images/.
@@ -24,7 +24,8 @@ export function hexToRgb01(hex) {
 }
 
 // Stabiele id per kleur — gebruikt om het feColorMatrix-filter te delen.
-export function tintFilterId(color) {
+// (intern: alleen ensureTintFilter gebruikt dit)
+function tintFilterId(color) {
   return 'fishTint-' + color.replace(/[^a-z0-9]/gi, '').toLowerCase();
 }
 

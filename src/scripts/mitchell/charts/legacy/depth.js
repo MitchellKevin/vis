@@ -1,8 +1,9 @@
 import * as d3 from 'd3';
 import { C, FONT_BODY } from '../../constants.js';
-import { $, fmt, fishSymbolId, rng, reduceMotion } from '../../utils.js';
+import { $, fmt, rng, reduceMotion } from '../../utils.js';
 import { showTooltip, hideTooltip } from '../../tooltip.js';
 import { state, lifecycle, raf } from '../../state.js';
+import { fishSymbolId } from './legacy-support.js';
 
 export function initDepth() {
   const { visData } = state;

@@ -13,6 +13,7 @@
   body{
     font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
     color: var(--ink); line-height: 1.55; font-size: 10.5pt; margin: 0; background:#fff;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
   }
   h1,h2,h3,h4{ color: var(--green); line-height: 1.2; }
   h1{ font-size: 26pt; margin: 0 0 6px; }
@@ -210,7 +211,7 @@
 
 <div class="file-card avoid">
 <h3><code>constants.js</code> — de vaste gegevens</h3>
-<p>Pure data, geen logica: het kleurenpalet (<code>COLORS</code>), lettertypes, maandnamen, de lijst <b>vissoorten</b> (<code>visData</code> — met naam, gewicht, typische lengte, vorm, kleur), landcoördinaten voor de kaart, browserfamilies en begroetingen per taal.</p>
+<p>Pure data, geen logica: het kleurenpalet (<code>COLORS</code>), lettertypes, maandnamen, de lijst <b>vissoorten</b> (<code>visData</code> — met naam, gewicht, typische lengte, vorm, kleur), landcoördinaten voor de kaart en begroetingen per taal.</p>
 </div>
 
 <div class="file-card avoid">
@@ -309,7 +310,7 @@
   <li><b>Canvas opzetten.</b> Een <code>&lt;canvas&gt;</code> wordt in het podium gezet en op schermscherpte (<i>device pixel ratio</i>) afgesteld, zodat het niet wazig is.</li>
   <li><b>Steekproef van ~80 vissen.</b> Per soort wordt het aantal visjes bepaald in verhouding tot hoe vaak die soort gezien is (<code>v.count / total × 80</code>). Vaker gezien = meer visjes.</li>
   <li><b>Grootte op schaal.</b> Elk visje krijgt een grootte op basis van het gewicht: <code>∛gewicht</code> (derdemachtswortel), want massa schaalt met lengte³. Zo staan de soorten in realistische verhouding (meerval groot, alver klein). Ook krijgt elk visje een eigen lengte in cm (± wat variatie) voor de hover.</li>
-  <li><b>Visjes inkleuren (sprite).</b> <code>makeSprite()</code> tekent de vis-PNG op een onzichtbaar mini-canvas en loopt pixel voor pixel langs om hem in de soort-kleur te zetten (grijswaarde × kleur), met behoud van textuur. Het resultaat wordt gecachet, zodat dit maar één keer per soort+kleur gebeurt.</li>
+  <li><b>Visjes inkleuren (sprite).</b> <code>buildSprite()</code> tekent de vis-PNG op een onzichtbaar mini-canvas en loopt pixel voor pixel langs om hem in de soort-kleur te zetten (grijswaarde × kleur), met behoud van textuur. Het resultaat wordt gecachet, zodat dit maar één keer per soort+kleur gebeurt.</li>
   <li><b>De animatielus.</b> Elke frame (<code>requestAnimationFrame</code>) beweegt elk visje: een beetje koers, een zachte golf, lichte aantrekking naar het midden, een vleugje toeval ("dwalen") en wrijving (afremmen). Aan de rand zwemt het er aan de andere kant weer in.</li>
   <li><b>Interactie.</b> <b>Klik</b> = de visjes schrikken (ze krijgen een duwtje weg van de muis) + een rimpel (<code>aquarium-rip</code>). <b>Hover</b> = tooltip met naam en grootte (bijv. "Baars ~32 cm"). De filter-knoppen onderaan zetten soorten aan/uit.</li>
   <li><b>Teller.</b> Een getal telt soepel op naar het totaal aantal waarnemingen (met een ease-curve).</li>
@@ -317,9 +318,9 @@
 </ol>
 
 <pre><span class="c">// kern van de zwem-natuurkunde, per visje, per frame</span>
-f.x += f.vx; f.y += f.vy + Math.sin(f.wiggle) * <span class="s">0.04</span>;  <span class="c">// koers + golf</span>
-f.vx += (<span class="s">50</span> - f.x) * <span class="s">0.00006</span>;                       <span class="c">// zachte trek naar midden</span>
-f.vx *= <span class="s">0.992</span>;                                       <span class="c">// wrijving (afremmen)</span></pre>
+fish.x += fish.velocityX; fish.y += fish.velocityY + Math.sin(fish.wigglePhase) * <span class="s">0.04</span>;  <span class="c">// koers + golf</span>
+fish.velocityX += (<span class="s">50</span> - fish.x) * CENTER_PULL;            <span class="c">// zachte trek naar midden</span>
+fish.velocityX *= FRICTION;                                  <span class="c">// wrijving (afremmen)</span></pre>
 </section>
 
 <!-- ============ 9. RADAR ============ -->
@@ -351,9 +352,9 @@ f.vx *= <span class="s">0.992</span>;                                       <spa
 </ol>
 
 <pre><span class="c">// naglooi: helderheid op basis van tijd sinds de sweep passeerde</span>
-<span class="k">const</span> age = (now - p.litAt) / GLOW_MS;
+<span class="k">const</span> age = (now - ping.litAt) / GLOW_MS;
 <span class="k">const</span> glow = age &gt;= <span class="s">1</span> ? <span class="s">0</span> : (<span class="s">1</span> - age) * (<span class="s">1</span> - age);  <span class="c">// zacht uitdovend</span>
-op = FLOOR + (<span class="s">1</span> - FLOOR) * glow;                       <span class="c">// nooit helemaal weg</span></pre>
+<span class="k">return</span> MIN_GLOW + (<span class="s">1</span> - MIN_GLOW) * glow;             <span class="c">// nooit helemaal weg</span></pre>
 
 <div class="note"><b>Bewuste keuze.</b> De afstand is <i>relatief per tijdvak</i>: een vis dicht bij het midden in een rustige week kan absoluut gezien minder waarnemingen hebben dan een vis aan de rand in een drukke week. Het exacte aantal staat altijd in het label naast de vis.</div>
 </section>
@@ -379,10 +380,10 @@ op = FLOOR + (<span class="s">1</span> - FLOOR) * glow;                       <s
 </ol>
 
 <pre><span class="c">// de vier krachten die de woorden ordenen</span>
-d3.forceSimulation(list)
-  .force(<span class="s">'x'</span>, d3.forceX(centerX).strength(<span class="s">0.04</span>))     <span class="c">// naar het midden</span>
+d3.forceSimulation(words)
+  .force(<span class="s">'x'</span>, d3.forceX(CENTER_X).strength(<span class="s">0.04</span>))    <span class="c">// naar het midden</span>
   .force(<span class="s">'charge'</span>, d3.forceManyBody().strength(<span class="s">-4</span>))  <span class="c">// licht afstoten</span>
-  .force(<span class="s">'collide'</span>, d3.forceCollide(d =&gt; d.rad));        <span class="c">// niet overlappen</span></pre>
+  .force(<span class="s">'collide'</span>, d3.forceCollide(word =&gt; word.radius)); <span class="c">// niet overlappen</span></pre>
 </section>
 
 <!-- ============ 11. NET ============ -->
@@ -407,10 +408,10 @@ d3.forceSimulation(list)
 </ol>
 
 <pre><span class="c">// de drie manieren om de belgrootte te bepalen</span>
-<span class="k">const</span> statFn = {
-  count:   d =&gt; d.count,
-  weight:  d =&gt; d.weight,
-  biomass: d =&gt; d.count * d.weight,   <span class="c">// aantal × gewicht</span>
+<span class="k">const</span> valueForStat = {
+  count:   species =&gt; species.count,
+  weight:  species =&gt; species.weight,
+  biomass: species =&gt; species.count * species.weight,   <span class="c">// aantal × gewicht</span>
 };</pre>
 </section>
 

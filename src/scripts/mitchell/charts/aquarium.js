@@ -5,7 +5,7 @@ import { state, lifecycle, raf } from '../state.js';
 
 // ============================================================================
 // aquarium.js — het "kijkglas": ~80 vissen zwemmen rond op een <canvas>,
-// evenredig verdeeld per soort. Elke vis is een ingekleurde PNG (makeSprite).
+// evenredig verdeeld per soort. Elke vis is een ingekleurde PNG (buildSprite).
 // Klik laat ze schrikken; chips onderaan filteren soorten in/uit; een teller
 // telt op naar het totaal.
 // ============================================================================
@@ -22,27 +22,27 @@ export function initAquarium() {
   counter.className = 'aquarium-counter';
   counter.setAttribute('aria-live', 'polite');
   stage.appendChild(counter);
-  const ctx = canvas.getContext('2d');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let W = 0, H = 0;
+  const context = canvas.getContext('2d');
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  let stageWidth = 0, stageHeight = 0;
   function resize() {
-    const r = stage.getBoundingClientRect();
-    W = r.width; H = r.height;
-    canvas.width = W * dpr; canvas.height = H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const rect = stage.getBoundingClientRect();
+    stageWidth = rect.width; stageHeight = rect.height;
+    canvas.width = stageWidth * pixelRatio; canvas.height = stageHeight * pixelRatio;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   }
   resize();
-  const ro = new ResizeObserver(resize); ro.observe(stage);
+  const resizeObserver = new ResizeObserver(resize); resizeObserver.observe(stage);
 
-  const total = TOTAL || visData.reduce((s, v) => s + v.count, 0) || 1;
+  const total = TOTAL || visData.reduce((sum, v) => sum + v.count, 0) || 1;
   const totalEl = $('#aquariumTotal'); if (totalEl) totalEl.textContent = formatNumber(total);
 
   // Aquarium samenvatting
   const sortedSpecies = visData.slice().sort((a, b) => (b.count || 0) - (a.count || 0));
-  const top3 = sortedSpecies.slice(0, 3).map(s => s.naam).join(', ');
+  const top3Names = sortedSpecies.slice(0, 3).map(s => s.naam).join(', ');
   const summaryEl = $('#aquariumSummary');
   if (summaryEl) {
-    summaryEl.textContent = `In dit kijkglas zwemmen ${visData.length} soorten mee. Meest aanwezig: ${top3}.`;
+    summaryEl.textContent = `In dit kijkglas zwemmen ${visData.length} soorten mee. Meest aanwezig: ${top3Names}.`;
   }
 
   // ── Instelbare waarden (hier draai je aan het gedrag) ─────────────────────
@@ -58,51 +58,50 @@ export function initAquarium() {
   const COUNTER_MS   = 3800;     // duur van het optellende totaal-getal
 
   // Per vissoort + kleur cachen we een getint offscreen-canvas (goedkoop hertekenen).
-  const sprites = {};
-  const imgCache = {};
+  const spriteCache = {};
+  const imageCache = {};
   function loadImage(url) {
-    if (imgCache[url]) return imgCache[url];
+    if (imageCache[url]) return imageCache[url];
     const img = new Image();
     img.src = url;
-    imgCache[url] = img;
+    imageCache[url] = img;
     return img;
   }
-  function makeSprite(naam, color) {
+  function buildSprite(naam, color) {
     const key = naam + color;
-    if (sprites[key]) return sprites[key];
+    if (spriteCache[key]) return spriteCache[key];
     const img = loadImage(fishImagePath(naam));
     if (!img.complete || !img.naturalWidth) return null;
-    const baseW = 64;
-    const aspect = img.naturalHeight / img.naturalWidth || 0.45;
-    const w = baseW, h = baseW * aspect;
-    const c = document.createElement('canvas');
-    c.width = w * dpr; c.height = h * dpr;
-    const offCtx = c.getContext('2d');
-    offCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    offCtx.drawImage(img, 0, 0, w, h);
+    const aspectRatio = img.naturalHeight / img.naturalWidth || 0.45;
+    const spriteWidth = 64, spriteHeight = 64 * aspectRatio;
+    const spriteCanvas = document.createElement('canvas');
+    spriteCanvas.width = spriteWidth * pixelRatio; spriteCanvas.height = spriteHeight * pixelRatio;
+    const spriteContext = spriteCanvas.getContext('2d');
+    spriteContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    spriteContext.drawImage(img, 0, 0, spriteWidth, spriteHeight);
     // Luminantie-behoudend tinten: grijswaarde × doelkleur. Texturen van de
     // foto blijven leesbaar maar alles krijgt de soort-kleur.
-    // De soort-kleur wordt eerst richting wit gemengd (L) en de helderheid
-    // licht opgetild (lift), zodat de vissen lichter oplichten op de donkere
-    // kijkglas-achtergrond.
-    const L = 0.4, lift = 1.12;
-    const [r0, g0, b0] = hexToRgb01(color);
-    const tr = r0 + (1 - r0) * L;
-    const tg = g0 + (1 - g0) * L;
-    const tb = b0 + (1 - b0) * L;
-    const pixW = c.width, pixH = c.height;
-    const data = offCtx.getImageData(0, 0, pixW, pixH);
-    const arr = data.data;
-    for (let i = 0; i < arr.length; i += 4) {
-      if (arr[i + 3] === 0) continue;
-      const y = 0.299 * arr[i] + 0.587 * arr[i + 1] + 0.114 * arr[i + 2];
-      arr[i]     = Math.min(255, y * tr * lift);
-      arr[i + 1] = Math.min(255, y * tg * lift);
-      arr[i + 2] = Math.min(255, y * tb * lift);
+    // De soort-kleur wordt eerst richting wit gemengd (whiteMix) en de helderheid
+    // licht opgetild (brightnessLift), zodat de vissen lichter oplichten op de
+    // donkere kijkglas-achtergrond.
+    const whiteMix = 0.4, brightnessLift = 1.12;
+    const [red, green, blue] = hexToRgb01(color);
+    const tintR = red + (1 - red) * whiteMix;
+    const tintG = green + (1 - green) * whiteMix;
+    const tintB = blue + (1 - blue) * whiteMix;
+    const pixelWidth = spriteCanvas.width, pixelHeight = spriteCanvas.height;
+    const imageData = spriteContext.getImageData(0, 0, pixelWidth, pixelHeight);
+    const pixels = imageData.data;
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i + 3] === 0) continue;
+      const luminance = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+      pixels[i]     = Math.min(255, luminance * tintR * brightnessLift);
+      pixels[i + 1] = Math.min(255, luminance * tintG * brightnessLift);
+      pixels[i + 2] = Math.min(255, luminance * tintB * brightnessLift);
     }
-    offCtx.putImageData(data, 0, 0);
-    sprites[key] = c;
-    return c;
+    spriteContext.putImageData(imageData, 0, 0);
+    spriteCache[key] = spriteCanvas;
+    return spriteCanvas;
   }
 
   // Grootte op schaal: massa schaalt met lengte³, dus zichtbare lengte ∝
@@ -112,136 +111,136 @@ export function initAquarium() {
   const sizeForWeight = (kg) => Math.cbrt(kg) * SIZE_SCALE;
 
   // Verdeel FISH_COUNT visjes over de soorten, evenredig met hoe vaak ze gezien zijn
-  const sample = [];
-  visData.forEach(v => {
-    const n = Math.max(1, Math.round((v.count / total) * FISH_COUNT));
-    for (let i = 0; i < n; i++) sample.push({
+  const fishes = [];
+  visData.forEach(species => {
+    const fishCountForSpecies = Math.max(1, Math.round((species.count / total) * FISH_COUNT));
+    for (let i = 0; i < fishCountForSpecies; i++) fishes.push({
       x: Math.random() * 100, y: Math.random() * 100,
-      vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.2,
-      shape: v.shape, color: v.color, naam: v.naam,
-      size: sizeForWeight(v.weight),
+      velocityX: (Math.random() - 0.5) * 0.4, velocityY: (Math.random() - 0.5) * 0.2,
+      color: species.color, naam: species.naam,
+      size: sizeForWeight(species.weight),
       // Lengte per individu: typische soort-lengte ± ~18% zodat ze niet allemaal
       // exact even lang "zijn" (hoeft niet exact, moet realistisch ogen).
-      lengthCm: Math.round((v.lengte || 30) * (0.82 + Math.random() * 0.36)),
-      wiggle: Math.random() * Math.PI * 2, visible: true,
+      lengthCm: Math.round((species.lengte || 30) * (0.82 + Math.random() * 0.36)),
+      wigglePhase: Math.random() * Math.PI * 2, visible: true,
     });
   });
 
   // filter-chips per soort
-  const filtersHost = $('#aquariumFilters');
-  if (filtersHost) {
-    filtersHost.innerHTML = '';
-    visData.forEach(v => {
+  const filtersEl = $('#aquariumFilters');
+  if (filtersEl) {
+    filtersEl.innerHTML = '';
+    visData.forEach(species => {
       const chip = document.createElement('button');
-      chip.type = 'button'; chip.className = 'filter-chip'; chip.dataset.naam = v.naam;
-      chip.style.setProperty('--chip', v.color); chip.setAttribute('aria-pressed', 'true');
-      chip.textContent = v.naam;
+      chip.type = 'button'; chip.className = 'filter-chip'; chip.dataset.naam = species.naam;
+      chip.style.setProperty('--chip', species.color); chip.setAttribute('aria-pressed', 'true');
+      chip.textContent = species.naam;
       chip.addEventListener('click', () => {
         const muted = chip.classList.toggle('muted');
         chip.setAttribute('aria-pressed', String(!muted));
-        sample.forEach(f => { if (f.naam === v.naam) f.visible = !muted; });
+        fishes.forEach(fish => { if (fish.naam === species.naam) fish.visible = !muted; });
       });
-      filtersHost.appendChild(chip);
+      filtersEl.appendChild(chip);
     });
   }
 
+  // Muispositie binnen het canvas → procent-coördinaten (0..100), net als de vis-x/y.
+  const toPercent = (event, rect) => [(event.clientX - rect.left) / rect.width * 100, (event.clientY - rect.top) / rect.height * 100];
+
   // klik = laten schrikken + rimpel
-  canvas.addEventListener('click', (e) => {
+  canvas.addEventListener('click', (event) => {
     const rect = canvas.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width * 100;
-    const py = (e.clientY - rect.top) / rect.height * 100;
-    sample.forEach(f => {
-      const dx = f.x - px;
-      const dy = f.y - py;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist >= SCARE_RADIUS) return;                       // te ver weg → niet schrikken
-      const strength = (SCARE_RADIUS - dist) / SCARE_RADIUS;  // dichterbij = harder schrikken
-      const safeDist = Math.max(0.1, dist);                   // voorkom delen door 0
-      f.vx += (dx / safeDist) * strength * SCARE_PUSH_X;      // duw wég van de klikplek
-      f.vy += (dy / safeDist) * strength * SCARE_PUSH_Y;
+    const [clickX, clickY] = toPercent(event, rect);
+    fishes.forEach(fish => {
+      const deltaX = fish.x - clickX;
+      const deltaY = fish.y - clickY;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      if (distance >= SCARE_RADIUS) return;                       // te ver weg → niet schrikken
+      const strength = (SCARE_RADIUS - distance) / SCARE_RADIUS;  // dichterbij = harder schrikken
+      const safeDistance = Math.max(0.1, distance);               // voorkom delen door 0
+      fish.velocityX += (deltaX / safeDistance) * strength * SCARE_PUSH_X; // duw wég van de klikplek
+      fish.velocityY += (deltaY / safeDistance) * strength * SCARE_PUSH_Y;
     });
     const ripple = document.createElement('span');
     ripple.className = 'aquarium-rip';
-    ripple.style.left = (e.clientX - rect.left) + 'px';
-    ripple.style.top = (e.clientY - rect.top) + 'px';
+    ripple.style.left = (event.clientX - rect.left) + 'px';
+    ripple.style.top = (event.clientY - rect.top) + 'px';
     stage.appendChild(ripple);
     setTimeout(() => ripple.remove(), 950);
   });
 
-  canvas.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width * 100;
-    const py = (e.clientY - rect.top) / rect.height * 100;
-    let closest = null;
-    let closestDist = 4;                         // alleen een tooltip binnen 4% van een visje
-    sample.forEach(f => {
-      if (!f.visible) return;
-      const d = Math.hypot(f.x - px, f.y - py);
-      if (d < closestDist) { closestDist = d; closest = f; }
+  canvas.addEventListener('mousemove', (event) => {
+    const [pointerX, pointerY] = toPercent(event, canvas.getBoundingClientRect());
+    let closestFish = null;
+    let closestDistance = 4;                      // alleen een tooltip binnen 4% van een visje
+    fishes.forEach(fish => {
+      if (!fish.visible) return;
+      const distance = Math.hypot(fish.x - pointerX, fish.y - pointerY);
+      if (distance < closestDistance) { closestDistance = distance; closestFish = fish; }
     });
-    if (closest) { canvas.style.cursor = 'pointer'; showTooltip(`<strong>${closest.naam}</strong>~${closest.lengthCm} cm<br/>klik om ze te laten schrikken`, e.clientX, e.clientY); }
+    if (closestFish) { canvas.style.cursor = 'pointer'; showTooltip(`<strong>${closestFish.naam}</strong>~${closestFish.lengthCm} cm<br/>klik om ze te laten schrikken`, event.clientX, event.clientY); }
     else { canvas.style.cursor = 'crosshair'; hideTooltip(); }
   });
   canvas.addEventListener('mouseleave', () => hideTooltip());
 
-  let running = false, rafId = 0, counterRafId = 0;
+  let running = false, frameId = 0, counterFrameId = 0;
   function tick() {
-    ctx.clearRect(0, 0, W, H);
-    const gradient = ctx.createRadialGradient(W / 2, H / 2, 30, W / 2, H / 2, Math.max(W, H));
+    context.clearRect(0, 0, stageWidth, stageHeight);
+    const gradient = context.createRadialGradient(stageWidth / 2, stageHeight / 2, 30, stageWidth / 2, stageHeight / 2, Math.max(stageWidth, stageHeight));
     gradient.addColorStop(0, 'rgba(30,172,176,0.10)'); gradient.addColorStop(1, 'rgba(30,172,176,0)');
-    ctx.fillStyle = gradient; ctx.fillRect(0, 0, W, H);
-    sample.forEach(f => {
+    context.fillStyle = gradient; context.fillRect(0, 0, stageWidth, stageHeight);
+    fishes.forEach(fish => {
       // ── Beweging (posities lopen in 0..100 = procent van het kijkglas) ──
-      f.x += f.vx;                                  // verplaats horizontaal
-      f.y += f.vy + Math.sin(f.wiggle) * 0.04;      // verticaal + een lichte golf
-      f.wiggle += 0.08;                             // golf-fase doortikken
+      fish.x += fish.velocityX;                              // verplaats horizontaal
+      fish.y += fish.velocityY + Math.sin(fish.wigglePhase) * 0.04; // verticaal + een lichte golf
+      fish.wigglePhase += 0.08;                              // golf-fase doortikken
 
-      f.vx += (50 - f.x) * CENTER_PULL;             // zachte trek naar het midden (50%)
-      f.vy += (50 - f.y) * CENTER_PULL;
-      f.vx += (Math.random() - 0.5) * WANDER;       // een beetje willekeurig dwalen
-      f.vy += (Math.random() - 0.5) * WANDER * 0.6;
-      f.vx *= FRICTION;                             // afremmen (wrijving)
-      f.vy *= FRICTION;
+      fish.velocityX += (50 - fish.x) * CENTER_PULL;         // zachte trek naar het midden (50%)
+      fish.velocityY += (50 - fish.y) * CENTER_PULL;
+      fish.velocityX += (Math.random() - 0.5) * WANDER;      // een beetje willekeurig dwalen
+      fish.velocityY += (Math.random() - 0.5) * WANDER * 0.6;
+      fish.velocityX *= FRICTION;                            // afremmen (wrijving)
+      fish.velocityY *= FRICTION;
 
       // Zwemt 'ie van het scherm? Zet 'm aan de overkant terug (eindeloos kijkglas)
-      if (f.x < -5) f.x = 105;
-      if (f.x > 105) f.x = -5;
-      if (f.y < -5) f.y = 105;
-      if (f.y > 105) f.y = -5;
+      if (fish.x < -5) fish.x = 105;
+      if (fish.x > 105) fish.x = -5;
+      if (fish.y < -5) fish.y = 105;
+      if (fish.y > 105) fish.y = -5;
 
-      if (!f.visible) return;                       // uitgefilterd → niet tekenen
-      const sprite = makeSprite(f.naam, f.color);
+      if (!fish.visible) return;                    // uitgefilterd → niet tekenen
+      const sprite = buildSprite(fish.naam, fish.color);
       if (!sprite) return;                          // plaatje nog niet geladen → volgende frame
 
       // ── Tekenen ──
-      const px = (f.x / 100) * W;                   // procent → pixels
-      const py = (f.y / 100) * H;
-      const angle = Math.atan2(f.vy, f.vx);         // kijkrichting uit de snelheid
-      const flip = Math.abs(angle) > Math.PI / 2 ? -1 : 1; // naar links? dan spiegelen
-      const drawW = sprite.width / dpr * f.size;
-      const drawH = sprite.height / dpr * f.size;
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(angle * (flip < 0 ? -1 : 1));
-      ctx.scale(1, flip);
-      ctx.globalAlpha = DRAW_ALPHA;
-      ctx.drawImage(sprite, -drawW / 2, -drawH / 2, drawW, drawH);
-      ctx.restore();
+      const pixelX = (fish.x / 100) * stageWidth;   // procent → pixels
+      const pixelY = (fish.y / 100) * stageHeight;
+      const angle = Math.atan2(fish.velocityY, fish.velocityX); // kijkrichting uit de snelheid
+      const flip = Math.abs(angle) > Math.PI / 2 ? -1 : 1;      // naar links? dan spiegelen
+      const drawWidth = sprite.width / pixelRatio * fish.size;
+      const drawHeight = sprite.height / pixelRatio * fish.size;
+      context.save();
+      context.translate(pixelX, pixelY);
+      context.rotate(angle * (flip < 0 ? -1 : 1));
+      context.scale(1, flip);
+      context.globalAlpha = DRAW_ALPHA;
+      context.drawImage(sprite, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+      context.restore();
     });
-    if (running) rafId = raf(tick);
+    if (running) frameId = raf(tick);
   }
   function animateCounter() {
-    const start = performance.now(), dur = COUNTER_MS;
+    const startTime = performance.now();
     function step(now) {
-      const t = Math.min(1, (now - start) / dur);
-      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const progress = Math.min(1, (now - startTime) / COUNTER_MS);
+      const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
       counter.textContent = `${formatNumber(Math.round(eased * total))} / ${formatNumber(total)}`;
-      if (t < 1) counterRafId = raf(step);
+      if (progress < 1) counterFrameId = raf(step);
     }
-    counterRafId = raf(step);
+    counterFrameId = raf(step);
   }
 
-  const observer = new IntersectionObserver(([entry]) => {
+  const visibilityObserver = new IntersectionObserver(([entry]) => {
     if (entry.isIntersecting) {
       if (!running && !reduceMotion()) { running = true; tick(); }
       if (!counter.dataset.animated) {
@@ -249,8 +248,8 @@ export function initAquarium() {
         if (reduceMotion()) counter.textContent = `${formatNumber(total)} / ${formatNumber(total)}`; else animateCounter();
       }
       if (reduceMotion()) tick();
-    } else { running = false; cancelAnimationFrame(rafId); }
+    } else { running = false; cancelAnimationFrame(frameId); }
   }, { threshold: 0.1 });
-  observer.observe(stage);
-  cleanups.push(() => { running = false; cancelAnimationFrame(rafId); cancelAnimationFrame(counterRafId); observer.disconnect(); ro.disconnect(); });
+  visibilityObserver.observe(stage);
+  cleanups.push(() => { running = false; cancelAnimationFrame(frameId); cancelAnimationFrame(counterFrameId); visibilityObserver.disconnect(); resizeObserver.disconnect(); });
 }
