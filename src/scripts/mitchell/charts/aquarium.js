@@ -229,16 +229,6 @@ export function initAquarium() {
     });
     if (running) frameId = raf(tick);
   }
-  function animateCounter() {
-    const startTime = performance.now();
-    function step(now) {
-      const progress = Math.min(1, (now - startTime) / COUNTER_MS);
-      const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      counter.textContent = `${formatNumber(Math.round(eased * total))} / ${formatNumber(total)}`;
-      if (progress < 1) counterFrameId = raf(step);
-    }
-    counterFrameId = raf(step);
-  }
 
   const visibilityObserver = new IntersectionObserver(([entry]) => {
     if (entry.isIntersecting) {

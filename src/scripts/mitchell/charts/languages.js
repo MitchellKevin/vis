@@ -124,23 +124,3 @@ function attachTooltip(wordGroups, totalVisitors) {
       showTooltip(`<strong>${word.name}</strong>${formatNumber(word.visitors)} bezoekers`, box.left + box.width / 2, box.top);
     });
 }
-
-// Laat de woorden zacht rond hun rustplek dobberen (elk met een eigen fase).
-function startBobbing(words, wordGroups, cleanups) {
-  words.forEach(word => { word.baseX = word.x; word.baseY = word.y; word.phase = Math.random() * Math.PI * 2; });
-  const startTime = performance.now();
-  let bobFrameId = 0;
-
-  const bobFrame = () => {
-    const elapsedSeconds = (performance.now() - startTime) / 1000;
-    words.forEach(word => {
-      word.x = word.baseX + Math.sin(elapsedSeconds * 0.5 + word.phase) * BOB_RADIUS;
-      word.y = word.baseY + Math.cos(elapsedSeconds * 0.45 + word.phase) * BOB_RADIUS;
-    });
-    positionWords(wordGroups);
-    bobFrameId = raf(bobFrame);
-  };
-
-  bobFrameId = raf(bobFrame);
-  cleanups.push(() => cancelAnimationFrame(bobFrameId));
-}
