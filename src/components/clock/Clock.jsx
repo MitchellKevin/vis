@@ -2,23 +2,23 @@ import { useEffect, useState } from "react";
 import { fish } from "../carousel/fish";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MARK: Styling — kleuren & maten van de tekening
+// MARK: Styling — colors & dimensions of the drawing
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CLOCK_CENTER = 220; // het midden van de klok-tekening (x én y)
-const HUB_RADIUS = 72; // de donkere cirkel in het midden
-const HAND_MAX_LENGTH = 128; // de langste wijzer (het drukste uur) in pixels
+const CLOCK_CENTER = 220; // center of the clock drawing (x and y)
+const HUB_RADIUS = 72; // the dark circle in the center
+const HAND_MAX_LENGTH = 128; // the variable hand length; longest = HUB_RADIUS + 8 + 128 = 136 px
 
-const COLOR_QUIET = [192, 168, 255]; // --color-purple (#c0a8ff) — rustig
-const COLOR_MID = [255, 128, 185]; //   --color-pink   (#ff80b9) — midden
-const COLOR_BUSY = [240, 175, 0]; //    --color-gold   (#f0af00) — druk
+const COLOR_QUIET = [192, 168, 255]; // --color-purple (#c0a8ff) — quiet
+const COLOR_MID = [255, 128, 185]; //   --color-pink   (#ff80b9) — mid
+const COLOR_BUSY = [240, 175, 0]; //    --color-gold   (#f0af00) — busy
 
-const TIMELINE_WIDTH = 1040; // breedte van de tijdlijn-tekening
-const TIMELINE_HEIGHT = 400; // hoogte van de tijdlijn-tekening
-const TIMELINE_AXIS_Y = 340; // hoogte waarop de tijd-as ligt
+const TIMELINE_WIDTH = 1040; // width of the timeline drawing
+const TIMELINE_HEIGHT = 400; // height of the timeline drawing
+const TIMELINE_AXIS_Y = 340; // y position of the time axis
 
-// Zet drukte (0–1) om naar een kleur over drie stops: tot 0,5 mengt de schaal
-// van rustig naar het midden, daarboven van het midden naar druk.
+// Maps busyness (0–1) to a color across three stops: below 0.5 blends from
+// quiet to mid, above 0.5 from mid to busy.
 function colorForBusyness(busyness) {
   const [from, to, t] =
     busyness < 0.5
@@ -29,27 +29,27 @@ function colorForBusyness(busyness) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MARK: Data — de meldingen tellen en klaarzetten voor de tekening
+// MARK: Data — counting notifications and preparing them for the drawing
 // ─────────────────────────────────────────────────────────────────────────────
 
-// De afbeelding opzoeken die bij een vissoort hoort (uit de carousel-lijst).
+// Look up the image that belongs to a fish species (from the carousel list).
 const fishByName = Object.fromEntries(fish.map((f) => [f.name, f]));
 
-// Telt alle getallen in een lijst bij elkaar op.
+// Sums all numbers in a list.
 const sumOf = (list) => list.reduce((sum, number) => sum + number, 0);
 
-// Een leeg telformulier: per uur een optelsom en het aantal getelde dagen.
+// Empty tally: a running sum and a day count per hour.
 function emptyTally() {
   return { sum: new Array(24).fill(0), days: new Array(24).fill(0) };
 }
 
-// Maakt een lijst van 24 uren. Per uur berekenen we het gemiddelde aantal
-// meldingen, zodat je de wijzerlengtes eerlijk kunt vergelijken.
+// Builds a list of 24 hours. Per hour we calculate the average number of
+// notifications so hand lengths can be compared fairly.
 function buildHourProfile(weekHours, weekDays) {
   if (!Array.isArray(weekHours) || weekHours.length === 0) return null;
   if (!Array.isArray(weekDays) || weekDays.length === 0) return null;
 
-  // Tel meldingen per uur op over alle dagen.
+  // Accumulate notifications per hour across all days.
   const tally = emptyTally();
 
   for (let i = 0; i < weekHours.length; i++) {
@@ -62,16 +62,17 @@ function buildHourProfile(weekHours, weekDays) {
     tally.days[hour] += 1;
   }
 
-  // Van optelsom naar gemiddelde per uur.
+  // Convert the running sum to an average per hour.
   const averages = tally.sum.map((sum, hour) =>
     tally.days[hour] ? sum / tally.days[hour] : 0,
   );
 
-  // Het drukste uur bepaalt de schaal (= langste wijzer).
+  // The busiest hour sets the scale (= longest hand).
+  // The ,1 prevents division by zero when all hours are silent.
   const highest = Math.max(...averages, 1);
   const total = sumOf(averages);
 
-  // Per uur: gemiddelde, drukte (0–1) en dagaandeel bewaren.
+  // Per hour: store the average, busyness (0–1), and share of the day.
   return averages.map((value, hour) => ({
     hour,
     value,
@@ -80,9 +81,9 @@ function buildHourProfile(weekHours, weekDays) {
   }));
 }
 
-// Maakt een rijtje vissen om over de tijdlijn te verdelen. Soorten die vaker
-// gezien zijn, komen vaker in het rijtje voor (decoratief: de data koppelt
-// geen soort aan een exacte minuut).
+// Builds a pool of fish to distribute across the timeline. Species seen more
+// often appear more often in the pool (decorative: the data does not link a
+// species to an exact minute).
 function buildFishPool(species) {
   if (!species) return fish;
 
@@ -93,7 +94,7 @@ function buildFishPool(species) {
   for (const [name, count] of ranked) {
     const fishImage = fishByName[name];
     if (!fishImage) continue;
-    // Hoe vaker gezien, hoe vaker in het rijtje (en minimaal één keer).
+    // The more often seen, the more copies in the pool (at least one).
     const copies = Math.max(1, Math.round((count / total) * 24));
     for (let i = 0; i < copies; i++) pool.push(fishImage);
   }
@@ -101,12 +102,12 @@ function buildFishPool(species) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MARK: Klok — wiskunde & tekst voor de wijzerplaat
+// MARK: Clock — math & text for the clock face
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Rekent een uur (0–24) en een afstand vanaf het midden om naar een x/y-punt
-// op de klok. Uur 0 staat bovenaan en de uren lopen met de klok mee.
-// Het uur mag een kommagetal zijn (voor de "nu"-wijzer).
+// Converts an hour (0–24) and a distance from the center to an x/y point on
+// the clock. Hour 0 is at the top and hours run clockwise.
+// Hour may be a decimal (for a "current time" hand).
 function pointOnClock(hour, distance) {
   const angle = (hour / 24) * 2 * Math.PI - Math.PI / 2;
   return {
@@ -115,17 +116,17 @@ function pointOnClock(hour, distance) {
   };
 }
 
-// Hoe ver de punt van een wijzer van het midden af staat (busyness is 0–1).
+// Distance from center to the tip of a hand (busyness is 0–1).
 function handTipDistance(busyness) {
   return HUB_RADIUS + 8 + busyness * HAND_MAX_LENGTH;
 }
 
-// Een uur als tekst, bijvoorbeeld 7 → "07:00". Ook gebruikt door de tijdlijn.
+// Formats an hour as text, e.g. 7 → "07:00". Also used by the timeline.
 function hourAsText(hour) {
   return `${String(hour).padStart(2, "0")}:00`;
 }
 
-// Zoekt het drukste uur in een urenlijst.
+// Finds the busiest hour in a list of hours.
 function busiestHourOf(hours) {
   let busiest = hours[0];
   for (const hour of hours) {
@@ -134,7 +135,7 @@ function busiestHourOf(hours) {
   return busiest;
 }
 
-// Zoekt het rustigste uur in een urenlijst.
+// Finds the quietest hour in a list of hours.
 function quietestHourOf(hours) {
   let quietest = hours[0];
   for (const hour of hours) {
@@ -144,37 +145,37 @@ function quietestHourOf(hours) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MARK: Tijdlijn — alles voor de uur-tijdlijn (verschijnt na een klik op een uur)
+// MARK: Timeline — everything for the hour timeline (shown after clicking an hour)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Een minuut (0–60) omrekenen naar een x-positie op de tijdlijn.
+// Converts a minute (0–60) to an x position on the timeline.
 function minuteToX(minute) {
   return 50 + (minute / 60) * (TIMELINE_WIDTH - 100);
 }
 
-// Een uur en een minuut als tekst, bijvoorbeeld (17, 5) → "17:05".
-// Minuut 60 rolt netjes door naar het volgende uur, dus (17, 60) → "18:00".
+// Formats an hour and minute as text, e.g. (17, 5) → "17:05".
+// Minute 60 wraps cleanly to the next hour, so (17, 60) → "18:00".
 function timeAsText(hour, minute) {
   const wholeHour = (hour + Math.floor(minute / 60)) % 24;
   const restMinute = minute % 60;
   return `${String(wholeHour).padStart(2, "0")}:${String(restMinute).padStart(2, "0")}`;
 }
 
-// Voor één uur: hoe vaak ging de bel in elk blok van 10 minuten? Opgeteld over
-// de hele periode en over alle dagen van de week. Geeft 6 getallen terug.
+// For one hour: how often did the bell ring in each 10-minute block? Summed
+// over the entire period and all days of the week. Returns 6 numbers.
 function countRingsPerBlock(pondWeek, hour) {
-  const perBlock = [0, 0, 0, 0, 0, 0]; // 6 blokken: 0–10, 10–20, … 50–60 min
+  const perBlock = [0, 0, 0, 0, 0, 0]; // 6 blocks: 0–10, 10–20, … 50–60 min
   for (let day = 0; day < 7; day++) {
     for (let minute = 0; minute < 60; minute++) {
-      const block = Math.floor(minute / 10); // bij welke vis hoort deze minuut
+      const block = Math.floor(minute / 10); // which 10-minute block this minute falls into
       perBlock[block] += pondWeek[day * 1440 + hour * 60 + minute];
     }
   }
   return perBlock;
 }
 
-// Eén vis op de tijdlijn. Hoe vaker de bel ging, hoe groter de vis. Hij hangt
-// aan een lijntje boven het blok van 10 minuten waar hij bij hoort.
+// One fish on the timeline. The more often the bell rang, the larger the fish.
+// It hangs on a thread above the 10-minute block it belongs to.
 function TimelineFish({
   hour,
   block,
@@ -184,7 +185,7 @@ function TimelineFish({
   onHover,
   onLeave,
 }) {
-  const size = 44 + (count / max) * 46; // 44–90px
+  const size = 44 + (count / max) * 46; // 44–90 px
   const x = minuteToX(block * 10 + 5);
   const y = TIMELINE_AXIS_Y - 150;
   const from = timeAsText(hour, block * 10);
@@ -192,7 +193,7 @@ function TimelineFish({
 
   return (
     <g>
-      {/* Het lijntje van de vis naar zijn blok op de as */}
+      {/* Thread connecting the fish to its block on the axis */}
       <line
         className="clock__timeline-thread"
         x1={x}
@@ -228,8 +229,8 @@ function TimelineFish({
   );
 }
 
-// De tijdlijn die verschijnt nadat je op een uur klikt: dat ene uur uitgesplitst
-// in zes blokken van 10 minuten, elk met een vis zo groot als zijn drukte.
+// Timeline shown after clicking an hour: that single hour broken into six
+// 10-minute blocks, each with a fish sized by its busyness.
 function HourTimeline({
   hour,
   blocks,
@@ -240,8 +241,8 @@ function HourTimeline({
   onBack,
 }) {
   const nextHour = (hour + 1) % 24;
-  const blockTotal = sumOf(blocks); // hoe vaak in totaal in dit uur
-  const blockMax = Math.max(...blocks, 1); // het drukste blok = de grootste vis
+  const blockTotal = sumOf(blocks); // total rings in this hour
+  const blockMax = Math.max(...blocks, 1); // busiest block = largest fish
 
   return (
     <div className="clock__timeline">
@@ -258,14 +259,14 @@ function HourTimeline({
         <strong>{blockTotal}×</strong>.
       </p>
 
-      {/* Stille uren: geen vissen om te tekenen */}
+      {/* Silent hours: nothing to draw */}
       {blockTotal === 0 && (
         <p className="clock__timeline-spot">
           In dit uur is de bel niet één keer gebruikt. Sssst, de vissen slapen.
         </p>
       )}
 
-      {/* Drukke uren: de as met streepjes en de vissen erboven */}
+      {/* Hours with activity: the axis with tick marks and fish above */}
       {blockTotal > 0 && (
         <>
           <svg
@@ -276,7 +277,7 @@ function HourTimeline({
               nextHour,
             )}: per 10 minuten hoe vaak de bel ging.`}
           >
-            {/* De tijd-as: x = minuut via minuteToX(), y = de hoogte TIMELINE_AXIS_Y (±wat om boven/onder de lijn te tekenen). */}
+            {/* Time axis: x = minute via minuteToX(), y = TIMELINE_AXIS_Y (drawn above and below the line). */}
             <line
               className="clock__timeline-axis"
               x1={minuteToX(0)}
@@ -284,6 +285,10 @@ function HourTimeline({
               x2={minuteToX(60)}
               y2={TIMELINE_AXIS_Y}
             />
+            {/* Vertical tick marks on the axis, each centered on TIMELINE_AXIS_Y:
+                 x1/x2 = x position of the minute (via minuteToX)
+                 y1    = 10 px above the axis (TIMELINE_AXIS_Y - 10)
+                 y2    = 10 px below the axis (TIMELINE_AXIS_Y + 10) */}
             {[0, 10, 20, 30, 40, 50, 60].map((minute) => (
               <g key={minute}>
                 <line
@@ -304,7 +309,7 @@ function HourTimeline({
               </g>
             ))}
 
-            {/* Per blok van 10 minuten één vis (lege blokken slaan we over) */}
+            {/* One fish per 10-minute block (empty blocks are skipped) */}
             {blocks.map((count, block) =>
               count === 0 ? null : (
                 <TimelineFish
@@ -313,7 +318,7 @@ function HourTimeline({
                   block={block}
                   count={count}
                   max={blockMax}
-                  fishImage={fishPool[block % fishPool.length]}
+                  fishImage={fishPool[block % fishPool.length] /* % length: never out of bounds when there are fewer fish than blocks */}
                   onHover={() => setHoveredBlock(block)}
                   onLeave={() => setHoveredBlock(null)}
                 />
@@ -340,7 +345,7 @@ function HourTimeline({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MARK: Component — de klok zelf (data ophalen, state en de render)
+// MARK: Component — the clock itself (data fetching, state and render)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Clock() {
@@ -353,8 +358,10 @@ export default function Clock() {
   const [selectedHour, setSelectedHour] = useState(null);
   const [hoveredBlock, setHoveredBlock] = useState(null);
 
-  // Eén keer de data ophalen zodra de klok op de pagina komt.
+  // Fetch data once when the clock mounts.
   useEffect(() => {
+    // cancelled prevents setState being called after the component has unmounted
+    // (React would otherwise warn about a memory leak).
     let cancelled = false;
     fetch("/json/vis-data.json")
       .then((response) => response.json())
@@ -365,30 +372,32 @@ export default function Clock() {
         setPondWeek(json.pondWeek ?? null);
         setSpecies(json.species ?? null);
       })
+      // On a failed fetch the loading text stays visible; no error message needed.
       .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // MARK: Berekeningen voor de tekening
+  // MARK: Derived values for the drawing
 
   const busiest = hours ? busiestHourOf(hours) : null;
   const quietest = hours ? quietestHourOf(hours) : null;
 
-  // In de naaf tonen we standaard het drukste uur; hover/focus overschrijft dat.
+  // The hub shows the busiest hour by default; hover/focus overrides it.
+  // != null (not !==) so hour 0 (midnight) also counts as a valid hovered hour.
   const activeHour = (hoveredHour != null && hours?.[hoveredHour]) || busiest;
 
-  // Voor de tijdlijn: per blok van 10 minuten het aantal belletjes in het uur.
+  // For the timeline: how often the bell rang per 10-minute block in the selected hour.
   const blocks =
     selectedHour != null && pondWeek
       ? countRingsPerBlock(pondWeek, selectedHour)
       : null;
 
-  // Het rijtje vissen dat over de tijdlijn verdeeld wordt.
+  // Pool of fish distributed across the timeline.
   const fishPool = buildFishPool(species);
 
-  // MARK: De tekening (render)
+  // MARK: Render
 
   return (
     <section className="clock" data-theme="dark" aria-labelledby="clock-title">
@@ -408,7 +417,7 @@ export default function Clock() {
         <div className="clock__face-wrap">
           {!hours && <p className="clock__loading">Ritme wordt geladen…</p>}
 
-          {/* MARK: Wijzerplaat (de klok) */}
+          {/* MARK: Clock face */}
           {hours && selectedHour == null && (
             <svg
               className="clock__face"
@@ -420,7 +429,7 @@ export default function Clock() {
                 busiest.value,
               )} meldingen per uur, rustigst om ${hourAsText(quietest.hour)}.`}
             >
-              {/* De 24 wijzers, één per uur */}
+              {/* The 24 hands, one per hour */}
               {hours.map((hour) => {
                 const start = pointOnClock(hour.hour, HUB_RADIUS);
                 const end = pointOnClock(
@@ -461,7 +470,7 @@ export default function Clock() {
                 );
               })}
 
-              {/* De naaf met de cijfers van het actieve uur */}
+              {/* Hub with the figures for the active hour */}
               <circle
                 className="clock__hub"
                 cx={CLOCK_CENTER}
@@ -495,7 +504,7 @@ export default function Clock() {
             </svg>
           )}
 
-          {/* MARK: Tijdlijn (na klik op een uur) */}
+          {/* MARK: Timeline (shown after clicking an hour) */}
           {selectedHour != null && blocks && (
             <HourTimeline
               hour={selectedHour}
@@ -512,7 +521,7 @@ export default function Clock() {
           )}
         </div>
 
-        {/* MARK: Duiding + tabel */}
+        {/* MARK: Insights + table */}
         {hours && (
           <aside className="clock__insights">
             <p className="clock__insight">
