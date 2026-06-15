@@ -32,7 +32,7 @@
     max-height: var(--scroll-container-height);
     border-radius: var(--radius-card);
 
-    overflow-x: clip;
+    overflow-x: hidden;
     overflow-y: auto;
     scroll-snap-type: y mandatory;
     scroll-timeline: --scroll-container-timeline;
@@ -206,7 +206,7 @@
           transform: scaleX(-1) translateX(calc(var(--fish-img-size)*-1)) scale(calc(clamp(1, 1 + (var(--fish-length) * 0.04), 3.5)));
           animation:
             wiggle 2s linear infinite,
-            swim ease-in-out both;
+            timeline-swim ease-in-out both;
 
           animation-timeline:
             auto,
@@ -283,7 +283,7 @@
     }
   }
 
-  @keyframes swim {
+  @keyframes timeline-swim {
     0% {
       transform: translateX(100dvw) translateY(calc(var(--scroll-container-height)/2*-1)) scale(0.4);
     }

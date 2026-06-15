@@ -461,9 +461,9 @@
 .loading-fish {
   font-size: 2.8rem;
   display: block;
-  animation: swim 1.1s ease-in-out infinite alternate;
+  animation: loading-fish 1.1s ease-in-out infinite alternate;
 }
-@keyframes swim {
+@keyframes loading-fish {
   from { transform: translateX(-14px) rotate(-5deg); }
   to   { transform: translateX(14px)  rotate(5deg); }
 }
