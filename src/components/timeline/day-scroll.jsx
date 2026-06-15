@@ -31,6 +31,12 @@ export default function DayScroll() {
                     <div aria-hidden="true" className="moon"></div>
                     <div aria-hidden="true" className="sun"></div>
                     <div aria-hidden="true" className="water-visual"></div>
+                    <div aria-hidden="true" className="canal-bottom">
+                        {/* bike image generated with ChatGPT */}
+                        <img src="/images/rusty-bike.png" alt="" className='canal-bike'/>
+                        {/* https://pngimg.com/image/81796 */}
+                        <img src="/images/plastic-bag.png" alt="" className='canal-bag'/>
+                    </div> 
                 </div>
                 <table>
                     <caption className='visually-hidden'>
