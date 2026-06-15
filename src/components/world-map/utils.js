@@ -11,35 +11,6 @@ export function flag(code) {
   );
 }
 
-// ── Normalise raw OS string ───────────────────────────────────────────────────
-
-// Collapses raw OS strings into canonical labels used across the UI
-export function normalizeOS(raw) {
-  const s = (raw || '').toLowerCase();
-  if (s.includes('windows'))   return 'Windows';
-  if (s.includes('mac'))       return 'macOS';
-  if (s.includes('ios'))       return 'iOS';
-  if (s.includes('android'))   return 'Android';
-  if (s.includes('linux'))     return 'Linux';
-  if (s.includes('chrome os')) return 'Chrome OS';
-  return 'Overig';
-}
-
-// ── Normalise raw browser string ─────────────────────────────────────────────
-
-// Collapses raw browser strings; Edge must come before Chrome because its UA contains "chrome"
-export function normalizeBrowser(raw) {
-  const s = (raw || '').toLowerCase();
-  if (s.includes('edge'))                             return 'Edge';
-  if (s.includes('chrome'))                          return 'Chrome';
-  if (s.includes('firefox'))                         return 'Firefox';
-  if (s.includes('safari') && !s.includes('chrome')) return 'Safari';
-  if (s.includes('ios'))                             return 'Safari'; // iOS webviews
-  if (s.includes('samsung'))                         return 'Samsung';
-  if (s.includes('opera'))                           return 'Opera';
-  return 'Overig';
-}
-
 // ── Aggregate raw events into per-country stats ───────────────────────────────
 
 // Reduces raw event array into a map of per-country stats keyed by TopoJSON numeric id
@@ -57,8 +28,6 @@ export function aggregate(events) {
         name: COUNTRY_NAMES[code] || code, // fall back to raw code if not in lookup
         events: 0, uploaded: 0, dismissed: 0,
         cities: {}, fish: {}, hours: [],
-        mobile: 0, desktop: 0,
-        os: {}, browser: {},
       };
     }
 
@@ -67,10 +36,6 @@ export function aggregate(events) {
     if (ev.event_name === 'uploadedFish')       c.uploaded++;
     if (ev.event_name === 'dismissedUploading') c.dismissed++;
     if (ev.city) c.cities[ev.city] = (c.cities[ev.city] || 0) + 1;
-
-    const dev = (ev.device || '').toLowerCase();
-    if      (dev === 'mobile'  || dev === 'tablet')  c.mobile++;
-    else if (dev === 'laptop'  || dev === 'desktop') c.desktop++;
 
     // Fish species is encoded in the referrer query string as ?fish=Baars&…
     const fishMatch = (ev.referrer_query || '').match(/fish=([^&]+)/);
@@ -85,8 +50,6 @@ export function aggregate(events) {
       if (!isNaN(h)) c.hours.push(h);
     }
 
-    if (ev.os)      { const os = normalizeOS(ev.os);           c.os[os]     = (c.os[os]     || 0) + 1; }
-    if (ev.browser) { const br = normalizeBrowser(ev.browser); c.browser[br]= (c.browser[br]|| 0) + 1; }
   });
 
   // Derive per-country summaries
@@ -101,8 +64,6 @@ export function aggregate(events) {
     c.topCities  = Object.entries(c.cities)
       .sort((a, b) => b[1] - a[1]).slice(0, 3).map(([city]) => city).join(', ');
     c.topFish    = firstKnown(c.fish);
-    c.topOS      = firstKnown(c.os);
-    c.topBrowser = firstKnown(c.browser);
     // Mean hour rounded to nearest integer, or null when no timestamp data exists
     c.avgHour    = c.hours.length
       ? Math.round(c.hours.reduce((a, b) => a + b, 0) / c.hours.length)
@@ -123,12 +84,6 @@ export async function loadData(period) {
 
 // ── Tooltip rows builder ──────────────────────────────────────────────────────
 
-// Appends a top-cities row to a tooltip rows array when city data is available
-function withCities(rows, c) {
-  if (c.topCities) rows.push({ label: '📍 Steden', val: c.topCities, color: '' });
-  return rows;
-}
-
 // Builds the label/value/color rows shown inside the hover tooltip for a given mode
 export function buildTooltipRows(c, mode, colors) {
   const { C, FISH_COLORS } = colors;
@@ -139,11 +94,11 @@ export function buildTooltipRows(c, mode, colors) {
 
   // Fish mode: top-5 species with counts and percentages
   if (mode === 'fish') {
-    const entries = Object.entries(c.fish).filter(([name]) => !UNKNOWN_VALS.includes(name)).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    if (!entries.length) return withCities([base, row('Vis', 'Geen data')], c);
-    return withCities([base, ...entries.map(([name, count]) =>
-      row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#c0a8ff'),
-    )], c);
+    const entries = Object.entries(c.fish).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (!entries.length) return [base, row('Vis', 'Geen data')];
+    return [base, ...entries.map(([name, count]) =>
+      row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#c0a8ff'),  // --color-purple fallback
+    )];
   }
 
   // Time mode: average hour label + breakdown into four time-of-day buckets
@@ -163,35 +118,17 @@ export function buildTooltipRows(c, mode, colors) {
       else if (h < 18) bk.middag++;
       else             bk.avond++;
     });
-    return withCities([
+    return [
       base,
       row('⏰ Gem. tijdstip',  hl(c.avgHour)),
-      row('🌙 Nacht (0–6u)',    n(bk.nacht)   + pct(bk.nacht,   c.events), '#9b74ff'),
-      row('🌅 Ochtend (6–12u)', n(bk.ochtend) + pct(bk.ochtend, c.events), '#f0af00'),
-      row('☀️ Middag (12–18u)', n(bk.middag)  + pct(bk.middag,  c.events), '#1eacb0'),
-      row('🌆 Avond (18–24u)',  n(bk.avond)   + pct(bk.avond,   c.events), '#ff80b9'),
-    ], c);
+      row('🌙 Nacht (0–6u)',    n(bk.nacht)   + pct(bk.nacht,   c.events), '#9b74ff'),  // --color-purple-bell
+      row('🌅 Ochtend (6–12u)', n(bk.ochtend) + pct(bk.ochtend, c.events), '#f0af00'),  // --color-gold
+      row('☀️ Middag (12–18u)', n(bk.middag)  + pct(bk.middag,  c.events), '#1eacb0'),  // --color-teal
+      row('🌆 Avond (18–24u)',  n(bk.avond)   + pct(bk.avond,   c.events), '#ff80b9'),  // --color-pink
+    ];
   }
 
-  // OS mode: ranked OS breakdown
-  if (mode === 'os') {
-    const entries = Object.entries(c.os || {}).sort((a, b) => b[1] - a[1]);
-    if (!entries.length) return withCities([base, row('OS', 'Geen data')], c);
-    return withCities([base, ...entries.map(([name, count]) =>
-      row(name, n(count) + pct(count, c.events), '#c0a8ff'),
-    )], c);
-  }
-
-  // Browser mode: ranked browser breakdown
-  if (mode === 'browser') {
-    const entries = Object.entries(c.browser || {}).sort((a, b) => b[1] - a[1]);
-    if (!entries.length) return withCities([base, row('Browser', 'Geen data')], c);
-    return withCities([base, ...entries.map(([name, count]) =>
-      row(name, n(count) + pct(count, c.events), '#c0a8ff'),
-    )], c);
-  }
-
-  return withCities([base], c);
+  return [base];
 }
 
 // ── Country fill colour for the current mode ──────────────────────────────────
@@ -213,7 +150,5 @@ export function getCountryFill(d, countryData, maxEvents, mode, colors) {
     if (h < 18) return '#1eacb0';  // --color-teal
     return '#ff80b9';              // --color-pink
   }
-  if (mode === 'os')      { if (!c || !c.topOS)      return C.land; return '#c0a8ff'; }
-  if (mode === 'browser') { if (!c || !c.topBrowser)  return C.land; return '#c0a8ff'; }
   return C.land;
 }

@@ -79,28 +79,8 @@ export const COUNTRY_GEO = {
   KW: [47.5, 29.3, 'Koeweit'],
 };
 
-// Browserfamilies voor de apparaten-school
-export const BROWSER_FAMILY = {
-  chrome: 'google', crios: 'google', 'chromium-webview': 'google', 'edge-chromium': 'google',
-  samsung: 'google', opera: 'google', miui: 'google', yandexbrowser: 'google', silk: 'google',
-  ios: 'apple', safari: 'apple', 'ios-webview': 'apple', 'edge-ios': 'apple',
-  firefox: 'firefox', fxios: 'firefox',
-  instagram: 'social', facebook: 'social',
-};
-export const FAMILY = {
-  google:  { color: COLORS.teal,     label: 'Chrome-achtig' },
-  apple:   { color: COLORS.bell,     label: 'Safari / iOS' },
-  firefox: { color: COLORS.goldDeep, label: 'Firefox' },
-  social:  { color: COLORS.pink,     label: 'Social in-app' },
-  other:   { color: COLORS.greenMid, label: 'Overig' },
-};
-export const BROWSER_LABEL = {
-  chrome: 'Chrome', crios: 'Chrome iOS', 'chromium-webview': 'Chrome WebView',
-  'edge-chromium': 'Edge', samsung: 'Samsung', opera: 'Opera', firefox: 'Firefox',
-  fxios: 'Firefox iOS', ios: 'Safari iOS', safari: 'Safari', 'ios-webview': 'iOS WebView',
-  instagram: 'Instagram', facebook: 'Facebook', silk: 'Silk', 'edge-ios': 'Edge iOS',
-  miui: 'MIUI', yandexbrowser: 'Yandex',
-};
+// (Browserfamilies BROWSER_FAMILY / FAMILY / BROWSER_LABEL — alleen voor de
+// gearchiveerde apparaten-charts — staan in charts/legacy/legacy-support.js.)
 
 // Begroetingen per taal (primaire subtag)
 export const GREETINGS = {

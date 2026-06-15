@@ -1,11 +1,12 @@
 import * as d3 from 'd3';
-import { C, FONT_BODY, FONT_DISPLAY, BROWSER_FAMILY, BROWSER_LABEL, FAMILY } from '../../constants.js';
+import { C, FONT_BODY, FONT_DISPLAY } from '../../constants.js';
 import { $, fmt, reduceMotion } from '../../utils.js';
 import { showTooltip, hideTooltip } from '../../tooltip.js';
-import { state, lifecycle, raf } from '../../state.js';
+import { lifecycle, raf } from '../../state.js';
+import { BROWSER_FAMILY, BROWSER_LABEL, FAMILY, legacyState } from './legacy-support.js';
 
 export function initShoal() {
-  const { techData } = state;
+  const { techData } = legacyState;
   const { cleanups } = lifecycle;
   const stage = $('#shoalStage');
   const tech = techData || { browser: {}, device: {}, os: {} };

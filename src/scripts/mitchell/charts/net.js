@@ -11,25 +11,25 @@ import { state, lifecycle } from '../state.js';
 // ============================================================================
 
 // ── Instelbare waarden ──────────────────────────────────────────────────────
-const W = 900, H = 680;        // tekenvlak
-const MESH_BOTTOM = 380;       // hoe ver het net naar beneden hangt
-const BUBBLE_PADDING = 8;      // ruimte tussen de bellen
-const FALL_FROM = 200;         // van hoe hoog het net en de bellen invallen
-const FISH_FACTOR = 1.4, FISH_MAX = 96; // vis-plaatje t.o.v. de bel (met plafond)
-const LABEL_MIN_R = 28;        // onder deze straal verbergen we het naam-label
+const STAGE_WIDTH = 900, STAGE_HEIGHT = 680; // tekenvlak
+const NET_BOTTOM = 380;          // hoe ver het net naar beneden hangt
+const BUBBLE_PADDING = 8;        // ruimte tussen de bellen
+const FALL_FROM_OFFSET = 200;    // van hoe hoog het net en de bellen invallen
+const FISH_SIZE_FACTOR = 1.4, FISH_SIZE_MAX = 96; // vis-plaatje t.o.v. de bel (met plafond)
+const LABEL_MIN_RADIUS = 28;     // onder deze straal verbergen we het naam-label
 
 // De drie weergaven: waarop baseren we de belgrootte?
-const statFn = {
-  count:   d => d.count,
-  weight:  d => d.weight,
-  biomass: d => d.count * d.weight,
+const valueForStat = {
+  count:   species => species.count,
+  weight:  species => species.weight,
+  biomass: species => species.count * species.weight,
 };
-const statLabel = {
-  count:   v => `${formatNumber(v.count)} waarnemingen`,
-  weight:  v => `~${v.weight} kg per vis`,
-  biomass: v => `${formatNumber(v.count * v.weight)} kg biomassa (${formatNumber(v.count)} × ${v.weight} kg)`,
+const summaryForStat = {
+  count:   species => `${formatNumber(species.count)} waarnemingen`,
+  weight:  species => `~${species.weight} kg per vis`,
+  biomass: species => `${formatNumber(species.count * species.weight)} kg biomassa (${formatNumber(species.count)} × ${species.weight} kg)`,
 };
-const explainer = {
+const explanationForStat = {
   count:   'Verdeeld op aantal waarnemingen.',
   weight:  'Verdeeld op gemiddeld gewicht per vis.',
   biomass: 'Verdeeld op biomassa: aantal × gewicht.',
@@ -38,111 +38,111 @@ const explainer = {
 export function initNet() {
   const { visData } = state;
   const { cleanups } = lifecycle;
-  const host = $('#netStage');
-  const info = $('#netInfo');
-  const svg = d3.select(host).append('svg').attr('viewBox', `0 0 ${W} ${H}`);
+  const stageEl = $('#netStage');
+  const infoEl = $('#netInfo');
+  const svg = d3.select(stageEl).append('svg').attr('viewBox', `0 0 ${STAGE_WIDTH} ${STAGE_HEIGHT}`);
 
   drawNet(svg);
-  const bubbleGroup = svg.append('g').attr('transform', 'translate(20, 80)');
+  const bubbleLayer = svg.append('g').attr('transform', 'translate(20, 80)');
   const defs = svg.append('defs');
   let currentStat = 'biomass';
 
   // Eén bel aanmaken: kleurverloop, hoofdcirkel, glansplekje, vis-plek, label.
-  function createBubble(g, d) {
-    const gradId = `bubGrad-${d.data.naam.replace(/\W/g, '')}`;
-    const grad = defs.append('radialGradient').attr('id', gradId).attr('cx', '35%').attr('cy', '30%');
-    grad.append('stop').attr('offset', '0%').attr('stop-color', COLORS.off).attr('stop-opacity', 0.7);
-    grad.append('stop').attr('offset', '50%').attr('stop-color', d.data.color).attr('stop-opacity', 0.55);
-    grad.append('stop').attr('offset', '100%').attr('stop-color', d.data.color).attr('stop-opacity', 0.85);
+  function createBubble(group, bubble) {
+    const gradientId = `bubGrad-${bubble.data.naam.replace(/\W/g, '')}`;
+    const gradient = defs.append('radialGradient').attr('id', gradientId).attr('cx', '35%').attr('cy', '30%');
+    gradient.append('stop').attr('offset', '0%').attr('stop-color', COLORS.off).attr('stop-opacity', 0.7);
+    gradient.append('stop').attr('offset', '50%').attr('stop-color', bubble.data.color).attr('stop-opacity', 0.55);
+    gradient.append('stop').attr('offset', '100%').attr('stop-color', bubble.data.color).attr('stop-opacity', 0.85);
 
-    g.append('circle').attr('class', 'bub-main').attr('r', d.r).attr('fill', `url(#${gradId})`)
+    group.append('circle').attr('class', 'bub-main').attr('r', bubble.r).attr('fill', `url(#${gradientId})`)
       .attr('stroke', 'rgb(1 70 60 / 0.28)').attr('stroke-width', 1);
-    g.append('circle').attr('class', 'bub-shine')
-      .attr('cx', -d.r * 0.3).attr('cy', -d.r * 0.3).attr('r', d.r * 0.25)
+    group.append('circle').attr('class', 'bub-shine')
+      .attr('cx', -bubble.r * 0.3).attr('cy', -bubble.r * 0.3).attr('r', bubble.r * 0.25)
       .attr('fill', 'rgb(253 247 239 / 0.45)');
-    g.append('g').attr('class', 'bub-fish').style('color', d.data.color);
-    g.append('text').attr('class', 'bub-label').attr('text-anchor', 'middle')
+    group.append('g').attr('class', 'bub-fish').style('color', bubble.data.color);
+    group.append('text').attr('class', 'bub-label').attr('text-anchor', 'middle')
       .attr('font-family', FONT_DISPLAY).attr('font-weight', 800).attr('fill', COLORS.green);
   }
 
   // Eén bel bijwerken voor de gekozen weergave: vis-plaatje, info, en animeren
   // naar de nieuwe grootte (zo "morphen" de bellen bij het wisselen).
-  function updateBubble(g, d, stat, motionScale) {
-    const fishSize = Math.min(d.r * FISH_FACTOR, FISH_MAX);
-    const tint = ensureTintFilter(svg, d.data.color);
-    g.select('.bub-fish').html(
-      `<image href="${fishImagePath(d.data.naam)}" x="${-fishSize / 2}" y="${-fishSize / 3}" width="${fishSize}" height="${fishSize / 1.8}" preserveAspectRatio="xMidYMid meet" filter="url(#${tint})"/>`
+  function updateBubble(group, bubble, stat, motionScale) {
+    const fishSize = Math.min(bubble.r * FISH_SIZE_FACTOR, FISH_SIZE_MAX);
+    const tintFilterId = ensureTintFilter(svg, bubble.data.color);
+    group.select('.bub-fish').html(
+      `<image href="${fishImagePath(bubble.data.naam)}" x="${-fishSize / 2}" y="${-fishSize / 3}" width="${fishSize}" height="${fishSize / 1.8}" preserveAspectRatio="xMidYMid meet" filter="url(#${tintFilterId})"/>`
     );
 
-    g.attr('aria-label', `${d.data.naam}: ${statLabel[stat](d.data)}`);
-    const setInfo = () => { info.textContent = `${d.data.naam} — ${statLabel[stat](d.data)}.`; };
-    g.on('click', setInfo).on('mouseenter', setInfo)
-      .on('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setInfo(); } });
+    group.attr('aria-label', `${bubble.data.naam}: ${summaryForStat[stat](bubble.data)}`);
+    const showInfo = () => { infoEl.textContent = `${bubble.data.naam} — ${summaryForStat[stat](bubble.data)}.`; };
+    group.on('click', showInfo).on('mouseenter', showInfo)
+      .on('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showInfo(); } });
 
-    g.select('.bub-main').transition().duration(800 * motionScale).attr('r', d.r);
-    g.select('.bub-shine').transition().duration(800 * motionScale)
-      .attr('cx', -d.r * 0.3).attr('cy', -d.r * 0.3).attr('r', d.r * 0.25);
-    g.select('.bub-label').transition().duration(800 * motionScale)
-      .attr('y', d.r * 0.55).attr('font-size', Math.min(d.r * 0.32, 18))
-      .attr('opacity', d.r > LABEL_MIN_R ? 0.92 : 0);
+    group.select('.bub-main').transition().duration(800 * motionScale).attr('r', bubble.r);
+    group.select('.bub-shine').transition().duration(800 * motionScale)
+      .attr('cx', -bubble.r * 0.3).attr('cy', -bubble.r * 0.3).attr('r', bubble.r * 0.25);
+    group.select('.bub-label').transition().duration(800 * motionScale)
+      .attr('y', bubble.r * 0.55).attr('font-size', Math.min(bubble.r * 0.32, 18))
+      .attr('opacity', bubble.r > LABEL_MIN_RADIUS ? 0.92 : 0);
   }
 
   // Herteken alle bellen voor 'stat' met circle-packing + een data-join.
-  function renderPack(stat) {
-    const packed = packBubbles(stat);
+  function renderBubbles(stat) {
+    const packedBubbles = packBubbles(stat);
     const motionScale = reduceMotion() ? 0 : 1;
 
-    const sel = bubbleGroup.selectAll('.net-bubble').data(packed, d => d.data.naam);
+    const existingBubbles = bubbleLayer.selectAll('.net-bubble').data(packedBubbles, bubble => bubble.data.naam);
 
     // verdwenen soorten → krimpen en weg
-    sel.exit().transition().duration(500 * motionScale)
-      .attr('transform', d => `translate(${d.x}, ${d.y}) scale(0)`).remove();
+    existingBubbles.exit().transition().duration(500 * motionScale)
+      .attr('transform', bubble => `translate(${bubble.x}, ${bubble.y}) scale(0)`).remove();
 
     // nieuwe soorten → klein en hoog beginnen, dan invallen
-    const enter = sel.enter().append('g')
+    const enteringBubbles = existingBubbles.enter().append('g')
       .attr('class', 'net-bubble').attr('tabindex', 0).attr('role', 'button')
-      .attr('transform', d => `translate(${d.x}, ${d.y - FALL_FROM}) scale(0)`);
-    enter.each(function (d) { createBubble(d3.select(this), d); });
+      .attr('transform', bubble => `translate(${bubble.x}, ${bubble.y - FALL_FROM_OFFSET}) scale(0)`);
+    enteringBubbles.each(function (bubble) { createBubble(d3.select(this), bubble); });
 
     // nieuw + bestaand bijwerken naar de nieuwe grootte
-    enter.merge(sel).each(function (d) { updateBubble(d3.select(this), d, stat, motionScale); });
+    enteringBubbles.merge(existingBubbles).each(function (bubble) { updateBubble(d3.select(this), bubble, stat, motionScale); });
 
-    enter.transition().delay((d, i) => (reduceMotion() ? 0 : 200 + i * 70))
+    enteringBubbles.transition().delay((bubble, i) => (reduceMotion() ? 0 : 200 + i * 70))
       .duration(900 * motionScale).ease(d3.easeCubicOut)
-      .attr('transform', d => `translate(${d.x}, ${d.y}) scale(1)`);
-    sel.transition().duration(800 * motionScale).ease(d3.easeCubicInOut)
-      .attr('transform', d => `translate(${d.x}, ${d.y}) scale(1)`);
+      .attr('transform', bubble => `translate(${bubble.x}, ${bubble.y}) scale(1)`);
+    existingBubbles.transition().duration(800 * motionScale).ease(d3.easeCubicInOut)
+      .attr('transform', bubble => `translate(${bubble.x}, ${bubble.y}) scale(1)`);
   }
 
   // Rangschik de soorten als compacte cirkels (grootte = de gekozen weergave).
   function packBubbles(stat) {
-    const packData = visData.map(v => ({ ...v, value: statFn[stat](v) }));
-    const pack = d3.pack().size([W - 40, H - 100]).padding(BUBBLE_PADDING);
-    const root = d3.hierarchy({ children: packData }).sum(d => d.value);
-    return pack(root).leaves();
+    const bubbleData = visData.map(species => ({ ...species, value: valueForStat[stat](species) }));
+    const packLayout = d3.pack().size([STAGE_WIDTH - 40, STAGE_HEIGHT - 100]).padding(BUBBLE_PADDING);
+    const hierarchyRoot = d3.hierarchy({ children: bubbleData }).sum(species => species.value);
+    return packLayout(hierarchyRoot).leaves();
   }
 
-  renderPack(currentStat);
-  if (info) info.textContent = explainer[currentStat];
+  renderBubbles(currentStat);
+  if (infoEl) infoEl.textContent = explanationForStat[currentStat];
 
   // De drie knoppen. onclick (i.p.v. addEventListener) zodat er bij hertekenen
   // niets opstapelt.
-  const markActive = () => $$('.net-toggle-btn').forEach(b => {
-    const on = b.dataset.stat === currentStat;
-    b.classList.toggle('active', on);
-    b.setAttribute('aria-selected', String(on));
+  const updateActiveToggle = () => $$('.net-toggle-btn').forEach(button => {
+    const isActive = button.dataset.stat === currentStat;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-selected', String(isActive));
   });
-  $$('.net-toggle-btn').forEach(btn => {
-    btn.onclick = () => {
-      if (btn.dataset.stat === currentStat) return;
-      currentStat = btn.dataset.stat;
-      markActive();
-      renderPack(currentStat);
-      if (info) info.textContent = explainer[currentStat];
+  $$('.net-toggle-btn').forEach(button => {
+    button.onclick = () => {
+      if (button.dataset.stat === currentStat) return;
+      currentStat = button.dataset.stat;
+      updateActiveToggle();
+      renderBubbles(currentStat);
+      if (infoEl) infoEl.textContent = explanationForStat[currentStat];
     };
   });
-  markActive();
-  cleanups.push(() => { $$('.net-toggle-btn').forEach(b => { b.onclick = null; }); });
+  updateActiveToggle();
+  cleanups.push(() => { $$('.net-toggle-btn').forEach(button => { button.onclick = null; }); });
 }
 
 // Het net dat van bovenaf in beeld zakt: verticale + horizontale "touwen".
@@ -150,20 +150,20 @@ function drawNet(svg) {
   const netGroup = svg.append('g');
 
   for (let i = 0; i <= 16; i++) {
-    const x = (i / 16) * W;
+    const x = (i / 16) * STAGE_WIDTH;
     netGroup.append('path').attr('class', 'net-rope')
-      .attr('d', `M ${x} 0 Q ${x + Math.sin(i) * 12} 200, ${x + Math.sin(i + 0.5) * 30} ${MESH_BOTTOM}`);
+      .attr('d', `M ${x} 0 Q ${x + Math.sin(i) * 12} 200, ${x + Math.sin(i + 0.5) * 30} ${NET_BOTTOM}`);
   }
   for (let j = 0; j <= 8; j++) {
-    const y = (j / 8) * MESH_BOTTOM, sag = 8 + j * 2;
+    const y = (j / 8) * NET_BOTTOM, sagAmount = 8 + j * 2;
     netGroup.append('path').attr('class', 'net-rope')
-      .attr('d', `M 0 ${y} Q ${W / 2} ${y + sag}, ${W} ${y}`);
+      .attr('d', `M 0 ${y} Q ${STAGE_WIDTH / 2} ${y + sagAmount}, ${STAGE_WIDTH} ${y}`);
   }
-  netGroup.append('line').attr('x1', 0).attr('y1', 0).attr('x2', W).attr('y2', 0)
+  netGroup.append('line').attr('x1', 0).attr('y1', 0).attr('x2', STAGE_WIDTH).attr('y2', 0)
     .attr('stroke', 'rgb(1 70 60 / 0.45)').attr('stroke-width', 2);
 
   // van boven in beeld laten zakken
-  netGroup.attr('transform', `translate(0,-${FALL_FROM})`)
+  netGroup.attr('transform', `translate(0,-${FALL_FROM_OFFSET})`)
     .transition().delay(reduceMotion() ? 0 : 300).duration(reduceMotion() ? 0 : 1400)
     .attr('transform', 'translate(0,0)');
 }
