@@ -37,9 +37,3 @@ export function generateMonthly(total) {
   const peak = [0.06, 0.22, 0.28, 0.16, 0.10, 0.06, 0.05, 0.04, 0.03];
   return peak.map(p => Math.round(p * total * (0.92 + rng() * 0.16)));
 }
-
-// Bouwt het id van een <symbol> in de FishSprite-sheet op uit de vorm-naam
-// (bv. 'round' → 'fish-round').
-export function fishSymbolId(shape) {
-  return 'fish-' + shape;
-}

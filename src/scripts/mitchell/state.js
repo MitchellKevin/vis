@@ -18,14 +18,10 @@ export const state = {
   visData,            // dezelfde referentie, in-place gemuteerd
   geoData: null,      // landen + totalen voor de wereldkaart
   funnelData: null,   // trechter: geüpload vs. weggeklikt
-  techData: null,     // device / browser / os verdeling
   worldTopo: null,    // TopoJSON van de wereld (landgrenzen)
-  dailyData: null,    // oproepen per dag
-  sessionsData: null, // sessies: bellers, totaal aanbellen, fanatici
-  pondWeekData: null, // tijdlijn voor de vijver-replay
   languagesData: null,// talen van de bezoekers
-  screensData: null,  // schermresoluties
-  orientationData: null, // portret / landschap
+  // (Legacy-only velden — techData, dailyData, sessionsData, pondWeekData,
+  //  screensData, orientationData — staan in charts/legacy/legacy-support.js.)
 };
 
 // ============================================================================

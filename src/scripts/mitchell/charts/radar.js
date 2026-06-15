@@ -13,213 +13,214 @@ import { state, lifecycle, raf } from '../state.js';
 // ============================================================================
 
 // ── Instelbare waarden ──────────────────────────────────────────────────────
-const W = 620, H = 620, cx = W / 2, cy = H / 2, R = 270; // vlak + middelpunt + buitenstraal
-const INNER_DIST = 70;                 // dichtst bij het midden (drukste soort)
-const OUTER_DIST = R - 55;             // bij de rand (zeldzaamste soort)
-const ABSENT_DIST = OUTER_DIST + 10;   // net buiten de rand: 0 waarnemingen
+const WIDTH = 620, HEIGHT = 620;       // tekenvlak
+const CENTER_X = WIDTH / 2, CENTER_Y = HEIGHT / 2, RADIUS = 270; // middelpunt + buitenstraal
+const INNER_DISTANCE = 70;             // dichtst bij het midden (drukste soort)
+const OUTER_DISTANCE = RADIUS - 55;    // bij de rand (zeldzaamste soort)
+const ABSENT_DISTANCE = OUTER_DISTANCE + 10; // net buiten de rand: 0 waarnemingen
 const MIN_GAP = 70;                    // minimale afstand tussen twee pings (px)
 const JITTER_RANGE = 22;               // hoeveel pings van de perfecte cirkel afwijken
-const PLACE_TRIES = 60;                // pogingen om een vrije plek te vinden
+const PLACE_ATTEMPTS = 60;             // pogingen om een vrije plek te vinden
 const SWEEP_SPEED = 0.01;              // draaisnelheid van de sweep (rad/frame)
-const SWEEP_SPEED_RM = 0.03;           // idem bij "animaties uit"
-const REVEAL_ARC = 0.18;              // binnen deze hoek licht de sweep een ping op
-const FLOOR = 0.12;                    // laagste helderheid (nooit helemaal weg)
+const SWEEP_SPEED_REDUCED = 0.03;      // idem bij "animaties uit"
+const REVEAL_ARC = 0.18;               // binnen deze hoek licht de sweep een ping op
+const MIN_GLOW = 0.12;                 // laagste helderheid (nooit helemaal weg)
 const GLOW_MS = 1600;                  // hoe lang de naglooi duurt
 const SCRUB_MS = 650;                  // overgangsduur bij het scrubben
 
 // Poolcoördinaat → schermpunt (hoek + afstand → [x, y]).
-const point = (angle, r) => [cx + Math.cos(angle) * r, cy + Math.sin(angle) * r];
-// Afstand-schaal: 0 waarnemingen → buitenrand, 'max' → midden.
-const makeDistanceScale = (max) =>
-  d3.scaleSqrt().domain([0, max]).range([OUTER_DIST, INNER_DIST]).clamp(true);
+const polarToPoint = (angle, distance) => [CENTER_X + Math.cos(angle) * distance, CENTER_Y + Math.sin(angle) * distance];
+// Afstand-schaal: 0 waarnemingen → buitenrand, 'maxCount' → midden.
+const makeDistanceScale = (maxCount) =>
+  d3.scaleSqrt().domain([0, maxCount]).range([OUTER_DISTANCE, INNER_DISTANCE]).clamp(true);
 
 export function initRadar() {
   const { visData, weekHours, weekDayLabels, weekDays, currentPeriod } = state;
   const { cleanups } = lifecycle;
-  const svg = d3.select($('#radarStage')).append('svg').attr('viewBox', `0 0 ${W} ${H}`);
+  const svg = d3.select($('#radarStage')).append('svg').attr('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
 
   drawDecor(svg);
   const sweep = drawSweep(svg);
 
   // Afstand op basis van het totaal-aantal (gedeeld door plaatsing + tijdslider).
   const maxCount = Math.max(...visData.map(v => v.count || 0), 1);
-  const placeScale = makeDistanceScale(maxCount);
-  const distanceFor = (count, jitter, scale = placeScale) =>
-    count > 0 ? scale(count) + jitter : ABSENT_DIST;
+  const placementScale = makeDistanceScale(maxCount);
+  const distanceForCount = (count, jitter, scale = placementScale) =>
+    count > 0 ? scale(count) + jitter : ABSENT_DISTANCE;
 
-  const pings = placePings(visData, distanceFor);
-  const buckets = buildTimeBuckets(visData, weekHours, weekDayLabels, weekDays, currentPeriod);
-  const totalAll = pings.reduce((s, p) => s + p.total, 0);
+  const pings = placePings(visData, distanceForCount);
+  const timeBuckets = buildTimeBuckets(visData, weekHours, weekDayLabels, weekDays, currentPeriod);
+  const totalObservations = pings.reduce((sum, ping) => sum + ping.total, 0);
 
   const detailPanel = $('#radarDetail');
   const pingsGroup = svg.append('g');
-  pings.forEach(p => drawPing(p, pings, pingsGroup, detailPanel, svg));
+  pings.forEach(ping => drawPing(ping, pings, pingsGroup, detailPanel, svg));
 
   // ── Tijdslider (onder de radar, zodat hij niets bedekt) ──
   const sliderLabel = makeSliderLabel();
-  const slider = makeSlider(buckets);
+  const slider = makeSlider(timeBuckets);
   mountScrubber(sliderLabel, slider, cleanups);
 
-  // Zet alle pings op de gekozen tijd-stand (pos 0 = hele periode = totalen).
-  function applyTime(pos) {
-    const isAll = pos === 0;
-    sliderLabel.textContent = isAll
-      ? `Hele ${buckets.noun} · ${formatNumber(totalAll)} waarnemingen`
-      : `${buckets.labels[pos - 1]}${buckets.subs[pos - 1] ? ' · ' + buckets.subs[pos - 1] : ''}`;
+  // Zet alle pings op de gekozen tijd-stand (stand 0 = hele periode = totalen).
+  function applyTime(bucketIndex) {
+    const isWholePeriod = bucketIndex === 0;
+    sliderLabel.textContent = isWholePeriod
+      ? `Hele ${timeBuckets.noun} · ${formatNumber(totalObservations)} waarnemingen`
+      : `${timeBuckets.labels[bucketIndex - 1]}${timeBuckets.subs[bucketIndex - 1] ? ' · ' + timeBuckets.subs[bucketIndex - 1] : ''}`;
 
     // Aantallen voor deze stand, en de schaal opnieuw normaliseren op de drukste
     // soort van dít tijdvak — zo staan ze altijd ten opzichte van elkaar.
-    const counts = pings.map(p => isAll ? p.total : (buckets.perSpecies.get(p.si)?.[pos - 1] ?? 0));
-    const scale = makeDistanceScale(Math.max(...counts, 1));
+    const countPerPing = pings.map(ping => isWholePeriod ? ping.total : (timeBuckets.perSpecies.get(ping.speciesIndex)?.[bucketIndex - 1] ?? 0));
+    const distanceScale = makeDistanceScale(Math.max(...countPerPing, 1));
 
-    pings.forEach((p, idx) => {
-      const count = counts[idx];
-      p.current = count;
-      const dist = count > 0 ? scale(count) + p.jitter : ABSENT_DIST;
-      [p.x, p.y] = point(p.angle, dist);
-      p.elem.transition().duration(reduceMotion() ? 0 : SCRUB_MS).ease(d3.easeCubicInOut)
-        .attr('transform', `translate(${p.x}, ${p.y})`);
-      p.labelTextEl.text(`${p.naam} · ${formatNumber(count)}`);
-      p.elem.attr('aria-label', `${p.naam}: ${formatNumber(count)} waarnemingen`);
-      if (p.selected) p.showDetail();
+    pings.forEach((ping, index) => {
+      const count = countPerPing[index];
+      ping.current = count;
+      const distance = count > 0 ? distanceScale(count) + ping.jitter : ABSENT_DISTANCE;
+      [ping.x, ping.y] = polarToPoint(ping.angle, distance);
+      ping.elem.transition().duration(reduceMotion() ? 0 : SCRUB_MS).ease(d3.easeCubicInOut)
+        .attr('transform', `translate(${ping.x}, ${ping.y})`);
+      ping.labelTextEl.text(`${ping.naam} · ${formatNumber(count)}`);
+      ping.elem.attr('aria-label', `${ping.naam}: ${formatNumber(count)} waarnemingen`);
+      if (ping.selected) ping.showDetail();
     });
   }
   slider.addEventListener('input', () => applyTime(+slider.value));
   applyTime(0);
 
-  drawSummary(visData, buckets);
+  drawSummary(visData, timeBuckets);
   startSweep(sweep, pings, cleanups);
 }
 
 // ── Decor: schijf, ringen en dradenkruis ────────────────────────────────────
 function drawDecor(svg) {
   // lichte vulling zodat de radar zich aftekent tegen de achtergrond
-  svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', R)
+  svg.append('circle').attr('cx', CENTER_X).attr('cy', CENTER_Y).attr('r', RADIUS)
     .attr('fill', 'rgba(1,70,60,0.03)').attr('stroke', 'none');
 
   // vier ringen; de buitenste is steviger en solide, de rest gestippeld
-  for (let i = 1; i <= 4; i++) {
-    const isEdge = i === 4;
-    svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', R * i / 4)
+  for (let ring = 1; ring <= 4; ring++) {
+    const isOuterRing = ring === 4;
+    svg.append('circle').attr('cx', CENTER_X).attr('cy', CENTER_Y).attr('r', RADIUS * ring / 4)
       .attr('fill', 'none')
-      .attr('stroke', isEdge ? 'rgba(1,70,60,0.40)' : 'rgba(1,70,60,0.22)')
-      .attr('stroke-width', isEdge ? 1.3 : 1)
-      .attr('stroke-dasharray', isEdge ? 'none' : '2 6');
+      .attr('stroke', isOuterRing ? 'rgba(1,70,60,0.40)' : 'rgba(1,70,60,0.22)')
+      .attr('stroke-width', isOuterRing ? 1.3 : 1)
+      .attr('stroke-dasharray', isOuterRing ? 'none' : '2 6');
   }
 
   // dradenkruis: één horizontale en één verticale lijn door het midden
-  const crosshair = 'rgba(1,70,60,0.16)';
-  svg.append('line').attr('x1', cx - R).attr('y1', cy).attr('x2', cx + R).attr('y2', cy)
-    .attr('stroke', crosshair).attr('stroke-width', 1);
-  svg.append('line').attr('x1', cx).attr('y1', cy - R).attr('x2', cx).attr('y2', cy + R)
-    .attr('stroke', crosshair).attr('stroke-width', 1);
+  const crosshairColor = 'rgba(1,70,60,0.16)';
+  svg.append('line').attr('x1', CENTER_X - RADIUS).attr('y1', CENTER_Y).attr('x2', CENTER_X + RADIUS).attr('y2', CENTER_Y)
+    .attr('stroke', crosshairColor).attr('stroke-width', 1);
+  svg.append('line').attr('x1', CENTER_X).attr('y1', CENTER_Y - RADIUS).attr('x2', CENTER_X).attr('y2', CENTER_Y + RADIUS)
+    .attr('stroke', crosshairColor).attr('stroke-width', 1);
 }
 
 // ── De draaiende sweep-wig (taartpunt met kleurverloop) ──────────────────────
 function drawSweep(svg) {
-  const grad = svg.append('defs').append('linearGradient').attr('id', 'radarSweep')
+  const gradient = svg.append('defs').append('linearGradient').attr('id', 'radarSweep')
     .attr('x1', 0).attr('y1', 0).attr('x2', 1).attr('y2', 0);
-  grad.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(1,70,60,0.0)');
-  grad.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(1,70,60,0.22)');
+  gradient.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(1,70,60,0.0)');
+  gradient.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(1,70,60,0.22)');
 
-  const [endX, endY] = point(-Math.PI / 4, R); // de wig beslaat 45°
+  const [endX, endY] = polarToPoint(-Math.PI / 4, RADIUS); // de wig beslaat 45°
   const sweep = svg.append('path')
-    .attr('d', `M ${cx} ${cy} L ${cx + R} ${cy} A ${R} ${R} 0 0 0 ${endX} ${endY} Z`)
+    .attr('d', `M ${CENTER_X} ${CENTER_Y} L ${CENTER_X + RADIUS} ${CENTER_Y} A ${RADIUS} ${RADIUS} 0 0 0 ${endX} ${endY} Z`)
     .attr('fill', 'url(#radarSweep)').attr('opacity', 0.6);
 
-  svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 5).attr('fill', COLORS.green); // middelpunt
+  svg.append('circle').attr('cx', CENTER_X).attr('cy', CENTER_Y).attr('r', 5).attr('fill', COLORS.green); // middelpunt
   return sweep;
 }
 
 // ── Pings plaatsen (afstand = aantal, hoek = vrij plekje zonder overlap) ──────
-function placePings(visData, distanceFor) {
+function placePings(visData, distanceForCount) {
   const seed = mulberry32(42); // vaste seed → elke render dezelfde plaatsing
   const pings = [];
-  visData.forEach((v, si) => {
+  visData.forEach((species, speciesIndex) => {
     const jitter = (seed() - 0.5) * JITTER_RANGE;
-    const distance = distanceFor(v.count, jitter);
-    const spot = pickFreeSpot(distance, pings, seed);
+    const distance = distanceForCount(species.count, jitter);
+    const freeSpot = pickFreeSpot(distance, pings, seed);
     pings.push({
-      ...v, ...spot, si, jitter,
-      total: v.count || 0, current: v.count || 0,
+      ...species, ...freeSpot, speciesIndex, jitter,
+      total: species.count || 0, current: species.count || 0,
       litAt: -1e9, hover: false, selected: false,
     });
   });
   return pings;
 }
 
-// Probeer tot PLACE_TRIES willekeurige hoeken; pak de eerste die ver genoeg van
-// de al-geplaatste pings ligt, anders de beste poging (rejection sampling).
+// Probeer tot PLACE_ATTEMPTS willekeurige hoeken; pak de eerste die ver genoeg
+// van de al-geplaatste pings ligt, anders de beste poging (rejection sampling).
 function pickFreeSpot(distance, placed, seed) {
-  let best = null, bestGap = -Infinity;
-  for (let t = 0; t < PLACE_TRIES; t++) {
+  let bestSpot = null, bestGap = -Infinity;
+  for (let attempt = 0; attempt < PLACE_ATTEMPTS; attempt++) {
     const angle = seed() * Math.PI * 2;
-    const [x, y] = point(angle, distance);
-    const nearest = placed.reduce((m, p) => Math.min(m, Math.hypot(p.x - x, p.y - y)), Infinity);
-    if (nearest >= MIN_GAP) return { angle, x, y };
-    if (nearest > bestGap) { bestGap = nearest; best = { angle, x, y }; }
+    const [x, y] = polarToPoint(angle, distance);
+    const nearestDistance = placed.reduce((min, p) => Math.min(min, Math.hypot(p.x - x, p.y - y)), Infinity);
+    if (nearestDistance >= MIN_GAP) return { angle, x, y };
+    if (nearestDistance > bestGap) { bestGap = nearestDistance; bestSpot = { angle, x, y }; }
   }
-  return best;
+  return bestSpot;
 }
 
 // ── Eén ping tekenen (halo, kern, vis-plaatje, label) + hover-info ───────────
-function drawPing(p, pings, pingsGroup, detailPanel, svg) {
-  const g = pingsGroup.append('g')
-    .attr('class', 'radar-ping').attr('data-naam', p.naam)
-    .attr('transform', `translate(${p.x}, ${p.y})`)
+function drawPing(ping, pings, pingsGroup, detailPanel, svg) {
+  const pingGroup = pingsGroup.append('g')
+    .attr('class', 'radar-ping').attr('data-naam', ping.naam)
+    .attr('transform', `translate(${ping.x}, ${ping.y})`)
     .attr('opacity', 0).attr('tabindex', 0).attr('role', 'img')
-    .attr('aria-label', `${p.naam}: ${formatNumber(p.count)} waarnemingen`);
+    .attr('aria-label', `${ping.naam}: ${formatNumber(ping.count)} waarnemingen`);
 
-  g.append('circle').attr('class', 'radar-ping-bg').attr('r', 18).attr('fill', p.color).attr('opacity', 0.18);
-  g.append('circle').attr('r', 8).attr('fill', p.color).attr('opacity', 0.6);
+  pingGroup.append('circle').attr('class', 'radar-ping-bg').attr('r', 18).attr('fill', ping.color).attr('opacity', 0.18);
+  pingGroup.append('circle').attr('r', 8).attr('fill', ping.color).attr('opacity', 0.6);
 
-  const tint = ensureTintFilter(svg, p.color);
-  g.append('g').attr('class', 'fish-wiggle')
-    .append('image').attr('href', fishImagePath(p.naam))
+  const tintFilterId = ensureTintFilter(svg, ping.color);
+  pingGroup.append('g').attr('class', 'fish-wiggle')
+    .append('image').attr('href', fishImagePath(ping.naam))
     .attr('x', -22).attr('y', -14).attr('width', 44).attr('height', 28)
-    .attr('preserveAspectRatio', 'xMidYMid meet').attr('filter', `url(#${tint})`);
+    .attr('preserveAspectRatio', 'xMidYMid meet').attr('filter', `url(#${tintFilterId})`);
 
   // label rechts van de vis, tenzij het dan de rand zou raken (dan links)
-  const labelRight = p.x > cx ? (p.x + 120 < W - 6) : (p.x - 120 < 6);
-  p.labelTextEl = g.append('text')
-    .attr('x', labelRight ? 26 : -26).attr('y', 4)
-    .attr('text-anchor', labelRight ? 'start' : 'end')
+  const labelOnRight = ping.x > CENTER_X ? (ping.x + 120 < WIDTH - 6) : (ping.x - 120 < 6);
+  ping.labelTextEl = pingGroup.append('text')
+    .attr('x', labelOnRight ? 26 : -26).attr('y', 4)
+    .attr('text-anchor', labelOnRight ? 'start' : 'end')
     .attr('font-family', FONT_BODY).attr('font-size', 12).attr('font-weight', 700)
     .attr('fill', COLORS.green).attr('opacity', 0.85)
-    .text(`${p.naam} · ${formatNumber(p.count)}`);
+    .text(`${ping.naam} · ${formatNumber(ping.count)}`);
 
   const showDetail = () => {
-    pings.forEach(x => { x.selected = false; });
+    pings.forEach(other => { other.selected = false; });
     pingsGroup.selectAll('.radar-ping').classed('selected', false);
-    p.selected = true;
-    g.classed('selected', true);
-    detailPanel.innerHTML = `<strong>${p.naam}</strong>${formatNumber(p.current)} waarnemingen<br/>Piek: ${MONTH_FULL[p.monthly.indexOf(Math.max(...p.monthly))]}<br/>Diepte: ${p.diepte}<br/>Gewicht: ~${p.weight} kg`;
+    ping.selected = true;
+    pingGroup.classed('selected', true);
+    detailPanel.innerHTML = `<strong>${ping.naam}</strong>${formatNumber(ping.current)} waarnemingen<br/>Piek: ${MONTH_FULL[ping.monthly.indexOf(Math.max(...ping.monthly))]}<br/>Diepte: ${ping.diepte}<br/>Gewicht: ~${ping.weight} kg`;
     detailPanel.classList.add('visible');
   };
   const hideDetail = () => {
-    p.hover = false;
-    p.selected = false;
-    g.classed('selected', false);
+    ping.hover = false;
+    ping.selected = false;
+    pingGroup.classed('selected', false);
     detailPanel.classList.remove('visible');
   };
 
   // Info op hover (en op focus voor toetsenbord); eraf → weer weg.
-  g.on('mouseenter', () => { p.hover = true; g.attr('cursor', 'pointer'); showDetail(); });
-  g.on('mouseleave', hideDetail);
-  g.on('focus', showDetail);
-  g.on('blur', hideDetail);
+  pingGroup.on('mouseenter', () => { ping.hover = true; pingGroup.attr('cursor', 'pointer'); showDetail(); });
+  pingGroup.on('mouseleave', hideDetail);
+  pingGroup.on('focus', showDetail);
+  pingGroup.on('blur', hideDetail);
 
-  p.elem = g;
-  p.showDetail = showDetail;
+  ping.elem = pingGroup;
+  ping.showDetail = showDetail;
 }
 
 // ── Samenvattingszin onder de kop ────────────────────────────────────────────
-function drawSummary(visData, buckets) {
-  const top = visData.slice().sort((a, b) => (b.count || 0) - (a.count || 0))[0];
-  const el = $('#radarSummary');
-  if (!el || !top) return;
-  const per = buckets.noun === 'jaar' ? 'maand' : buckets.noun === 'maand' ? 'week' : 'dag';
-  el.textContent = `De radar detecteert ${visData.length} vissoorten. Meest gesignaleerd: ${top.naam} (${formatNumber(top.count)} waarnemingen). Sleep de tijdslider om per ${per} te kijken.`;
+function drawSummary(visData, timeBuckets) {
+  const topSpecies = visData.slice().sort((a, b) => (b.count || 0) - (a.count || 0))[0];
+  const summaryEl = $('#radarSummary');
+  if (!summaryEl || !topSpecies) return;
+  const perLabel = timeBuckets.noun === 'jaar' ? 'maand' : timeBuckets.noun === 'maand' ? 'week' : 'dag';
+  summaryEl.textContent = `De radar detecteert ${visData.length} vissoorten. Meest gesignaleerd: ${topSpecies.naam} (${formatNumber(topSpecies.count)} waarnemingen). Sleep de tijdslider om per ${perLabel} te kijken.`;
 }
 
 // ── De sweep draaien + de naglooi per frame ──────────────────────────────────
@@ -227,67 +228,67 @@ function startSweep(sweep, pings, cleanups) {
   let sweepAngle = -Math.PI / 2, frameId = 0, running = false;
 
   function tick(now) {
-    sweepAngle += reduceMotion() ? SWEEP_SPEED_RM : SWEEP_SPEED;
-    sweep.attr('transform', `rotate(${sweepAngle * 180 / Math.PI} ${cx} ${cy})`);
+    sweepAngle += reduceMotion() ? SWEEP_SPEED_REDUCED : SWEEP_SPEED;
+    sweep.attr('transform', `rotate(${sweepAngle * 180 / Math.PI} ${CENTER_X} ${CENTER_Y})`);
 
-    pings.forEach(p => {
-      const delta = (p.angle - sweepAngle + Math.PI * 4) % (Math.PI * 2);
-      if (delta < REVEAL_ARC) p.litAt = now; // sweep veegt over de ping → oplichten
-      p.elem.attr('opacity', glowOpacity(p, now));
+    pings.forEach(ping => {
+      const angleBehindSweep = (ping.angle - sweepAngle + Math.PI * 4) % (Math.PI * 2);
+      if (angleBehindSweep < REVEAL_ARC) ping.litAt = now; // sweep veegt over de ping → oplichten
+      ping.elem.attr('opacity', glowOpacity(ping, now));
     });
 
     if (running) frameId = raf(tick);
   }
 
-  const observer = new IntersectionObserver(([entry]) => {
+  const visibilityObserver = new IntersectionObserver(([entry]) => {
     if (entry.isIntersecting) { if (!running) { running = true; frameId = raf(tick); } }
     else { running = false; cancelAnimationFrame(frameId); }
   }, { threshold: 0.2 });
-  observer.observe($('#radarStage'));
-  cleanups.push(() => { running = false; cancelAnimationFrame(frameId); observer.disconnect(); });
+  visibilityObserver.observe($('#radarStage'));
+  cleanups.push(() => { running = false; cancelAnimationFrame(frameId); visibilityObserver.disconnect(); });
 }
 
 // Helderheid van een ping: vol bij hover/selectie, anders uitdovende naglooi.
-function glowOpacity(p, now) {
+function glowOpacity(ping, now) {
   if (reduceMotion()) return 1;
-  if (p.hover || p.selected) return 1;
-  if (p.litAt < 0) return 0;                 // nog nooit door de sweep geraakt
-  const age = (now - p.litAt) / GLOW_MS;
+  if (ping.hover || ping.selected) return 1;
+  if (ping.litAt < 0) return 0;                 // nog nooit door de sweep geraakt
+  const age = (now - ping.litAt) / GLOW_MS;
   const glow = age >= 1 ? 0 : (1 - age) * (1 - age); // zacht uitdovend (easeOut)
-  return FLOOR + (1 - FLOOR) * glow;
+  return MIN_GLOW + (1 - MIN_GLOW) * glow;
 }
 
 // ── Tijdslider-bouwstenen ────────────────────────────────────────────────────
 function makeSliderLabel() {
-  const el = document.createElement('div');
-  Object.assign(el.style, { fontWeight: '700', fontSize: '13px', color: COLORS.green, textAlign: 'center' });
-  return el;
+  const label = document.createElement('div');
+  Object.assign(label.style, { fontWeight: '700', fontSize: '13px', color: COLORS.green, textAlign: 'center' });
+  return label;
 }
-function makeSlider(buckets) {
+function makeSlider(timeBuckets) {
   const slider = document.createElement('input');
   slider.type = 'range';
   slider.min = '0';
-  slider.max = String(buckets.labels.length);
+  slider.max = String(timeBuckets.labels.length);
   slider.step = '1';
   slider.value = '0';
   slider.style.width = '100%';
   slider.style.accentColor = COLORS.green;
-  slider.setAttribute('aria-label', `Tijdslider — sleep om door de ${buckets.noun} te scrubben`);
+  slider.setAttribute('aria-label', `Tijdslider — sleep om door de ${timeBuckets.noun} te scrubben`);
   return slider;
 }
 function mountScrubber(label, slider, cleanups) {
-  const box = document.createElement('div');
-  box.className = 'radar-scrubber';
-  Object.assign(box.style, {
+  const scrubberBox = document.createElement('div');
+  scrubberBox.className = 'radar-scrubber';
+  Object.assign(scrubberBox.style, {
     width: 'min(94%, 460px)', margin: '20px auto 0',
     display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center',
     fontFamily: FONT_BODY, boxSizing: 'border-box',
     background: 'rgba(253,247,239,0.78)',
     padding: '8px 14px 10px', borderRadius: '14px', border: '1px solid rgba(1,70,60,0.16)',
   });
-  box.append(label, slider);
-  $('#radarStage').insertAdjacentElement('afterend', box); // direct ónder de radar
-  cleanups.push(() => box.remove());
+  scrubberBox.append(label, slider);
+  $('#radarStage').insertAdjacentElement('afterend', scrubberBox); // direct ónder de radar
+  cleanups.push(() => scrubberBox.remove());
 }
 
 // ── Tijdvakken: groepeer de dagen en verdeel elk soort-totaal erover ─────────
@@ -296,56 +297,56 @@ function buildTimeBuckets(visData, weekHours, weekDayLabels, weekDays, currentPe
 
   // totaal aantal belletjes per dag (de echte "drukte-vorm")
   const dayTotals = [];
-  for (let d = 0; d < dayCount; d++) {
+  for (let day = 0; day < dayCount; day++) {
     let sum = 0;
-    for (let h = 0; h < 24; h++) sum += (weekHours[d * 24 + h] || 0);
+    for (let hour = 0; hour < 24; hour++) sum += (weekHours[day * 24 + hour] || 0);
     dayTotals.push(sum);
   }
 
   const groups = groupDays(currentPeriod, dayCount, weekDayLabels, weekDays);
 
   // gewicht per tijdvak = aandeel van de drukte
-  const agg = groups.map(g => g.days.reduce((s, d) => s + (dayTotals[d] || 0), 0));
-  const aggSum = agg.reduce((s, v) => s + v, 0) || 1;
-  const weights = agg.map(v => v / aggSum);
+  const bucketTotals = groups.map(group => group.days.reduce((sum, day) => sum + (dayTotals[day] || 0), 0));
+  const bucketTotalsSum = bucketTotals.reduce((sum, v) => sum + v, 0) || 1;
+  const weights = bucketTotals.map(v => v / bucketTotalsSum);
 
   // verdeel per soort het totaal over de tijdvakken (telt exact op)
   const perSpecies = new Map();
-  visData.forEach((v, si) => {
-    perSpecies.set(si, distributeOverBuckets(v.count || 0, weights, mulberry32(1000 + si * 7)));
+  visData.forEach((species, speciesIndex) => {
+    perSpecies.set(speciesIndex, distributeOverBuckets(species.count || 0, weights, mulberry32(1000 + speciesIndex * 7)));
   });
 
   const noun = currentPeriod === 'week' ? 'week' : currentPeriod === 'jaar' ? 'jaar' : 'maand';
-  return { labels: groups.map(g => g.label), subs: groups.map(g => g.sub), agg, perSpecies, noun };
+  return { labels: groups.map(g => g.label), subs: groups.map(g => g.sub), perSpecies, noun };
 }
 
 // Bepaal de tijdvakken (buckets) afhankelijk van de periode.
 function groupDays(period, dayCount, weekDayLabels, weekDays) {
   if (period === 'week') {
     // elke dag een eigen tijdvak
-    return Array.from({ length: dayCount }, (_, d) => ({ label: weekDayLabels[d] || `Dag ${d + 1}`, sub: '', days: [d] }));
+    return Array.from({ length: dayCount }, (_, day) => ({ label: weekDayLabels[day] || `Dag ${day + 1}`, sub: '', days: [day] }));
   }
   if (period === 'jaar') {
     // groepeer per kalendermaand op basis van de datums
     const byMonth = new Map();
-    for (let d = 0; d < dayCount; d++) {
-      const dt = new Date(weekDays[d]);
-      const valid = !Number.isNaN(dt.getTime());
-      const key = valid ? `${dt.getUTCFullYear()}-${dt.getUTCMonth()}` : `m${Math.floor(d / 30)}`;
+    for (let day = 0; day < dayCount; day++) {
+      const date = new Date(weekDays[day]);
+      const isValidDate = !Number.isNaN(date.getTime());
+      const key = isValidDate ? `${date.getUTCFullYear()}-${date.getUTCMonth()}` : `m${Math.floor(day / 30)}`;
       if (!byMonth.has(key)) {
-        byMonth.set(key, { label: valid ? MONTH_LONG_NL[dt.getUTCMonth()] : `Maand ${byMonth.size + 1}`, sub: '', days: [] });
+        byMonth.set(key, { label: isValidDate ? MONTH_LONG_NL[date.getUTCMonth()] : `Maand ${byMonth.size + 1}`, sub: '', days: [] });
       }
-      byMonth.get(key).days.push(d);
+      byMonth.get(key).days.push(day);
     }
     return [...byMonth.values()];
   }
   // maand → weken van 7 dagen
   const groups = [];
-  for (let w = 0; w * 7 < dayCount; w++) {
-    const start = w * 7, end = Math.min(start + 6, dayCount - 1);
+  for (let weekIndex = 0; weekIndex * 7 < dayCount; weekIndex++) {
+    const start = weekIndex * 7, end = Math.min(start + 6, dayCount - 1);
     const days = [];
-    for (let d = start; d <= end; d++) days.push(d);
-    groups.push({ label: `Week ${w + 1}`, sub: `${weekDayLabels[start] || ''}–${weekDayLabels[end] || ''}`, days });
+    for (let day = start; day <= end; day++) days.push(day);
+    groups.push({ label: `Week ${weekIndex + 1}`, sub: `${weekDayLabels[start] || ''}–${weekDayLabels[end] || ''}`, days });
   }
   return groups;
 }
@@ -353,12 +354,12 @@ function groupDays(period, dayCount, weekDayLabels, weekDays) {
 // Verdeel een totaal over de tijdvakken volgens 'weights' + soort-variatie,
 // en corrigeer de afronding zodat de som exact het totaal blijft.
 function distributeOverBuckets(total, weights, seed) {
-  const raw = weights.map(w => Math.max(0.0001, w * (0.5 + seed())));
-  const rawSum = raw.reduce((s, x) => s + x, 0);
+  const raw = weights.map(weight => Math.max(0.0001, weight * (0.5 + seed())));
+  const rawSum = raw.reduce((sum, x) => sum + x, 0);
   const exact = raw.map(x => (x / rawSum) * total);
   const rounded = exact.map(Math.round);
 
-  let diff = total - rounded.reduce((s, x) => s + x, 0);
+  let diff = total - rounded.reduce((sum, x) => sum + x, 0);
   const order = exact.map((_, i) => i).sort((a, b) => (exact[b] - rounded[b]) - (exact[a] - rounded[a]));
   for (let k = 0; diff !== 0 && order.length; k++) {
     const i = order[k % order.length];

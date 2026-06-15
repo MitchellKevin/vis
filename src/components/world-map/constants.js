@@ -2,8 +2,8 @@
 export const TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
 export const DATA_URLS = {
-  maand: '/json/event-maand.json',
-  week:  '/json/event-week.json',
+  maand: '/json/event-maand-slim.json',
+  week:  '/json/event-week-slim.json',
 };
 
 //  Globe geometry 
@@ -41,6 +41,7 @@ export const FISH_COLORS = {
   Karper:     '#9b74ff',  // --color-purple-bell
   Snoekbaars: '#ff80b9',  // --color-pink
   Paling:     '#01463c',  // --color-green-dark
+  unknown:    '#c0a8ff',  // --color-purple
 };
 
 

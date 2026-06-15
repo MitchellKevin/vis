@@ -35,9 +35,3 @@ export function hideTooltip(delay = 0) {
   if (delay > 0) tooltipHideTimer = setTimeout(() => t.classList.remove('visible'), delay);
   else t.classList.remove('visible');
 }
-
-// Vergeet de gecachte verwijzing — nodig als de DOM opnieuw is opgebouwd
-// (bv. na een hermount), zodat el() het verse element weer opzoekt.
-export function resetTooltipRef() {
-  tooltipEl = null;
-}

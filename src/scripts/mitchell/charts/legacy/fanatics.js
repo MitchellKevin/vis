@@ -1,10 +1,10 @@
 import * as d3 from 'd3';
 import { C, FONT_BODY } from '../../constants.js';
 import { $, fmt, reduceMotion } from '../../utils.js';
-import { state } from '../../state.js';
+import { legacyState } from './legacy-support.js';
 
 export function initFanatics() {
-  const { sessionsData } = state;
+  const { sessionsData } = legacyState;
   const stage = $('#fanaticsStage');
   const s = sessionsData;
   if (!s || !s.hist) { stage.innerHTML = '<p class="stage-fallback">Geen sessiedata.</p>'; return; }
