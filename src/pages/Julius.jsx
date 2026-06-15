@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import Nav from '../components/Nav.jsx';
 import EmblaCarousel from '../components/carousel/EmblaCarousel.jsx';
+import Pond from '../components/pond/Pond.jsx';
+import Clock from '../components/clock/Clock.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
 
 function useBodyClass(cls) {
@@ -14,6 +16,8 @@ export default function Julius() {
   useBodyClass('julius-page');
   useStylesheet('/styles/Julius.css');
   useStylesheet('/styles/EmblaCarousel.css');
+  useStylesheet('/styles/pond.css');
+  useStylesheet('/styles/clock.css');
 
   return (
     <>
@@ -21,6 +25,8 @@ export default function Julius() {
 
       <main className="julius-main">
         <EmblaCarousel />
+        <Pond />
+        <Clock />
       </main>
     </>
   );
