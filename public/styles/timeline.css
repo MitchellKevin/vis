@@ -179,7 +179,7 @@
 
         img {
           max-width: var(--fish-img-size);
-          transform: scaleX(-1) translateX(calc(var(--fish-img-size)*-1));
+          transform: scaleX(-1) translateX(calc(var(--fish-img-size)*-1)) scale(calc(clamp(1, 1 + (var(--fish-length) * 0.04), 3.5)));
           animation:
             wiggle 2s linear infinite,
             swim ease-in-out both;
@@ -251,23 +251,23 @@
 
     0%,
     100% {
-      transform: translateY(0) scaleX(-1) rotate(-2deg);
+      transform: translateY(0) rotate(-2deg);
     }
 
     50% {
-      transform: translateY(-4px) scaleX(-1) rotate(2deg);
+      transform: translateY(-4px) rotate(2deg);
     }
   }
 
   @keyframes swim {
     0% {
-      transform: translateX(-100dvw) translateY(calc(var(--scroll-container-height)/2*-1)) scaleX(-1) scale(0.6);
+      transform: translateX(100dvw) translateY(calc(var(--scroll-container-height)/2*-1)) scale(0.4);
     }
     50% {
-      transform: translateX(0)  translateY(0) scaleX(-1) scale(calc(clamp(0.6, 0.6 + (var(--fish-length) * 0.05), 2.5)));
+      transform: translateX(0)  translateY(0);
     }
     100% {
-      transform: translateX(100dvw) translateY(calc(var(--scroll-container-height))) scaleX(-1) scale(0.6);
+      transform: translateX(-100dvw) translateY(calc(var(--scroll-container-height))) scale(0.4);
     }
   }
 

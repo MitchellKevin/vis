@@ -50,7 +50,7 @@ export default function DayScroll() {
                             const visMatch = visData.find(
                                 (v) => v.naam.toLowerCase() === hour.topFish?.toLowerCase()
                             );
-                            const length = visMatch ? visMatch.length : 1;
+                            const length = visMatch ? visMatch.lengte : 1;
 
                             return (
                                 <tr key={i}>
