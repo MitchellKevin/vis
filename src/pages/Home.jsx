@@ -1,23 +1,21 @@
 import { useRef, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import Nav              from '../components/Nav.jsx';
-import GlobeMap         from '../components/world-map/GlobeMap.jsx';
+import GlobeMap from '../components/world-map/GlobeMap.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
-import useJoostData     from '../components/world-map/useJoostData.js';
+import useJoostData from '../components/world-map/useJoostData.js';
 
 // Timeline
-import DayScroll    from '../components/timeline/day-scroll.jsx';
+import DayScroll from '../components/timeline/day-scroll.jsx';
 
 // Mitchell components
-import FishSprite        from '../components/mitchell-components/FishSprite.jsx';
-import NetChapter        from '../components/mitchell-components/NetChapter.jsx';
-import DataSwitch        from '../components/mitchell-components/DataSwitch.jsx';
-import Aquarium          from '../components/mitchell-components/Aquarium.jsx';
-import DataCarousel      from '../components/mitchell-components/DataCarousel.jsx';
-import SectionWave       from '../components/mitchell-components/SectionWave.jsx';
-import LanguagesChapter  from '../components/mitchell-components/LanguagesChapter.jsx';
-import RadarChapter      from '../components/mitchell-components/RadarChapter.jsx';
-import { initMitchell }  from '../scripts/mitchell.js';
+import FishSprite from '../components/mitchell-components/FishSprite.jsx';
+import NetChapter from '../components/mitchell-components/NetChapter.jsx';
+import DataSwitch from '../components/mitchell-components/DataSwitch.jsx';
+import Aquarium from '../components/mitchell-components/Aquarium.jsx';
+import DataCarousel from '../components/mitchell-components/DataCarousel.jsx';
+import SectionWave from '../components/mitchell-components/SectionWave.jsx';
+import LanguagesChapter from '../components/mitchell-components/LanguagesChapter.jsx';
+import RadarChapter from '../components/mitchell-components/RadarChapter.jsx';
+import { initMitchell } from '../scripts/mitchell.js';
 
 function AccessibilityMenu() {
   const [open, setOpen] = useState(false);
@@ -105,7 +103,6 @@ export default function Home() {
 
   return (
     <>
-      <Nav />
       <header>
         <span className="logo">Visdeurbel</span>
       </header>
@@ -114,54 +111,30 @@ export default function Home() {
           <h1>Visualisaties</h1>
           <p>Overzicht van alle visualisatieprojecten voor de Visdeurbel meesterproef.</p>
         </section>
-        <section>
-          <div className="grid">
-            <Link className="card" to="/julius">
-              <span className="card__label">Julius</span>
-              <h2 className="card__title">Visualisatie Julius</h2>
-              <p className="card__desc">Persoonlijk visualisatieproject van Julius.</p>
-              <span className="card__link">Bekijken →</span>
-            </Link>
-            <Link className="card" to="/mitchell">
-              <span className="card__label">Mitchell</span>
-              <h2 className="card__title">Visualisatie Mitchell</h2>
-              <p className="card__desc">Persoonlijk visualisatieproject van Mitchell.</p>
-              <span className="card__link">Bekijken →</span>
-            </Link>
-            <a className="card" href="#timeline">
-              <h2 className="card__title">Timeline Visualisatie</h2>
-              <p className="card__desc">Visualisaties van hoeveel vissen op welk tijdstip van de dag te zien zijn.</p>
-              <span className="card__link">Bekijken ↓</span>
-            </a>
+        {/* Globe map — outside <main> so index.css max-width doesn't constrain it */}
+        {loading ? (
+          <div className="map-panel map-panel--loading">
+            <div className="loading-inner">
+              <div className="loading-fish">🐟</div>
+              <div className="loading-text">Data laden…</div>
+            </div>
           </div>
-        </section>
+        ) : (
+          <GlobeMap
+            countryData={countryData}
+            maxEvents={maxEvents}
+            topoFeatures={topoFeatures}
+            onRotateTo={flyToRef}
+          />
+        )}
 
-      </main>
-
-      {/* Globe map — outside <main> so index.css max-width doesn't constrain it */}
-      {loading ? (
-        <div className="map-panel map-panel--loading">
-          <div className="loading-inner">
-            <div className="loading-fish">🐟</div>
-            <div className="loading-text">Data laden…</div>
-          </div>
-        </div>
-      ) : (
-        <GlobeMap
-          countryData={countryData}
-          maxEvents={maxEvents}
-          topoFeatures={topoFeatures}
-          onRotateTo={flyToRef}
-        />
-      )}
-
-      <main style={{ paddingBlock: 0, maxWidth: 'none' }}>
         <DayScroll />
+
+        <FishSprite />
+        <DataSwitch />
+        <AccessibilityMenu />
       </main>
 
-      <FishSprite />
-      <DataSwitch />
-      <AccessibilityMenu />
       <div className="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
       <main id="mitchell-main" aria-label="Datavisualisatie over de Visdeurbel, door Mitchell" style={{ paddingBlock: 0, maxWidth: 'none' }}>
         <p className="sr-only">
