@@ -7,7 +7,6 @@ import useJoostData     from '../components/world-map/useJoostData.js';
 
 // Components
 import DayScroll    from '../components/timeline/day-scroll.jsx';
-import TableStyled  from '../components/timeline/table-styled.jsx';
 
 // Mitchell components
 import FishSprite        from '../components/mitchell-components/FishSprite.jsx';
@@ -158,7 +157,6 @@ export default function Home() {
 
       <main style={{ paddingBlock: 0, maxWidth: 'none' }}>
         <DayScroll />
-        <TableStyled />
       </main>
 
       <FishSprite />
