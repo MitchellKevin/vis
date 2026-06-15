@@ -127,6 +127,7 @@ function hourAsText(hour) {
 }
 
 // Finds the busiest hour in a list of hours.
+// controllered de array en kijkt de heletijd welke het grootst is
 function busiestHourOf(hours) {
   let busiest = hours[0];
   for (const hour of hours) {
@@ -318,7 +319,11 @@ function HourTimeline({
                   block={block}
                   count={count}
                   max={blockMax}
-                  fishImage={fishPool[block % fishPool.length] /* % length: never out of bounds when there are fewer fish than blocks */}
+                  fishImage={
+                    fishPool[
+                      block % fishPool.length
+                    ] /* % length: never out of bounds when there are fewer fish than blocks */
+                  }
                   onHover={() => setHoveredBlock(block)}
                   onLeave={() => setHoveredBlock(null)}
                 />
