@@ -134,6 +134,7 @@ export function initAquarium() {
       const chip = document.createElement('button');
       chip.type = 'button'; chip.className = 'filter-chip'; chip.dataset.naam = species.naam;
       chip.style.setProperty('--chip', species.color); chip.setAttribute('aria-pressed', 'true');
+      chip.setAttribute('aria-label', `${species.naam}, gemiddelde lengte: ${species.lengte} cm`);
       chip.textContent = species.naam;
       chip.addEventListener('click', () => {
         const muted = chip.classList.toggle('muted');
