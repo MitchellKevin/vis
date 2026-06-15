@@ -4,7 +4,7 @@ export const SCALE = 30;
 
 export async function loadData() {
   const response = await fetch(
-    '/json/event-maand.json'
+    '/json/event-maand-slim.json'
   );
 
   const text = await response.text();
