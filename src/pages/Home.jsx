@@ -1,14 +1,26 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import Nav from '../components/Nav.jsx';
+import Nav              from '../components/Nav.jsx';
+import GlobeMap         from '../components/world-map/GlobeMap.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
+import useJoostData     from '../components/world-map/useJoostData.js';
 
-// Components ->
-import DayScroll from '../components/timeline/day-scroll.jsx';
-import TableStyled from '../components/timeline/table-styled.jsx';
+// Components
+import DayScroll    from '../components/timeline/day-scroll.jsx';
+import TableStyled  from '../components/timeline/table-styled.jsx';
 
 export default function Home() {
   useStylesheet('/styles/index.css');
   useStylesheet('/styles/timeline.css');
+  useStylesheet('/styles/joost.css');
+
+  const flyToRef = useRef(null);
+
+  const {
+    countryData, maxEvents,
+    topoFeatures, loading,
+  } = useJoostData();
+
   return (
     <>
       <Nav />
@@ -28,12 +40,6 @@ export default function Home() {
               <p className="card__desc">Persoonlijk visualisatieproject van Julius.</p>
               <span className="card__link">Bekijken →</span>
             </Link>
-            <Link className="card" to="/joost">
-              <span className="card__label">Joost</span>
-              <h2 className="card__title">Visualisatie Joost</h2>
-              <p className="card__desc">Persoonlijk visualisatieproject van Joost.</p>
-              <span className="card__link">Bekijken →</span>
-            </Link>
             <Link className="card" to="/mitchell">
               <span className="card__label">Mitchell</span>
               <h2 className="card__title">Visualisatie Mitchell</h2>
@@ -47,6 +53,27 @@ export default function Home() {
             </a>
           </div>
         </section>
+
+      </main>
+
+      {/* Globe map — outside <main> so index.css max-width doesn't constrain it */}
+      {loading ? (
+        <div className="map-panel map-panel--loading">
+          <div className="loading-inner">
+            <div className="loading-fish">🐟</div>
+            <div className="loading-text">Data laden…</div>
+          </div>
+        </div>
+      ) : (
+        <GlobeMap
+          countryData={countryData}
+          maxEvents={maxEvents}
+          topoFeatures={topoFeatures}
+          onRotateTo={flyToRef}
+        />
+      )}
+
+      <main>
         <DayScroll />
         <TableStyled />
       </main>
