@@ -2,10 +2,11 @@ import * as d3 from 'd3';
 import { C, FONT_BODY } from '../../constants.js';
 import { $, fmt, reduceMotion } from '../../utils.js';
 import { showTooltip, hideTooltip } from '../../tooltip.js';
-import { state, lifecycle, raf } from '../../state.js';
+import { lifecycle, raf } from '../../state.js';
+import { legacyState } from './legacy-support.js';
 
 export function initScreens() {
-  const { screensData, orientationData } = state;
+  const { screensData, orientationData } = legacyState;
   const { cleanups } = lifecycle;
   const stage = $('#screensStage');
   const list = (screensData || []).map(d => ({ ...d, ar: d.w / d.h, portrait: d.w < d.h }));

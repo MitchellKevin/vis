@@ -1,10 +1,10 @@
 import * as d3 from 'd3';
 import { C, FONT_BODY } from '../../constants.js';
 import { $, reduceMotion } from '../../utils.js';
-import { state } from '../../state.js';
+import { legacyState } from './legacy-support.js';
 
 export function initWeekday() {
-  const { pondWeekData } = state;
+  const { pondWeekData } = legacyState;
   const stage = $('#weekdayStage');
   const week = pondWeekData;
   if (!week || week.length < 7 * 1440) { stage.innerHTML = '<p class="stage-fallback">Geen weekdata.</p>'; return; }

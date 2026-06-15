@@ -22,8 +22,7 @@ export function synthesizeYear(live) {
   const { dayKeys, dayLabels } = buildCalendar();        // 3. datums + labels
   live.weekDays = dayKeys;
   live.weekDayLabels = dayLabels;
-  live.daily = buildDailyTotals(live.weekHours);         // 4. dagtotalen
-  live.period = buildPeriod(dayKeys);                    // 5. periode-label
+  live.period = buildPeriod(dayKeys);                    // 4. periode-label
   return live;
 }
 
@@ -36,7 +35,6 @@ const scaleKeys = (obj, keys) => { if (obj) keys.forEach(k => { if (typeof obj[k
 function scaleAllCounts(live) {
   scaleObj(live.species);
   if (typeof live.totalUploads === 'number') live.totalUploads = scaleNum(live.totalUploads);
-  if (typeof live.pondTotal === 'number')    live.pondTotal    = scaleNum(live.pondTotal);
 
   scaleKeys(live.funnel, ['uploadedFish', 'dismissedUploading', 'total']);
 
@@ -52,16 +50,7 @@ function scaleAllCounts(live) {
     }
   }
 
-  if (live.tech) ['device', 'browser', 'os'].forEach(cat => scaleObj(live.tech[cat]));
   if (Array.isArray(live.languages)) live.languages.forEach(l => { if (typeof l.n === 'number') l.n = scaleNum(l.n); });
-  if (Array.isArray(live.screens))   live.screens.forEach(s => { if (typeof s.n === 'number') s.n = scaleNum(s.n); });
-
-  scaleKeys(live.orientation, ['portrait', 'landscape', 'square', 'total', 'unique']);
-
-  if (live.sessions) {
-    scaleKeys(live.sessions, ['totalSessions', 'ringers', 'totalRings']);
-    if (Array.isArray(live.sessions.hist)) live.sessions.hist = live.sessions.hist.map(scaleNum);
-  }
 }
 
 // — Een heel jaar aan uren maken ———————————————————————————————————————————————
@@ -91,17 +80,6 @@ function buildCalendar() {
     dayLabels.push(`${dt.getUTCDate()} ${MONTH_SHORT_NL[dt.getUTCMonth()]}`);
   }
   return { dayKeys, dayLabels };
-}
-
-// — Totaal aantal belletjes per dag ————————————————————————————————————————————
-function buildDailyTotals(yearHours) {
-  const daily = {};
-  for (let d = 0; d < DAYS; d++) {
-    let sum = 0;
-    for (let h = 0; h < 24; h++) sum += yearHours[d * 24 + h];
-    daily[d + 1] = sum;
-  }
-  return daily;
 }
 
 // — Mensvriendelijk periode-label ("1 jun 2025 – 31 mei 2026") ————————————————————
@@ -138,16 +116,10 @@ function copyToState(live) {
   state.periodLabel     = live.period?.label || '';
   state.geoData         = live.geo         || null;
   state.funnelData      = live.funnel      || null;
-  state.techData        = live.tech        || null;
-  state.dailyData       = live.daily       || null;
-  state.sessionsData    = live.sessions    || null;
-  state.pondWeekData    = live.pondWeek    || null;
   state.languagesData   = live.languages   || null;
-  state.screensData     = live.screens     || null;
-  state.orientationData = live.orientation || null;
 
   // TOTAL = geüploade vissen uit de trechter, of anders de som per soort.
-  state.TOTAL = (state.funnelData && state.funnelData.uploadedFish)
+  state.TOTAL = state.funnelData?.uploadedFish
     || state.visData.reduce((s, v) => s + v.count, 0);
 
   // Per soort een nep-maandverloop verzinnen + sorteren op aantal (grootst eerst).
