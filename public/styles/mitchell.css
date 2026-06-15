@@ -679,7 +679,7 @@ body.mitchell-page {
 .swim-fish {
   position: fixed;
   left: 0; top: 0;
-  width: 60px; height: 30px;
+  width: 90px; height: 45px;
   z-index: 50;
   pointer-events: none;
   will-change: transform;
@@ -698,5 +698,5 @@ body.mitchell-page {
   65%      { transform: rotate(8deg); }
 }
 @media (max-width: 768px) {
-  .swim-fish { width: 46px; height: 23px; }
+  .swim-fish { width: 68px; height: 34px; }
 }

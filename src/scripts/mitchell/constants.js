@@ -6,7 +6,7 @@
 
 // Stijl-tokens (hex-spiegels van visdeurbel-tokens.css). We spiegelen ze hier
 // in JS omdat de charts (canvas/SVG) niet bij de CSS-variabelen kunnen.
-export const C = {
+export const COLORS = {
   green:    '#01463c',
   greenMid: '#015a4e',
   off:      '#fdf7ef',
@@ -29,20 +29,21 @@ export const UTRECHT = [5.117, 52.09];
 
 // Vissoorten — basis voor radar, aquarium en net. `count` start op 0 en wordt
 // uit de geladen data gevuld (dataLoad.js). De overige velden bepalen kleur,
-// gewicht (voor biomassa), silhouet-vorm en waar de vis "hoort" te zwemmen.
+// gewicht (voor biomassa), typische lengte in cm (voor de aquarium-hover),
+// silhouet-vorm en waar de vis "hoort" te zwemmen.
 export const visData = [
-  { naam: 'Blankvoorn', count: 0, color: C.teal,   weight: 0.3,  shape: 'round', diepte: 'mid',   habitat: 'open' },
-  { naam: 'Brasem',     count: 0, color: '#34b3a0', weight: 1.8,  shape: 'round', diepte: 'bodem', habitat: 'zand' },
-  { naam: 'Baars',      count: 0, color: '#4a9ab8', weight: 0.6,  shape: 'baars', diepte: 'mid',   habitat: 'open' },
-  { naam: 'Snoekbaars', count: 0, color: '#5b8fd6', weight: 2.4,  shape: 'pred',  diepte: 'mid',   habitat: 'open' },
-  { naam: 'Paling',     count: 0, color: '#3a8aa8', weight: 0.5,  shape: 'long',  diepte: 'bodem', habitat: 'steen' },
-  { naam: 'Kolblei',    count: 0, color: C.goldDeep,weight: 0.4,  shape: 'round', diepte: 'mid',   habitat: 'zand' },
-  { naam: 'Alver',      count: 0, color: '#ffc94d', weight: 0.08, shape: 'tiny',  diepte: 'top',   habitat: 'oppervlak' },
-  { naam: 'Ruisvoorn',  count: 0, color: '#5a8a3f', weight: 0.35, shape: 'round', diepte: 'top',   habitat: 'riet' },
-  { naam: 'Snoek',      count: 0, color: C.pink,    weight: 3.2,  shape: 'pred',  diepte: 'mid',   habitat: 'riet' },
-  { naam: 'Winde',      count: 0, color: '#c8a96e', weight: 0.8,  shape: 'baars', diepte: 'mid',   habitat: 'stroom' },
-  { naam: 'Meerval',    count: 0, color: C.bell,    weight: 12.0, shape: 'long',  diepte: 'bodem', habitat: 'steen' },
-  { naam: 'Karper',     count: 0, color: '#a07850', weight: 2.5,  shape: 'round', diepte: 'bodem', habitat: 'zand' },
+  { naam: 'Blankvoorn', count: 0, color: COLORS.teal,   weight: 0.3,  lengte: 25,  shape: 'round', diepte: 'mid',   habitat: 'open' },
+  { naam: 'Brasem',     count: 0, color: '#34b3a0', weight: 1.8,  lengte: 45,  shape: 'round', diepte: 'bodem', habitat: 'zand' },
+  { naam: 'Baars',      count: 0, color: '#4a9ab8', weight: 0.6,  lengte: 30,  shape: 'baars', diepte: 'mid',   habitat: 'open' },
+  { naam: 'Snoekbaars', count: 0, color: '#5b8fd6', weight: 2.4,  lengte: 55,  shape: 'pred',  diepte: 'mid',   habitat: 'open' },
+  { naam: 'Paling',     count: 0, color: '#3a8aa8', weight: 0.5,  lengte: 70,  shape: 'long',  diepte: 'bodem', habitat: 'steen' },
+  { naam: 'Kolblei',    count: 0, color: COLORS.goldDeep,weight: 0.4,  lengte: 30,  shape: 'round', diepte: 'mid',   habitat: 'zand' },
+  { naam: 'Alver',      count: 0, color: '#ffc94d', weight: 0.08, lengte: 13,  shape: 'tiny',  diepte: 'top',   habitat: 'oppervlak' },
+  { naam: 'Ruisvoorn',  count: 0, color: '#5a8a3f', weight: 0.35, lengte: 25,  shape: 'round', diepte: 'top',   habitat: 'riet' },
+  { naam: 'Snoek',      count: 0, color: COLORS.pink,    weight: 3.2,  lengte: 75,  shape: 'pred',  diepte: 'mid',   habitat: 'riet' },
+  { naam: 'Winde',      count: 0, color: '#c8a96e', weight: 0.8,  lengte: 40,  shape: 'baars', diepte: 'mid',   habitat: 'stroom' },
+  { naam: 'Meerval',    count: 0, color: COLORS.bell,    weight: 12.0, lengte: 150, shape: 'long',  diepte: 'bodem', habitat: 'steen' },
+  { naam: 'Karper',     count: 0, color: '#a07850', weight: 2.5,  lengte: 55,  shape: 'round', diepte: 'bodem', habitat: 'zand' },
 ];
 
 // Landcentroïden [lengtegraad, breedtegraad, naam] voor de bel-landen
@@ -87,11 +88,11 @@ export const BROWSER_FAMILY = {
   instagram: 'social', facebook: 'social',
 };
 export const FAMILY = {
-  google:  { color: C.teal,     label: 'Chrome-achtig' },
-  apple:   { color: C.bell,     label: 'Safari / iOS' },
-  firefox: { color: C.goldDeep, label: 'Firefox' },
-  social:  { color: C.pink,     label: 'Social in-app' },
-  other:   { color: C.greenMid, label: 'Overig' },
+  google:  { color: COLORS.teal,     label: 'Chrome-achtig' },
+  apple:   { color: COLORS.bell,     label: 'Safari / iOS' },
+  firefox: { color: COLORS.goldDeep, label: 'Firefox' },
+  social:  { color: COLORS.pink,     label: 'Social in-app' },
+  other:   { color: COLORS.greenMid, label: 'Overig' },
 };
 export const BROWSER_LABEL = {
   chrome: 'Chrome', crios: 'Chrome iOS', 'chromium-webview': 'Chrome WebView',

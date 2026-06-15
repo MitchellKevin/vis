@@ -21,11 +21,6 @@ export default function Nav({ current }) {
           to="/mitchell"
           aria-current={current === 'mitchell' ? 'page' : undefined}
         >Mitchell</NavLink>
-        <NavLink
-          className="vdb-nav__link"
-          to="/nienke"
-          aria-current={current === 'nienke' ? 'page' : undefined}
-        >Nienke</NavLink>
       </div>
     </nav>
   );

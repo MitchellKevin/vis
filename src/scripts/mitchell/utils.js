@@ -8,7 +8,7 @@ export const $  = (s, p = document) => p.querySelector(s);
 export const $$ = (s, p = document) => Array.from(p.querySelectorAll(s));
 
 // Getal netjes met Nederlandse duizendtal-puntjes tonen (49736 → "49.736").
-export const fmt = n => new Intl.NumberFormat('nl-NL').format(Math.round(n));
+export const formatNumber = n => new Intl.NumberFormat('nl-NL').format(Math.round(n));
 
 // True als de bezoeker "verminderde beweging" heeft aangezet in zijn OS of via a11y menu.
 // Charts gebruiken dit om animaties over te slaan / direct eindstand te tonen.

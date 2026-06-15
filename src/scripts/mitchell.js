@@ -6,9 +6,9 @@ import { state, lifecycle } from './mitchell/state.js';
 import { loadData, synthesizeYear } from './mitchell/dataLoad.js';
 import { initSwimFish } from './mitchell/swimFish.js';
 
-import { initHero      } from './mitchell/charts/hero.js';
-import { initRing      } from './mitchell/charts/ring.js';
-import { initWorld     } from './mitchell/charts/world.js';
+import { initHero      } from './mitchell/charts/legacy/hero.js';
+import { initRing      } from './mitchell/charts/legacy/ring.js';
+import { initWorld     } from './mitchell/charts/legacy/world.js';
 import { initLanguages } from './mitchell/charts/languages.js';
 import { initRadar     } from './mitchell/charts/radar.js';
 import { initAquarium  } from './mitchell/charts/aquarium.js';
@@ -83,22 +83,25 @@ export function initMitchell() {
   }
 
   let swimTeardown = null;
+  let disposed = false;
 
   async function boot() {
     try { await loadData('/json/vis-data.json'); }
     catch (e) { console.warn('vis-data.json niet geladen', e); }
     try { state.worldTopo = await fetch('/json/world-110m.json').then(r => r.json()); }
     catch (e) { console.warn('world-110m.json niet geladen', e); }
+    // Cleanup kan tijdens de awaits al gelopen hebben (StrictMode of navigatie):
+    // dan niets meer opzetten, anders blijft o.a. het gids-visje achter op andere routes.
+    if (disposed) return;
     $$('.data-switch__btn').forEach(b => b.addEventListener('click', () => setPeriod(b.dataset.period)));
     observeChapters();
-    // Na de awaits aanmaken: overleeft zo de StrictMode mount→unmount→remount
-    // (anders ruimt de unmount-cleanup de vis op vóór hij opnieuw gemaakt wordt).
     swimTeardown = initSwimFish();
   }
 
   boot();
 
   return () => {
+    disposed = true;
     sectionObserver.disconnect();
     cleanups.forEach(fn => { try { fn(); } catch { /* noop */ } });
     rafs.forEach(id => cancelAnimationFrame(id));

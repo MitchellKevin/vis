@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Nav from '../components/Nav.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
 import FishSprite from '../components/mitchell-components/FishSprite.jsx';
 import NetChapter from '../components/mitchell-components/NetChapter.jsx';
 import DataSwitch from '../components/mitchell-components/DataSwitch.jsx';
 import Aquarium from '../components/mitchell-components/Aquarium.jsx';
-import HeroChapter from '../components/mitchell-components/HeroChapter.jsx';
+import HeroChapter from '../components/mitchell-components/legacy/HeroChapter.jsx';
 import DataCarousel from '../components/mitchell-components/DataCarousel.jsx';
 import SectionWave from '../components/mitchell-components/SectionWave.jsx';
-import RingChapter from '../components/mitchell-components/RingChapter.jsx';
-import WorldChapter from '../components/mitchell-components/WorldChapter.jsx';
+import RingChapter from '../components/mitchell-components/legacy/RingChapter.jsx';
+import WorldChapter from '../components/mitchell-components/legacy/WorldChapter.jsx';
 import LanguagesChapter from '../components/mitchell-components/LanguagesChapter.jsx';
 import RadarChapter from '../components/mitchell-components/RadarChapter.jsx';
 import { initMitchell } from '../scripts/mitchell.js';
@@ -72,7 +72,6 @@ function AccessibilityMenu() {
 }
 
 export default function Mitchell() {
-  const initialized = useRef(false);
   useStylesheet('/styles/mitchell.css');
   useStylesheet('/styles/mitchell-week1.css');
   useStylesheet('/styles/mitchell-carousel.css');
@@ -85,8 +84,6 @@ export default function Mitchell() {
   }, []);
 
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
     const cleanup = initMitchell();
     return cleanup;
   }, []);
@@ -111,14 +108,12 @@ export default function Mitchell() {
           tekst. Gebruik de schakelaar bovenaan om tussen week, maand en jaar te
           wisselen.
         </p>
-        <HeroChapter />
-        <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
+        {/* <HeroChapter />
+        <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" /> */}
         <DataCarousel />
-        <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
-        <RingChapter />
-        <SectionWave top="var(--color-off-white)" bottom="var(--color-purple)" />
-        <WorldChapter />
-        <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
+        {/* <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
+        <RingChapter /> */}
+        <SectionWave top="var(--color-gold-light)" bottom="var(--color-gold-light)" />
         <Aquarium />
         <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
         <RadarChapter />

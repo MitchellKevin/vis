@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
-import { C } from '../constants.js';
-import { $, fmt, rng, reduceMotion } from '../utils.js';
-import { state, lifecycle, raf } from '../state.js';
+import { COLORS } from '../../constants.js';
+import { $, formatNumber, rng, reduceMotion } from '../../utils.js';
+import { state, lifecycle, raf } from '../../state.js';
 
 // ============================================================================
 // hero.js — de intro: duizenden deeltjes vormen samen één grote vis.
@@ -27,7 +27,7 @@ export function initHero(sectionEl) {
   const easeOut = (t) => 1 - Math.pow(1 - t, 3);
   const easeIn = (t) => t * t * t;
   // Palet leesbaar op de lichte (violette) achtergrond — donkergroen + accenten.
-  const heroCol = d3.interpolateRgbBasis([C.green, C.teal, C.pink, C.goldDeep, C.greenMid]);
+  const heroCol = d3.interpolateRgbBasis([COLORS.green, COLORS.teal, COLORS.pink, COLORS.goldDeep, COLORS.greenMid]);
 
   // Vis-silhouet → puntenwolk (offscreen tekenen, pixels uitlezen)
   function buildFishPoints(n) {
@@ -115,7 +115,7 @@ export function initHero(sectionEl) {
     }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     const ce = easeOut(clamp(elapsed / 2200, 0, 1));
-    if (countEl) countEl.textContent = fmt(Math.round(ce * target));
+    if (countEl) countEl.textContent = formatNumber(Math.round(ce * target));
     if (overlay) { overlay.style.opacity = String(1 - smoothstep(0, 0.55, s)); overlay.style.transform = `translateY(${-s * 40}px)`; }
   }
 

@@ -1,3 +1,4 @@
+// Simple brand footer with logo, tagline and copyright notice
 export default function PageFooter() {
   return (
     <footer className="page-footer">
