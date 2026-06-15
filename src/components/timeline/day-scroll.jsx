@@ -31,6 +31,12 @@ export default function DayScroll() {
                     <div aria-hidden="true" className="moon"></div>
                     <div aria-hidden="true" className="sun"></div>
                     <div aria-hidden="true" className="water-visual"></div>
+                    <div aria-hidden="true" className="canal-bottom">
+                        {/* bike image generated with ChatGPT */}
+                        <img src="/images/rusty-bike.png" alt="" className='canal-bike'/>
+                        {/* https://pngimg.com/image/81796 */}
+                        <img src="/images/plastic-bag.png" alt="" className='canal-bag'/>
+                    </div> 
                 </div>
                 <table>
                     <caption className='visually-hidden'>
@@ -50,7 +56,7 @@ export default function DayScroll() {
                             const visMatch = visData.find(
                                 (v) => v.naam.toLowerCase() === hour.topFish?.toLowerCase()
                             );
-                            const length = visMatch ? visMatch.length : 1;
+                            const length = visMatch ? visMatch.lengte : 1;
 
                             return (
                                 <tr key={i}>

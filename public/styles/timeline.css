@@ -64,6 +64,7 @@
           height: 20px;
 
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 20' preserveAspectRatio='none'%3E%3Cpath d='M 0 10 Q 150 15, 300 10 T 600 10 T 900 10 T 1200 10 L 1200 20 L 0 20 Z' fill='%231eacb0'/%3E%3C/svg%3E");
+          /* svg written by Claude */
           background-size: 600px 20px;
           background-repeat: repeat-x;
 
@@ -92,7 +93,7 @@
         box-shadow: 0 0 1.5rem white;
         animation: moon-rotation linear;
         animation-timeline: --scroll-container-timeline;
-        
+
         &::before {
           position: absolute;
           content: "";
@@ -113,6 +114,29 @@
         box-shadow: 0 0 1.5rem rgb(255, 235, 137);
         animation: sun-rotation linear;
         animation-timeline: --scroll-container-timeline;
+      }
+
+      .canal-bottom {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        opacity: .5;
+
+        .canal-bike {
+          position: absolute;
+          max-width: clamp(4rem, 50%, 15rem);
+          bottom: 0;
+          right: 0;
+          margin-inline: 2em;
+        }
+
+        .canal-bag {
+          display: none;
+          position: absolute;
+          max-width: clamp(1rem, 8%, 5rem);
+          bottom: 1rem;
+          animation: floating-bag 30s linear infinite;
+        }
       }
     }
 
@@ -179,7 +203,7 @@
 
         img {
           max-width: var(--fish-img-size);
-          transform: scaleX(-1) translateX(calc(var(--fish-img-size)*-1));
+          transform: scaleX(-1) translateX(calc(var(--fish-img-size)*-1)) scale(calc(clamp(1, 1 + (var(--fish-length) * 0.04), 3.5)));
           animation:
             wiggle 2s linear infinite,
             swim ease-in-out both;
@@ -251,23 +275,25 @@
 
     0%,
     100% {
-      transform: translateY(0) scaleX(-1) rotate(-2deg);
+      transform: translateY(0) rotate(-2deg);
     }
 
     50% {
-      transform: translateY(-4px) scaleX(-1) rotate(2deg);
+      transform: translateY(-4px) rotate(2deg);
     }
   }
 
   @keyframes swim {
     0% {
-      transform: translateX(-100dvw) translateY(calc(var(--scroll-container-height)/2*-1)) scaleX(-1) scale(0.6);
+      transform: translateX(100dvw) translateY(calc(var(--scroll-container-height)/2*-1)) scale(0.4);
     }
+
     50% {
-      transform: translateX(0)  translateY(0) scaleX(-1) scale(calc(clamp(0.6, 0.6 + (var(--fish-length) * 0.05), 2.5)));
+      transform: translateX(0) translateY(0);
     }
+
     100% {
-      transform: translateX(100dvw) translateY(calc(var(--scroll-container-height))) scaleX(-1) scale(0.6);
+      transform: translateX(-100dvw) translateY(calc(var(--scroll-container-height))) scale(0.4);
     }
   }
 
@@ -283,7 +309,7 @@
 
     52% {
       --rotation-moon: 180deg;
-        /* 12 uur smiddags */
+      /* 12 uur smiddags */
     }
 
     60% {
@@ -295,28 +321,59 @@
     }
   }
 
-    @keyframes sun-rotation {
-      0% {
-        --rotation-sun: 180deg;
-      }
-
-      20% {
-        --rotation-sun: 320deg;
-      }
-
-      52% {
-        --rotation-sun: 360deg;
-          /* 12 uur smiddags */
-      }
-
-      90% {
-        --rotation-sun: 400deg;
-      }
-
-      100% {
-        --rotation-sun: 540deg;
-      }
+  @keyframes sun-rotation {
+    0% {
+      --rotation-sun: 180deg;
     }
+
+    20% {
+      --rotation-sun: 320deg;
+    }
+
+    52% {
+      --rotation-sun: 360deg;
+      /* 12 uur smiddags */
+    }
+
+    90% {
+      --rotation-sun: 400deg;
+    }
+
+    100% {
+      --rotation-sun: 540deg;
+    }
+  }
+
+  .canal-bag{
+    display: block !important;
+  }
+
+  @keyframes floating-bag {
+    0% {
+      left: 100%;
+      transform: translateY(-15px) rotate(0deg);
+    }
+
+    15% {
+      transform: translateY(-100px) rotate(30deg);
+    }
+
+    30% {
+      transform: translateY(0) rotate(65deg);
+    }
+
+    45% {
+      transform: translateY(-15px) rotate(90deg);
+    }
+
+    60% {
+      left: -100%;
+      transform: translateY(0) rotate(65deg);
+    }
+    100%{
+      left: -100%;
+    }
+  }
 }
 
 
@@ -325,188 +382,188 @@
 
 
 
-  /* MARK: Scroll-driven table */
-  .scroll-driven {
-    padding: 10em 3em;
-    background: var(--color-green-dark);
-    padding-bottom: 20rem;
+/* MARK: Scroll-driven table */
+.scroll-driven {
+  padding: 10em 3em;
+  background: var(--color-green-dark);
+  padding-bottom: 20rem;
 
-    >p,
-    h2 {
-      color: var(--color-gold-light);
+  >p,
+  h2 {
+    color: var(--color-gold-light);
+  }
+
+  table {
+    background: var(--color-gold-light);
+    width: 100%;
+    padding: var(--spacing);
+    border-radius: var(--radius-card);
+    table-layout: auto;
+
+    caption {
+      font: var(--text-p2-bold);
     }
 
-    table {
-      background: var(--color-gold-light);
-      width: 100%;
-      padding: var(--spacing);
-      border-radius: var(--radius-card);
-      table-layout: auto;
+    thead {
+      background-color: var(--color-purple);
+    }
 
-      caption {
-        font: var(--text-p2-bold);
+    tr {
+      position: relative;
+
+      .timestamp {
+        width: 1%;
+        white-space: nowrap;
+        padding-right: 1em;
       }
 
-      thead {
-        background-color: var(--color-purple);
-      }
-
-      tr {
+      td:has(.bar-fill) {
         position: relative;
+        padding-right: var(--fish-img-size);
 
-        .timestamp {
-          width: 1%;
-          white-space: nowrap;
-          padding-right: 1em;
+        .bar-fill {
+          height: var(--bar-height);
+          background-color: var(--color-purple);
+
+          display: flex;
+          align-items: center;
+
+          transition: all .2s;
+
+          transform-origin: left center;
+
+          animation: scale-in linear;
+          animation-timeline: view();
+          animation-range: cover 5% cover 30%;
+          /* https://scroll-driven-animations.style/tools/view-timeline/ranges/#range-start-name=contain&range-start-percentage=0&range-end-name=contain&range-end-percentage=100&view-timeline-axis=block&view-timeline-inset=0&subject-size=smaller&subject-animation=reveal&interactivity=clicktodrag&show-areas=yes&show-fromto=yes&show-labels=yes */
+          animation-fill-mode: both;
+
+          .amount {
+            margin-left: auto;
+          }
         }
 
-        td:has(.bar-fill) {
-          position: relative;
-          padding-right: var(--fish-img-size);
+        img {
+          position: absolute;
+          right: 0;
+          max-width: var(--fish-img-size);
+          transform: scaleX(-1);
 
-          .bar-fill {
-            height: var(--bar-height);
-            background-color: var(--color-purple);
+          animation: swim-to-side linear;
+          animation-timeline: view();
+          animation-range: cover 5% cover 30%;
+          animation-fill-mode: both;
+          transform-origin: right center;
 
-            display: flex;
-            align-items: center;
+          anchor-name: --fish;
+        }
 
-            transition: all .2s;
+        .tooltip {
+          position: absolute;
+          z-index: 10;
+          opacity: 0;
+          pointer-events: none;
+          background-color: var(--color-off-white);
+          padding: 10px;
+          border-radius: var(--radius-card);
+          white-space: normal;
+          width: max-content;
+          max-width: clamp(200px, 50%, 600px);
 
-            transform-origin: left center;
+          position-anchor: --fish;
+          position-area: top right;
 
-            animation: scale-in linear;
-            animation-timeline: view();
-            animation-range: cover 5% cover 30%;
-            /* https://scroll-driven-animations.style/tools/view-timeline/ranges/#range-start-name=contain&range-start-percentage=0&range-end-name=contain&range-end-percentage=100&view-timeline-axis=block&view-timeline-inset=0&subject-size=smaller&subject-animation=reveal&interactivity=clicktodrag&show-areas=yes&show-fromto=yes&show-labels=yes */
-            animation-fill-mode: both;
+          transform: translateY(calc(-100%));
+          margin-bottom: var(--triangle-height);
 
-            .amount {
-              margin-left: auto;
-            }
-          }
-
-          img {
+          &::after {
+            content: '';
             position: absolute;
-            right: 0;
-            max-width: var(--fish-img-size);
-            transform: scaleX(-1);
+            left: 0;
+            bottom: calc(-1 * var(--triangle-height) / 2);
+            width: var(--triangle-height);
+            aspect-ratio: 1;
+            background-color: var(--color-off-white);
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+            z-index: -1;
+            pointer-events: none;
+          }
+        }
 
-            animation: swim-to-side linear;
-            animation-timeline: view();
-            animation-range: cover 5% cover 30%;
-            animation-fill-mode: both;
-            transform-origin: right center;
-
-            anchor-name: --fish;
+        &:hover {
+          .bar-fill {
+            background-color: var(--color-purple-dark-mode);
+            color: var(--color-off-white);
           }
 
           .tooltip {
-            position: absolute;
-            z-index: 10;
-            opacity: 0;
-            pointer-events: none;
-            background-color: var(--color-off-white);
-            padding: 10px;
-            border-radius: var(--radius-card);
-            white-space: normal;
-            width: max-content;
-            max-width: clamp(200px, 50%, 600px);
-
-            position-anchor: --fish;
-            position-area: top right;
-
-            transform: translateY(calc(-100%));
-            margin-bottom: var(--triangle-height);
-
-            &::after {
-              content: '';
-              position: absolute;
-              left: 0;
-              bottom: calc(-1 * var(--triangle-height) / 2);
-              width: var(--triangle-height);
-              aspect-ratio: 1;
-              background-color: var(--color-off-white);
-              clip-path: polygon(0 0, 100% 0, 0 100%);
-              z-index: -1;
-              pointer-events: none;
-            }
-          }
-
-          &:hover {
-            .bar-fill {
-              background-color: var(--color-purple-dark-mode);
-              color: var(--color-off-white);
-            }
-
-            .tooltip {
-              opacity: 1;
-            }
+            opacity: 1;
           }
         }
       }
+    }
 
-      & * {
-        text-align: start;
-      }
+    & * {
+      text-align: start;
     }
   }
+}
 
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes scale-in {
-      from {
-        transform: scaleX(0);
-      }
-
-      to {
-        transform: scaleX(1);
-      }
-
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes scale-in {
+    from {
+      transform: scaleX(0);
     }
 
-    @keyframes swim-to-side {
-      0% {
-        transform: translateY(-6%) rotate(-4deg) scaleX(-1);
-      }
+    to {
+      transform: scaleX(1);
+    }
 
-      10% {
-        transform: translateY(8%) rotate(3deg) scaleX(-1);
-      }
+  }
 
-      20% {
-        transform: translateY(-10%) rotate(-4deg) scaleX(-1);
-      }
+  @keyframes swim-to-side {
+    0% {
+      transform: translateY(-6%) rotate(-4deg) scaleX(-1);
+    }
 
-      30% {
-        transform: translateY(7%) rotate(4deg) scaleX(-1);
-      }
+    10% {
+      transform: translateY(8%) rotate(3deg) scaleX(-1);
+    }
 
-      40% {
-        transform: translateY(-8%) rotate(-3deg) scaleX(-1);
-      }
+    20% {
+      transform: translateY(-10%) rotate(-4deg) scaleX(-1);
+    }
 
-      50% {
-        transform: translateY(10%) rotate(4deg) scaleX(-1);
-      }
+    30% {
+      transform: translateY(7%) rotate(4deg) scaleX(-1);
+    }
 
-      60% {
-        transform: translateY(-7%) rotate(-4deg) scaleX(-1);
-      }
+    40% {
+      transform: translateY(-8%) rotate(-3deg) scaleX(-1);
+    }
 
-      70% {
-        transform: translateY(8%) rotate(3deg) scaleX(-1);
-      }
+    50% {
+      transform: translateY(10%) rotate(4deg) scaleX(-1);
+    }
 
-      80% {
-        transform: translateY(-6%) rotate(-4deg) scaleX(-1);
-      }
+    60% {
+      transform: translateY(-7%) rotate(-4deg) scaleX(-1);
+    }
 
-      90% {
-        transform: translateY(4%) rotate(2deg) scaleX(-1);
-      }
+    70% {
+      transform: translateY(8%) rotate(3deg) scaleX(-1);
+    }
 
-      100% {
-        transform: translateY(0%) rotate(-4deg) scaleX(-1);
-      }
+    80% {
+      transform: translateY(-6%) rotate(-4deg) scaleX(-1);
+    }
+
+    90% {
+      transform: translateY(4%) rotate(2deg) scaleX(-1);
+    }
+
+    100% {
+      transform: translateY(0%) rotate(-4deg) scaleX(-1);
     }
   }
+}
