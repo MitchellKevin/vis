@@ -13,11 +13,6 @@ export default function Nav({ current }) {
         >Julius</NavLink>
         <NavLink
           className="vdb-nav__link"
-          to="/joost"
-          aria-current={current === 'joost' ? 'page' : undefined}
-        >Joost</NavLink>
-        <NavLink
-          className="vdb-nav__link"
           to="/mitchell"
           aria-current={current === 'mitchell' ? 'page' : undefined}
         >Mitchell</NavLink>
