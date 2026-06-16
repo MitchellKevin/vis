@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home.jsx';
 import Julius from './pages/Julius.jsx';
-import Joost from './pages/Joost.jsx';
 import Mitchell from './pages/Mitchell.jsx';
 
 export default function App() {
