@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import GlobeMap from '../components/world-map/GlobeMap.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
 import useJoostData from '../components/world-map/useJoostData.js';
