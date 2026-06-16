@@ -8,16 +8,23 @@
  * ========================================================================== */
 
 .clock {
-  /* Enige niet-semantische waarde: een héél dunne lijn voor de visdraadjes. */
-  --clock-hairline: rgb(253 247 239 / 0.3);
+  --clock-hairline: rgb(1 70 60 / 0.2);
 
+  background: white;
   max-width: var(--layout-max-width);
   margin-inline: auto;
   padding: var(--space-10) var(--layout-gutter) var(--space-11);
   color: var(--text-primary);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+  align-items: center;
 }
 
 .clock__head {
+  /* .clock__head is een <header>; overschrijf de globale header-flex
+     (index.css) zodat titel en paragraaf netjes onder elkaar staan. */
+  display: block;
   text-align: center;
   max-width: 60ch;
   margin-inline: auto;
@@ -71,6 +78,8 @@
 /* ── De wijzers ────────────────────────────────────────────────────────────── */
 
 .clock__hand {
+  /* Alle wijzers dezelfde kleur; alleen de lengte toont hoe druk een uur is. */
+  stroke: var(--color-purple);
   stroke-width: 20;
   stroke-linecap: round;
   cursor: pointer;
@@ -93,25 +102,24 @@
 /* ── Naaf (het midden van de klok) met de cijfers ──────────────────────────── */
 
 .clock__hub {
-  /* Iets donkerder dan de pagina, met een zachte rand — leest als een naaf. */
-  fill: var(--color-green-dark-mode);
-  stroke: var(--text-muted);
+  fill: var(--color-gold-light);
+  stroke: var(--color-green-dark);
   stroke-width: 1.5;
 }
 
 .clock__hub-time {
-  fill: var(--text-primary);
+  fill: var(--color-green-dark);
   font: var(--text-h3);
   font-family: var(--font-display);
 }
 
 .clock__hub-value {
-  fill: var(--color-gold);
+  fill: var(--color-green-dark);
   font: 800 32px/1 var(--font-display);
 }
 
 .clock__hub-label {
-  fill: var(--text-muted);
+  fill: rgb(1 70 60 / 0.7);
   font: var(--text-p2);
   font-family: var(--font-body);
 }
@@ -233,30 +241,6 @@
   to   { opacity: 1; scale: 1; }
 }
 
-/* ── Duiding onder de klok (Tip-kaart in de huisstijl) ─────────────────────── */
-
-.clock__insights {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  max-width: 60ch;
-  text-align: center;
-  background: var(--bg-surface);
-  border-radius: var(--radius-card);
-  padding: var(--space-7) var(--space-6);
-}
-
-.clock__insight {
-  font: var(--text-p1);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.clock__insight strong {
-  white-space: nowrap;
-  color: var(--color-gold);
-}
-
 /* Visueel verborgen, wel leesbaar voor screenreaders. */
 .clock__sr-only {
   position: absolute;
@@ -272,10 +256,36 @@
 
 /* ── Responsief ────────────────────────────────────────────────────────────── */
 
+@media (min-width: 769px) {
+  .clock {
+    grid-template-columns: 1fr 1fr;
+    /* Lijn de titel/uitleg uit met de bovenkant van de klok i.p.v. centreren
+       t.o.v. de hele rechterkolom (klok + duiding), anders zakt de tekst
+       onder de klok weg. */
+    align-items: start;
+    gap: var(--space-4);
+    padding-block: var(--space-8);
+  }
+
+  .clock__face-wrap {
+    min-height: 0;
+  }
+
+  .clock__head {
+    text-align: left;
+    max-width: none;
+    margin-inline: 0;
+    padding-right: var(--space-6);
+  }
+
+  .clock__layout {
+    margin-top: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .clock__head h2 { font: var(--text-h2-m); }
   .clock__sub { font: var(--text-p1-m); }
-  .clock__insight { font: var(--text-p1-m); }
   .clock__face-wrap { min-height: 0; }
 }
 
