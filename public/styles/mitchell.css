@@ -269,12 +269,25 @@ body.mitchell-page {
 .screen-win:focus-visible rect { stroke-width: 2.5; }
 
 /* ── Koor van talen ──────────────────────────────────── */
-.lang-stage { width: min(94vw, 900px); aspect-ratio: 900 / 540; margin: var(--space-6) auto 0; }
-.lang-stage svg { width: 100%; height: 100%; }
-.lang-word { cursor: pointer; }
-.lang-word text { transition: filter 0.2s ease; }
-.lang-word:hover text:first-child,
-.lang-word:focus-visible text:first-child { filter: drop-shadow(0 0 10px currentColor); outline: none; }
+.lang-stage {
+  width: min(94vw, 900px);
+  margin: var(--space-6) auto 0;
+}
+.lang-stage svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.lang-word {
+  cursor: default;
+}
+.lang-word:hover,
+.lang-word:focus-visible {
+  opacity: 0.7;
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
 
 /* ── Draaiende globe ─────────────────────────────────── */
 .globe-stage { width: min(92vw, 600px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; }
@@ -506,8 +519,16 @@ body.mitchell-page {
 
 .net-stage { width: min(94vw, 900px); aspect-ratio: 900 / 680; margin: var(--space-5) auto 0; }
 .net-stage svg { width: 100%; height: 100%; }
-.net-rope { stroke: rgb(253 247 239 / 0.28); stroke-width: 1; fill: none; }
+.net-stage {
+  background-image:
+    linear-gradient(rgba(253,247,239,0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(253,247,239,0.15) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
 .net-bubble { cursor: pointer; transition: filter 0.2s ease; transform-box: fill-box; }
+.bub-main { stroke: rgb(1 70 60 / 0.28); stroke-width: 1; }
+.bub-shine { fill: rgb(253 247 239 / 0.45); }
+.bub-label { font-family: var(--font-display); font-weight: 800; fill: var(--color-green-dark); text-anchor: middle; }
 .net-bubble:hover, .net-bubble:focus-visible {
   filter: brightness(1.12) drop-shadow(0 0 10px currentColor);
   outline: none;
@@ -523,13 +544,59 @@ body.mitchell-page {
 
 /* ── Radar ───────────────────────────────────────────── */
 .radar-stage { width: min(94vw, 620px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; position: relative; }
+.radar-scrubber {
+  width: min(94%, 460px); margin: 20px auto 0;
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
+  font-family: var(--font-body); box-sizing: border-box;
+  background: rgba(253,247,239,0.78);
+  padding: 8px 14px 10px; border-radius: 14px; border: 1px solid rgba(1,70,60,0.16);
+}
+.radar-scrubber div { font-weight: 700; font-size: 13px; color: var(--color-green-dark); text-align: center; }
+.radar-scrubber input[type=range] { width: 100%; accent-color: var(--color-green-dark); }
 .radar-stage svg { width: 100%; height: 100%; }
-.radar-ping { cursor: pointer; }
+
+/* Sweep arm — CSS rotation in SVG coordinate space */
+.radar-sweep-group {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: radar-sweep-rotate 10s linear infinite;
+}
+@keyframes radar-sweep-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Pings — glow in sync with sweep via per-element animation-delay */
+.radar-ping {
+  cursor: pointer;
+  animation: radar-ping-glow 10s linear infinite;
+}
+@keyframes radar-ping-glow {
+  0%   { opacity: 1;    }
+  40%  { opacity: 0.3;  }
+  99%  { opacity: 0.12; }
+  100% { opacity: 1;    }
+}
+.radar-ping:hover,
+.radar-ping:focus-visible,
+.radar-ping.selected {
+  opacity: 1 !important;
+  animation-play-state: paused;
+}
 .radar-ping:hover .radar-ping-bg { opacity: 0.4; }
 .radar-ping.selected .radar-ping-bg { opacity: 0.6; animation: radar-pulse 1.4s ease-out infinite; }
 @keyframes radar-pulse {
   0%   { transform: scale(1);   opacity: 0.5; }
   100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Pause both animations when radar is off-screen */
+.radar-stage.is-paused .radar-sweep-group,
+.radar-stage.is-paused .radar-ping { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-sweep-group { animation: none; }
+  .radar-ping { animation: none; opacity: 1 !important; }
 }
 .fish-wiggle { animation: swim-wiggle 2s ease-in-out infinite; transform-origin: 20% 10%; }
 @keyframes swim-wiggle {
