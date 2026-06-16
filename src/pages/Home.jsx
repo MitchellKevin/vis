@@ -26,8 +26,8 @@ export default function Home() {
   const flyToRef = useRef(null);
 
   useEffect(() => {
-    document.body.classList.add('mitchell-page');
-    return () => document.body.classList.remove('mitchell-page');
+    document.body.classList.add("mitchell-page");
+    return () => document.body.classList.remove("mitchell-page");
   }, []);
 
   useEffect(() => {
@@ -46,7 +46,38 @@ export default function Home() {
       <main>
         <section className="hero">
           <h1>Visualisaties</h1>
-          <p>Overzicht van alle visualisatieprojecten voor de Visdeurbel meesterproef.</p>
+          <p>
+            Overzicht van alle visualisatieprojecten voor de Visdeurbel
+            meesterproef.
+          </p>
+        </section>
+        <section>
+          <div className="grid">
+            <Link className="card" to="/julius">
+              <span className="card__label">Julius</span>
+              <h2 className="card__title">Visualisatie Julius</h2>
+              <p className="card__desc">
+                Persoonlijk visualisatieproject van Julius.
+              </p>
+              <span className="card__link">Bekijken →</span>
+            </Link>
+            <Link className="card" to="/mitchell">
+              <span className="card__label">Mitchell</span>
+              <h2 className="card__title">Visualisatie Mitchell</h2>
+              <p className="card__desc">
+                Persoonlijk visualisatieproject van Mitchell.
+              </p>
+              <span className="card__link">Bekijken →</span>
+            </Link>
+            <a className="card" href="#timeline">
+              <h2 className="card__title">Timeline Visualisatie</h2>
+              <p className="card__desc">
+                Visualisaties van hoeveel vissen op welk tijdstip van de dag te
+                zien zijn.
+              </p>
+              <span className="card__link">Bekijken ↓</span>
+            </a>
+          </div>
         </section>
       </main>
 
@@ -79,13 +110,25 @@ export default function Home() {
       <div className="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
       <main id="mitchell-main" aria-label="Datavisualisatie over de Visdeurbel, door Mitchell" style={{ paddingBlock: 0, maxWidth: 'none' }}>
         <DataCarousel />
-        <SectionWave top="var(--color-gold-light)" bottom="var(--color-gold-light)" />
+        <SectionWave
+          top="var(--color-gold-light)"
+          bottom="var(--color-gold-light)"
+        />
         <Aquarium />
-        <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
+        <SectionWave
+          top="var(--color-gold-light)"
+          bottom="var(--color-off-white)"
+        />
         <RadarChapter />
-        <SectionWave top="var(--color-off-white)" bottom="var(--color-purple)" />
+        <SectionWave
+          top="var(--color-off-white)"
+          bottom="var(--color-purple)"
+        />
         <LanguagesChapter />
-        <SectionWave top="var(--color-purple)" bottom="var(--color-gold-light)" />
+        <SectionWave
+          top="var(--color-purple)"
+          bottom="var(--color-gold-light)"
+        />
         <NetChapter />
       </main>
 
