@@ -23,9 +23,9 @@ function YoutubeIcon() {
 const navLinks = ["Over", "Waarom", "De vissen", "Community", "Visfoto's"];
 
 const credits = [
-  { label: "Design by: Moan", href: "#" },
-  { label: "Copy by: Buro Dertig", href: "#" },
-  { label: "Built by: Cyd Stumpel", href: "#" },
+  { label: "Design by: vis", href: "#" },
+  { label: "Copy by: vis", href: "#" },
+  { label: "Built by: vis", href: "#" },
   { label: "Stream by: Live-Streams.nl", href: "#" },
 ];
 
