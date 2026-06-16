@@ -2,21 +2,42 @@ import * as d3 from 'd3';
 import { COLORS, FONT_DISPLAY } from '../constants.js';
 import { $, $$, formatNumber, reduceMotion } from '../utils.js';
 import { ensureTintFilter, fishImagePath } from '../fishImage.js';
-import { state, lifecycle } from '../state.js';
+import { state, lifecycle, raf } from '../state.js';
 
 // ============================================================================
-// net.js — een "net" met bellen (circle-packing). Elke bel is een vissoort;
+// net.js — een echt "net" met bellen (circle-packing). Elke bel is een vissoort;
 // de grootte hangt af van de gekozen weergave: aantal, gemiddeld gewicht, of
-// biomassa (aantal × gewicht). Bovenaan zakt een net-patroon in beeld.
+// biomassa (aantal × gewicht). Bovenaan zakt een ruitvormig sleepnet in beeld
+// dat dóórbuigt onder het gewicht van de zwaarste bellen en zacht meewiegt in
+// de stroming.
 // ============================================================================
 
 // ── Instelbare waarden ──────────────────────────────────────────────────────
 const STAGE_WIDTH = 900, STAGE_HEIGHT = 680; // tekenvlak
-const NET_BOTTOM = 380;          // hoe ver het net naar beneden hangt
+const NET_BOTTOM = 380;          // hoe ver het net (in ruststand) naar beneden hangt
 const BUBBLE_PADDING = 8;        // ruimte tussen de bellen
 const FALL_FROM_OFFSET = 200;    // van hoe hoog het net en de bellen invallen
 const FISH_SIZE_FACTOR = 1.4, FISH_SIZE_MAX = 96; // vis-plaatje t.o.v. de bel (met plafond)
 const LABEL_MIN_RADIUS = 28;     // onder deze straal verbergen we het naam-label
+
+// Het net als maaswerk: een rooster van knopen waar diagonale "touwen" doorheen
+// lopen → ruitvormige mazen i.p.v. een saai vierkant grid.
+const NET_COLS = 18;             // mazen breed
+const NET_ROWS = 9;              // mazen diep
+const NET_GRAVITY = 60;          // basis-doorhang door zwaartekracht (px, lege kolom)
+const NET_CENTER_BOW = 28;       // extra doorhang in het midden (hangmat-vorm)
+const NET_BOTTOM_MARGIN = 16;    // hoe ver de onderrand ónder de laagste bel blijft
+const NET_SWAY_X = 7, NET_SWAY_Y = 4; // amplitude van het zachte wiegen (px, onderrand)
+
+// De soort-bellen-laag staat op translate(BUBBLE_DX, BUBBLE_DY).
+const BUBBLE_DX = 20, BUBBLE_DY = 80;
+
+// Tijdlijn van de intro-animatie (ms): eerst strak invallen, dán doorzakken.
+const DROP_MS = 1000, SAG_DELAY = 600, SAG_MS = 1150;
+const SWAY_DELAY = 1500, SWAY_MS = 1400, MORPH_MS = 850;
+
+const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
+const easeSag = d3.easeBackOut.overshoot(1.1);   // zacht doorzakken mét lichte settle
 
 // De drie weergaven: waarop baseren we de belgrootte?
 const valueForStat = {
@@ -42,10 +63,12 @@ export function initNet() {
   const infoEl = $('#netInfo');
   const svg = d3.select(stageEl).append('svg').attr('viewBox', `0 0 ${STAGE_WIDTH} ${STAGE_HEIGHT}`);
 
-  drawNet(svg);
-  const bubbleLayer = svg.append('g').attr('transform', 'translate(20, 80)');
+  // Lagen, van achter naar voren: net → soort-bellen.
+  const net = createNet(svg);
+  const bubbleLayer = svg.append('g').attr('transform', `translate(${BUBBLE_DX}, ${BUBBLE_DY})`);
   const defs = svg.append('defs');
   let currentStat = 'biomass';
+  let firstRender = true;
 
   // Eén bel aanmaken: kleurverloop, hoofdcirkel, glansplekje, vis-plek, label.
   function createBubble(group, bubble) {
@@ -92,6 +115,9 @@ export function initNet() {
     const packedBubbles = packBubbles(stat);
     const motionScale = reduceMotion() ? 0 : 1;
 
+    // Het net laten doorbuigen onder de nieuwe verdeling (animeren ná de eerste keer).
+    net.setWeight(packedBubbles, !firstRender);
+
     const existingBubbles = bubbleLayer.selectAll('.net-bubble').data(packedBubbles, bubble => bubble.data.naam);
 
     // verdwenen soorten → krimpen en weg
@@ -112,6 +138,8 @@ export function initNet() {
       .attr('transform', bubble => `translate(${bubble.x}, ${bubble.y}) scale(1)`);
     existingBubbles.transition().duration(800 * motionScale).ease(d3.easeCubicInOut)
       .attr('transform', bubble => `translate(${bubble.x}, ${bubble.y}) scale(1)`);
+
+    firstRender = false;
   }
 
   // Rangschik de soorten als compacte cirkels (grootte = de gekozen weergave).
@@ -124,6 +152,28 @@ export function initNet() {
 
   renderBubbles(currentStat);
   if (infoEl) infoEl.textContent = explanationForStat[currentStat];
+
+  // ── Animatie-loop (net wiegen), gepauzeerd buiten beeld ──
+  let running = false, frameId = 0;
+  function loop(now) {
+    net.tick(now);
+    if (running) frameId = raf(loop);
+  }
+
+  if (reduceMotion()) {
+    net.paintFinal();
+  } else {
+    net.startIntro();                           // initNet draait al pas in beeld → meteen starten
+    running = true; frameId = raf(loop);
+    // Observer enkel om te pauzeren/hervatten buiten beeld (zuinig).
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        if (!running) { running = true; frameId = raf(loop); }
+      } else { running = false; cancelAnimationFrame(frameId); }
+    }, { threshold: 0 });
+    visibilityObserver.observe(stageEl);
+    cleanups.push(() => { running = false; cancelAnimationFrame(frameId); visibilityObserver.disconnect(); });
+  }
 
   // De drie knoppen. onclick (i.p.v. addEventListener) zodat er bij hertekenen
   // niets opstapelt.
@@ -145,25 +195,132 @@ export function initNet() {
   cleanups.push(() => { $$('.net-toggle-btn').forEach(button => { button.onclick = null; }); });
 }
 
-// Het net dat van bovenaf in beeld zakt: verticale + horizontale "touwen".
-function drawNet(svg) {
-  const netGroup = svg.append('g');
+// ============================================================================
+// Het net: een ruitvormig maaswerk dat invalt, doorzakt en meewiegt.
+// Geeft een handvol controls terug die initNet aanstuurt.
+// ============================================================================
+function createNet(svg) {
+  const cols = NET_COLS, rows = NET_ROWS;
+  const layerSel = svg.append('g').attr('class', 'net-layer');
+  const layer = layerSel.node();   // ruwe DOM-node voor snelle setAttribute in de loop
 
-  for (let i = 0; i <= 16; i++) {
-    const x = (i / 16) * STAGE_WIDTH;
-    netGroup.append('path').attr('class', 'net-rope')
-      .attr('d', `M ${x} 0 Q ${x + Math.sin(i) * 12} 200, ${x + Math.sin(i + 0.5) * 30} ${NET_BOTTOM}`);
+  // ── Knopen: vaste basis-posities (taut), de doorhang komt er los bovenop ──
+  const nodes = [];
+  const nodeAt = (r, c) => nodes[r * (cols + 1) + c];
+  for (let r = 0; r <= rows; r++) {
+    for (let c = 0; c <= cols; c++) {
+      const depth = r / rows;                       // 0 bovenaan (vastgemaakt) → 1 onderaan
+      const x0 = (c / cols) * STAGE_WIDTH;
+      const y0 = depth * NET_BOTTOM;
+      nodes.push({ r, c, depth, x0, y0, x: x0, y: y0 });
+    }
   }
-  for (let j = 0; j <= 8; j++) {
-    const y = (j / 8) * NET_BOTTOM, sagAmount = 8 + j * 2;
-    netGroup.append('path').attr('class', 'net-rope')
-      .attr('d', `M 0 ${y} Q ${STAGE_WIDTH / 2} ${y + sagAmount}, ${STAGE_WIDTH} ${y}`);
-  }
-  netGroup.append('line').attr('x1', 0).attr('y1', 0).attr('x2', STAGE_WIDTH).attr('y2', 0)
-    .attr('stroke', 'rgb(1 70 60 / 0.45)').attr('stroke-width', 2);
 
-  // van boven in beeld laten zakken
-  netGroup.attr('transform', `translate(0,-${FALL_FROM_OFFSET})`)
-    .transition().delay(reduceMotion() ? 0 : 300).duration(reduceMotion() ? 0 : 1400)
-    .attr('transform', 'translate(0,0)');
+  // Doorhang per kolom (px t.o.v. ruststand). Basis = zwaartekracht; bij bellen
+  // zakt de onderrand verder door zodat het net de vangst omhult.
+  const gravityDroop = d3.range(cols + 1).map(c => NET_GRAVITY + NET_CENTER_BOW * Math.sin(Math.PI * c / cols));
+  let dropFrom = gravityDroop.slice();
+  let dropTo = gravityDroop.slice();
+  const drop = gravityDroop.slice();
+
+  // ── Strengen: twee families diagonalen → ruitvormige mazen ──
+  const strands = [];
+  for (let k = -rows; k <= cols; k++) {               // van linksboven naar rechtsonder
+    const chain = [];
+    for (let r = 0; r <= rows; r++) { const c = k + r; if (c >= 0 && c <= cols) chain.push(nodeAt(r, c)); }
+    if (chain.length > 1) strands.push(chain);
+  }
+  for (let k = 0; k <= cols + rows; k++) {            // van rechtsboven naar linksonder
+    const chain = [];
+    for (let r = 0; r <= rows; r++) { const c = k - r; if (c >= 0 && c <= cols) chain.push(nodeAt(r, c)); }
+    if (chain.length > 1) strands.push(chain);
+  }
+  const strandEls = strands.map(() => layerSel.append('path').attr('class', 'net-rope').node());
+
+  // Dikkere rand-touwen: bovenrand (waaraan het hangt) en de doorzakkende onderrand.
+  const topNodes = d3.range(cols + 1).map(c => nodeAt(0, c));
+  const botNodes = d3.range(cols + 1).map(c => nodeAt(rows, c));
+  const topRope = layerSel.append('path').attr('class', 'net-rope net-rope--edge').node();
+  const botRope = layerSel.append('path').attr('class', 'net-rope net-rope--edge').node();
+
+  // Knopen waar de strengen kruisen.
+  const knotEls = nodes.map(() => layerSel.append('circle').attr('class', 'net-knot').attr('r', 2).node());
+
+  const pathFor = chain => {
+    let d = `M${chain[0].x.toFixed(1)} ${chain[0].y.toFixed(1)}`;
+    for (let i = 1; i < chain.length; i++) d += `L${chain[i].x.toFixed(1)} ${chain[i].y.toFixed(1)}`;
+    return d;
+  };
+
+  // Doorhang per kolom: zak tot net ónder het laagste bel-silhouet in die kolom,
+  // met de zwaartekracht-doorhang als minimum. Zo omhult het net de vangst.
+  function computeDrop(bubbles) {
+    const out = gravityDroop.slice();
+    for (let c = 0; c <= cols; c++) {
+      const x = (c / cols) * STAGE_WIDTH;
+      let bottom = NET_BOTTOM + gravityDroop[c];
+      for (const b of bubbles) {
+        const dx = x - (b.x + BUBBLE_DX);
+        if (Math.abs(dx) >= b.r) continue;            // deze kolom snijdt de bel niet
+        const silhouette = (b.y + BUBBLE_DY) + Math.sqrt(b.r * b.r - dx * dx) + NET_BOTTOM_MARGIN;
+        if (silhouette > bottom) bottom = silhouette;
+      }
+      out[c] = Math.min(bottom, STAGE_HEIGHT - 6) - NET_BOTTOM;
+    }
+    return out;
+  }
+
+  let introStart = null;     // performance.now() bij start van de intro (null = nog niet)
+  let morphStart = null;     // start van een gewicht-overgang bij weergave-wissel
+
+  // Bereken alle knoop-posities voor tijdstip `now` en teken het net.
+  function paint(now) {
+    let dropEased, sagScale, swayAmp, weightT;
+    if (reduceMotion()) {
+      dropEased = 1; sagScale = 1; swayAmp = 0; weightT = 1;
+    } else if (introStart == null) {
+      dropEased = 0; sagScale = 0; swayAmp = 0; weightT = 1;   // wachtstand: nog niet in beeld
+    } else {
+      const e = now - introStart;
+      dropEased = d3.easeCubicOut(clamp01(e / DROP_MS));
+      sagScale = easeSag(clamp01((e - SAG_DELAY) / SAG_MS));            // zakt door mét lichte settle
+      swayAmp = clamp01((e - SWAY_DELAY) / SWAY_MS);
+      weightT = morphStart == null ? 1 : d3.easeCubicInOut(clamp01((now - morphStart) / MORPH_MS));
+    }
+
+    for (let c = 0; c <= cols; c++) drop[c] = dropFrom[c] + (dropTo[c] - dropFrom[c]) * weightT;
+
+    layer.setAttribute('transform', `translate(0,${((1 - dropEased) * -FALL_FROM_OFFSET).toFixed(1)})`);
+
+    for (const n of nodes) {
+      let x = n.x0;
+      let y = n.y0 + sagScale * Math.pow(n.depth, 1.2) * drop[n.c];   // onderrand zakt het meest
+      if (swayAmp > 0) {                              // bovenrand blijft vast, onderrand wiegt het meest
+        x += n.depth * NET_SWAY_X * swayAmp * Math.sin(now * 0.0012 + n.c * 0.55 + n.r * 0.3);
+        y += n.depth * NET_SWAY_Y * swayAmp * Math.sin(now * 0.0009 + n.c * 0.4);
+      }
+      n.x = x; n.y = Math.min(y, STAGE_HEIGHT - 2);
+    }
+
+    for (let i = 0; i < strands.length; i++) strandEls[i].setAttribute('d', pathFor(strands[i]));
+    topRope.setAttribute('d', pathFor(topNodes));
+    botRope.setAttribute('d', pathFor(botNodes));
+    for (let i = 0; i < nodes.length; i++) {
+      knotEls[i].setAttribute('cx', nodes[i].x.toFixed(1));
+      knotEls[i].setAttribute('cy', nodes[i].y.toFixed(1));
+    }
+  }
+
+  return {
+    // Nieuwe verdeling instellen; `animate` laat het net er soepel naartoe buigen.
+    setWeight(bubbles, animate) {
+      dropFrom = drop.slice();
+      dropTo = computeDrop(bubbles);
+      if (animate && !reduceMotion()) morphStart = performance.now();
+      else { morphStart = null; for (let c = 0; c <= cols; c++) drop[c] = dropTo[c]; }
+    },
+    startIntro() { if (introStart == null) introStart = performance.now(); },
+    tick(now) { paint(now); },
+    paintFinal() { paint(performance.now()); },   // directe eindstand (reduced motion)
+  };
 }

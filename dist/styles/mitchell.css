@@ -506,7 +506,9 @@ body.mitchell-page {
 
 .net-stage { width: min(94vw, 900px); aspect-ratio: 900 / 680; margin: var(--space-5) auto 0; }
 .net-stage svg { width: 100%; height: 100%; }
-.net-rope { stroke: rgb(253 247 239 / 0.28); stroke-width: 1; fill: none; }
+.net-rope { stroke: rgb(253 247 239 / 0.28); stroke-width: 1; fill: none; stroke-linecap: round; }
+.net-rope--edge { stroke: rgb(253 247 239 / 0.5); stroke-width: 2; }
+.net-knot { fill: rgb(253 247 239 / 0.3); }
 .net-bubble { cursor: pointer; transition: filter 0.2s ease; transform-box: fill-box; }
 .net-bubble:hover, .net-bubble:focus-visible {
   filter: brightness(1.12) drop-shadow(0 0 10px currentColor);

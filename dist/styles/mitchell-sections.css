@@ -108,6 +108,8 @@
 
 /* ── Net — touwen donker ip off-white ────────────────── */
 .mitchell-page .net-rope { stroke: rgb(1 70 60 / 0.22); }
+.mitchell-page .net-rope--edge { stroke: rgb(1 70 60 / 0.42); }
+.mitchell-page .net-knot { fill: rgb(1 70 60 / 0.3); }
 
 /* ── Hero op violet — donkergroene tekst, geen halo ──── */
 /* Halo weg zodat de vis-puntenwolk volledig zichtbaar blijft; tekst leesbaar
