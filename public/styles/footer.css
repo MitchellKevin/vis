@@ -1,0 +1,335 @@
+/* ============================================================================
+ * Visdeurbel — Footer
+ * ----------------------------------------------------------------------------
+ * Nagebouwd naar het website-ontwerp: donkerpaarse achtergrond, vier kolommen
+ * (merk/claim, navigatie, info+socials, journaal+partners) en een onderbalk
+ * met taalkeuze en credits. Kleuren/typografie via de design-tokens.
+ * ========================================================================== */
+
+.vdb-footer {
+  --vdb-footer-bg: var(--color-purple);          /* merk-paars, zoals de andere golven */
+  --vdb-footer-fg: var(--color-green-dark);       /* donkergroen voor leesbaarheid op paars */
+  --vdb-footer-muted: rgb(1 70 60 / 0.6);
+
+  background: var(--vdb-footer-bg);
+  color: var(--vdb-footer-fg);
+  padding: var(--space-11) var(--space-8) var(--space-7);
+  font-family: 'PT Sans', system-ui, sans-serif;
+}
+
+.vdb-footer__inner {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.6fr 0.8fr 1.2fr 1.2fr;
+  gap: var(--space-9);
+  align-items: start;
+}
+
+/* ── Kolom 1 — merk + claim + contact ─────────────────────────────────────── */
+
+.vdb-footer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+}
+
+.vdb-footer__bell {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+}
+
+.vdb-footer__wordmark {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 32px;
+  color: var(--vdb-footer-fg);
+}
+
+/* Selector met .vdb-footer-prefix zodat de kleur wint van pagina-overrides
+ * zoals `.mitchell-page h2 { color: var(--text-primary) }` op de Home-pagina. */
+.vdb-footer .vdb-footer__claim {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 54px;
+  line-height: 1.15;
+  color: var(--vdb-footer-fg);
+  max-width: 11ch;
+  margin: var(--space-7) 0 var(--space-8);
+}
+
+.vdb-footer__email {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-button);
+  background: var(--color-off-white);
+  color: var(--color-green-dark);
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.vdb-footer__email:hover {
+  background: var(--color-gold-light);
+  transform: translateY(-1px);
+}
+
+/* ── Kolom 2 — navigatie ──────────────────────────────────────────────────── */
+
+.vdb-footer__nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-2);
+}
+
+.vdb-footer__nav-link {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--vdb-footer-fg);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.vdb-footer__nav-link:hover {
+  color: var(--color-purple-bell);
+}
+
+/* ── Kolom 3 & 4 — tekst, links ───────────────────────────────────────────── */
+
+.vdb-footer__info-col,
+.vdb-footer__journal-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-2);
+}
+
+.vdb-footer__text {
+  font: var(--text-p1);
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--vdb-footer-fg);
+  margin: 0;
+  max-width: 30ch;
+}
+
+.vdb-footer__text--strong {
+  font-weight: 700;
+}
+
+.vdb-footer__link {
+  color: var(--vdb-footer-fg);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.vdb-footer__link:hover {
+  color: var(--color-purple-bell);
+}
+
+/* ── Socials ──────────────────────────────────────────────────────────────── */
+
+.vdb-footer__socials {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.vdb-footer__social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--vdb-footer-fg);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.vdb-footer__social svg {
+  width: 34px;
+  height: 34px;
+}
+
+/* YouTube-play: uitsnede in de footer-kleur, zodat de driehoek "doorzichtig"
+ * oogt in het donkergroene icoon (zowel los social-icoon als in de knop). */
+.vdb-footer__yt-play {
+  fill: var(--vdb-footer-bg);
+}
+
+.vdb-footer__social:hover {
+  color: var(--color-purple-bell);
+  transform: translateY(-1px);
+}
+
+/* ── Kolom 4 — abonneren + partners ───────────────────────────────────────── */
+
+.vdb-footer__subscribe {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: fit-content;
+  height: 50px;
+  padding: 0 var(--space-6);
+  border: 1.5px solid var(--vdb-footer-fg);
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--vdb-footer-fg);
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.vdb-footer__subscribe-icon {
+  display: inline-flex;
+}
+
+.vdb-footer__subscribe-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.vdb-footer__subscribe:hover {
+  background: var(--vdb-footer-fg);
+  color: var(--vdb-footer-bg);
+}
+
+.vdb-footer__subscribe:hover .vdb-footer__subscribe-icon svg rect {
+  fill: var(--vdb-footer-bg);
+}
+
+.vdb-footer__subscribe:hover .vdb-footer__subscribe-icon svg path {
+  fill: var(--vdb-footer-fg);
+}
+
+.vdb-footer__partners-label {
+  margin-top: var(--space-4);
+}
+
+.vdb-footer__partners {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.vdb-footer__partner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.1;
+  max-width: 9ch;
+  color: var(--vdb-footer-muted);
+}
+
+.vdb-footer__partner-mark {
+  font-size: 16px;
+  letter-spacing: -1px;
+  color: var(--vdb-footer-muted);
+}
+
+/* ── Onderbalk ────────────────────────────────────────────────────────────── */
+
+.vdb-footer__bottom {
+  max-width: var(--layout-max-width);
+  margin: var(--space-10) auto 0;
+  padding-top: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.vdb-footer__lang {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.vdb-footer__lang-link {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--vdb-footer-fg);
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+.vdb-footer__lang-link--active {
+  font-weight: 800;
+  opacity: 1;
+}
+
+.vdb-footer__credits {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.vdb-footer__copyright {
+  font: var(--text-p2);
+  font-size: 16px;
+  color: var(--vdb-footer-fg);
+}
+
+.vdb-footer__credit-link {
+  font: var(--text-p2);
+  font-size: 16px;
+  color: var(--vdb-footer-fg);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+.vdb-footer__credit-link:hover {
+  color: var(--color-purple-bell);
+}
+
+/* ── Responsief ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .vdb-footer__inner {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
+  }
+  .vdb-footer__claim {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .vdb-footer {
+    padding: var(--space-9) var(--space-6) var(--space-6);
+  }
+  .vdb-footer__inner {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+  .vdb-footer__claim {
+    font-size: 32px;
+    max-width: none;
+    margin: var(--space-6) 0 var(--space-6);
+  }
+  .vdb-footer__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
