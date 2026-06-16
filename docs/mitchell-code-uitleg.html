@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<title>Visdeurbel — Mitchell-pagina: code uitgelegd</title>
+<style>
+  :root{
+    --green:#01463c; --green-mid:#015a4e; --bell:#9b74ff; --teal:#1eacb0;
+    --gold:#f0af00; --ink:#1d2b28; --muted:#5a6b67; --line:#d9e0dd; --bg:#fdfbf6;
+  }
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body{
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink); line-height: 1.55; font-size: 10.5pt; margin: 0; background:#fff;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  h1,h2,h3,h4{ color: var(--green); line-height: 1.2; }
+  h1{ font-size: 26pt; margin: 0 0 6px; }
+  h2{ font-size: 17pt; margin: 26px 0 8px; padding-bottom: 5px; border-bottom: 2px solid var(--green); }
+  h3{ font-size: 13pt; margin: 18px 0 4px; color: var(--green-mid); }
+  h4{ font-size: 11pt; margin: 12px 0 2px; color: var(--ink); }
+  p{ margin: 6px 0; }
+  ul,ol{ margin: 6px 0 6px 0; padding-left: 22px; }
+  li{ margin: 3px 0; }
+  code{ font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 9pt;
+        background:#eef3f1; color:#0a3f37; padding: 1px 4px; border-radius: 4px; }
+  pre{ background:#0c2b26; color:#e8f3ef; padding: 10px 12px; border-radius: 8px; overflow:auto;
+       font-family:"SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 8.4pt; line-height:1.45;
+       white-space: pre-wrap; word-break: break-word; }
+  pre .c{ color:#86b8ad; } /* comment */
+  pre .k{ color:#9b74ff; } /* keyword */
+  pre .s{ color:#f0af00; } /* string */
+  .lead{ font-size: 12pt; color: var(--muted); }
+  .tag{ display:inline-block; font-size:8pt; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+        padding:2px 8px; border-radius:999px; vertical-align: middle; margin-left:6px; }
+  .tag.jsx{ background:#e6dcff; color:#5b3da8; }
+  .tag.js{ background:#fdeccb; color:#8a5a00; }
+  .note{ background:#f3f7f5; border-left:4px solid var(--teal); padding:8px 12px; border-radius:0 6px 6px 0; margin:10px 0; }
+  .note b{ color: var(--green); }
+  .file-card{ border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:12px 0; background:var(--bg); }
+  .file-card h3{ margin-top:2px; }
+  .path{ font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:8.5pt; color:var(--muted); }
+  .steps{ counter-reset: step; list-style:none; padding-left:0; }
+  .steps > li{ position:relative; padding-left:30px; margin:8px 0; }
+  .steps > li::before{ counter-increment: step; content: counter(step); position:absolute; left:0; top:0;
+      width:21px; height:21px; background:var(--green); color:#fff; border-radius:50%; font-size:9pt; font-weight:700;
+      display:flex; align-items:center; justify-content:center; }
+  table{ border-collapse:collapse; width:100%; margin:10px 0; font-size:9.2pt; }
+  th,td{ border:1px solid var(--line); padding:5px 8px; text-align:left; vertical-align:top; }
+  th{ background:#eef3f1; color:var(--green); }
+  .toc a{ color:var(--ink); text-decoration:none; }
+  .toc ol{ list-style: decimal; }
+  .pagebreak{ page-break-before: always; }
+  .avoid{ page-break-inside: avoid; }
+  .cover{ text-align:center; padding-top: 60mm; }
+  .cover .sub{ color:var(--muted); font-size:13pt; margin-top:8px; }
+  .cover .meta{ margin-top:40px; font-size:10pt; color:var(--muted); }
+  .pill{ display:inline-block; background:var(--green); color:#fff; border-radius:999px; padding:3px 12px; font-size:9pt; font-weight:700; }
+  .small{ font-size:9pt; color:var(--muted); }
+  .kbd{ font-family:monospace; background:#eef3f1; border:1px solid var(--line); border-radius:4px; padding:0 5px; font-size:8.5pt; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<section class="cover">
+  <span class="pill">Code-documentatie</span>
+  <h1>De Visdeurbel-datavisualisatie</h1>
+  <p class="sub">De Mitchell-pagina, stap voor stap uitgelegd<br/>React-componenten &amp; JavaScript-grafieken</p>
+  <div class="meta">
+    Een begrijpelijke gids door alle actieve bestanden in<br/>
+    <span class="path">src/components/mitchell-components/</span> en <span class="path">src/scripts/mitchell/charts/</span>
+  </div>
+</section>
+
+<!-- ============ INHOUD ============ -->
+<section class="pagebreak">
+<h2>Inhoudsopgave</h2>
+<div class="toc">
+<ol>
+  <li>Inleiding — voor wie en hoe te lezen</li>
+  <li>Het grote plaatje — hoe de pagina werkt</li>
+  <li>De pagina zelf — <code>Mitchell.jsx</code></li>
+  <li>De dirigent — <code>mitchell.js</code></li>
+  <li>De gedeelde fundering (data &amp; hulpjes)</li>
+  <li>Structurele componenten (FishSprite, DataSwitch, SectionWave)</li>
+  <li>De feiten-carrousel — <code>DataCarousel.jsx</code></li>
+  <li>Het aquarium — <code>Aquarium.jsx</code> + <code>aquarium.js</code></li>
+  <li>De sonar/radar — <code>RadarChapter.jsx</code> + <code>radar.js</code></li>
+  <li>Het talenkoor — <code>LanguagesChapter.jsx</code> + <code>languages.js</code></li>
+  <li>Het net — <code>NetChapter.jsx</code> + <code>net.js</code></li>
+  <li>Begrippenlijst (jargon uitgelegd)</li>
+  <li>Bijlage — de legacy-map</li>
+</ol>
+</div>
+</section>
+
+<!-- ============ 1. INLEIDING ============ -->
+<section class="pagebreak">
+<h2>1 · Inleiding — voor wie en hoe te lezen</h2>
+<p class="lead">Dit document legt uit hoe de scrollende datavisualisatie over de Visdeurbel in elkaar zit — bedoeld zodat <b>iedereen</b> het kan volgen, ook zonder diepe programmeerkennis.</p>
+
+<p>De pagina bestaat uit twee soorten bestanden die samenwerken:</p>
+<table class="avoid">
+<tr><th style="width:160px">Soort</th><th>Wat doet het?</th><th>Map</th></tr>
+<tr>
+  <td><b>React-componenten</b> <span class="tag jsx">.jsx</span></td>
+  <td>Bouwen de <b>structuur</b> van de pagina: de teksten, knoppen en lege "podia" (stages) waar straks een grafiek in komt. Vergelijk het met het neerzetten van lege lijsten aan de muur.</td>
+  <td class="path">components/mitchell-components/</td>
+</tr>
+<tr>
+  <td><b>Chart-scripts</b> <span class="tag js">.js</span></td>
+  <td>Tekenen en <b>animeren</b> de grafieken ín die podia, met data en de tekenbibliotheek D3 of een canvas. Dit is het "schilderij" dat in de lijst komt.</td>
+  <td class="path">scripts/mitchell/charts/</td>
+</tr>
+</table>
+
+<div class="note"><b>Leeswijzer.</b> Per grafiek bespreken we eerst het korte React-component (de lege huls) en daarna het script dat de huls vult. Jargon (D3, canvas, IntersectionObserver…) staat uitgelegd in de <b>Begrippenlijst</b> achterin — bij het eerste gebruik markeren we zo'n term <i>schuin</i>.</p>
+</div>
+</section>
+
+<!-- ============ 2. GROTE PLAATJE ============ -->
+<section class="pagebreak">
+<h2>2 · Het grote plaatje — hoe de pagina werkt</h2>
+<p>De Mitchell-pagina is één lange scroll met "hoofdstukken" (chapters). Het samenspel verloopt in vier stappen:</p>
+
+<ol class="steps">
+  <li><b>React zet de structuur neer.</b> <code>Mitchell.jsx</code> rendert alle hoofdstukken als HTML. Elk grafiek-hoofdstuk bevat een lege <code>&lt;div&gt;</code> met een uniek <code>id</code> — bijvoorbeeld <code>id="aquariumStage"</code>. Dat is het lege podium.</li>
+  <li><b>De dirigent start.</b> Eén keer bij het laden roept de pagina <code>initMitchell()</code> aan (in <code>mitchell.js</code>). Die laadt de data uit een JSON-bestand en houdt in de gaten welk hoofdstuk in beeld scrolt.</li>
+  <li><b>Grafiek wordt "lui" getekend.</b> Zodra een hoofdstuk in beeld komt, roept de dirigent het bijbehorende script aan (bijv. <code>initAquarium()</code>), dat het podium vult. Dit heet <i>lazy loading</i>: pas tekenen wanneer nodig, dat scheelt rekenkracht.</li>
+  <li><b>Wisselen van periode.</b> Bovenaan staat een schakelaar (week / maand / jaar). Klik je daarop, dan worden alle grafieken opgeruimd en opnieuw getekend met de nieuwe dataset.</li>
+</ol>
+
+<div class="note avoid">
+<b>Waarom deze splitsing?</b> React is sterk in <i>structuur en toestand</i> (welke knop is actief, welke tekst staat er). D3/canvas zijn sterk in <i>tekenen en animeren</i>. Door ze te scheiden blijft elk stuk overzichtelijk: de <code>.jsx</code> blijft kort, en alle teken-logica zit gebundeld in de <code>.js</code>-scripts.
+</div>
+
+<h3>De gedeelde "waarheid": <code>state</code></h3>
+<p>Alle grafieken lezen uit één gedeeld data-object, <code>state</code>. De dirigent vult dat met de geladen dataset; de grafieken halen er hun cijfers uit. Zo hoeft bij een periodewissel maar op één plek de data ververst te worden.</p>
+</section>
+
+<!-- ============ 3. Mitchell.jsx ============ -->
+<section class="pagebreak">
+<h2>3 · De pagina zelf — <code>Mitchell.jsx</code> <span class="tag jsx">.jsx</span></h2>
+<p class="path">src/pages/Mitchell.jsx</p>
+<p>Dit is het hoofdcomponent van de pagina. Het regelt drie dingen: stylesheets laden, de dirigent starten, en de hoofdstukken in de juiste volgorde neerzetten.</p>
+
+<h3>Stap voor stap</h3>
+<ol class="steps">
+  <li><b>Stylesheets inladen.</b> Met <code>useStylesheet('/styles/mitchell.css')</code> (en enkele andere) worden de bijbehorende CSS-bestanden alleen op deze pagina geladen.</li>
+  <li><b>Dirigent één keer starten.</b> In een <code>useEffect</code> wordt <code>initMitchell()</code> aangeroepen. Een <code>useRef</code> (<code>initialized</code>) zorgt dat dit maar één keer gebeurt, ook als React in ontwikkelmodus dubbel rendert. De functie geeft een <i>opruim-functie</i> terug die draait als je de pagina verlaat.</li>
+  <li><b>De hoofdstukken plaatsen.</b> In de <code>return</code> staan de secties in scroll-volgorde, met tussen elke twee een <code>&lt;SectionWave&gt;</code> (de golf-overgang):</li>
+</ol>
+
+<pre><span class="c">// vereenvoudigde volgorde uit de return</span>
+&lt;DataCarousel /&gt;            <span class="c">// feiten-carrousel</span>
+&lt;SectionWave … /&gt;
+&lt;Aquarium /&gt;                <span class="c">// rondzwemmende vissen</span>
+&lt;SectionWave … /&gt;
+&lt;RadarChapter /&gt;            <span class="c">// sonar</span>
+&lt;SectionWave … /&gt;
+&lt;LanguagesChapter /&gt;        <span class="c">// drijvende begroetingen</span>
+&lt;SectionWave … /&gt;
+&lt;NetChapter /&gt;              <span class="c">// bubbel-net</span></pre>
+
+<div class="note"><b>Let op — Hero, Ring en Wereldkaart staan uit.</b> In de code zie je <code>&lt;HeroChapter /&gt;</code>, <code>&lt;RingChapter /&gt;</code> en de wereldkaart <i>uitgecommentarieerd</i> (tussen <code>{/* … */}</code>). Ze worden dus niet getoond; hun code is naar de <code>legacy/</code>-map verhuisd. Daarom bespreken we ze hier niet (zie de bijlage).</div>
+
+<h3>Het toegankelijkheidsmenu (<code>AccessibilityMenu</code>)</h3>
+<p>Binnen hetzelfde bestand zit een klein menu (het ♿-knopje) met twee schakelaars:</p>
+<ul>
+  <li><b>Animaties uit</b> — zet <code>window.__reduceMotion</code> aan. Alle grafieken checken die vlag en slaan dan animaties over (zie <code>reduceMotion()</code> in de fundering).</li>
+  <li><b>Hoger contrast</b> — voegt een class toe aan de <code>&lt;body&gt;</code> waarop de CSS reageert.</li>
+</ul>
+<p>Beide keuzes worden in <code>localStorage</code> bewaard, zodat ze bij een volgend bezoek onthouden blijven.</p>
+</section>
+
+<!-- ============ 4. mitchell.js ============ -->
+<section class="pagebreak">
+<h2>4 · De dirigent — <code>mitchell.js</code> <span class="tag js">.js</span></h2>
+<p class="path">src/scripts/mitchell.js</p>
+<p>Dit script verbindt de lege podia met de juiste grafiek-scripts en regelt het laden en wisselen van data.</p>
+
+<h3>Stap voor stap</h3>
+<ol class="steps">
+  <li><b>Koppeltabel.</b> Een object <code>chapterInit</code> koppelt elk sectie-<code>id</code> aan een teken-functie, bijv. <code>'ch-radar': initRadar</code>.</li>
+  <li><b>In de gaten houden.</b> Een <i>IntersectionObserver</i> let op welke <code>.chapter</code> in beeld scrolt. Komt er één in zicht én is die nog niet getekend (<code>dataset.inited</code>), dan draait de bijbehorende init-functie. Dit is de <i>lazy loading</i> uit stap 3.</li>
+  <li><b>Opruimen.</b> <code>clearChapters()</code> draait alle geregistreerde opruim-functies (<code>cleanups</code>), stopt lopende animaties (<code>rafs</code>) en leegt de podia. Nodig vóór een periodewissel, anders stapelen grafieken en animaties zich op.</li>
+  <li><b>Periode wisselen.</b> <code>setPeriod('week'|'maand'|'jaar')</code> markeert de actieve knop, ruimt op, laadt het juiste JSON-bestand (en voor 'jaar' wordt de data eerst gesynthetiseerd) en begint opnieuw te observeren.</li>
+  <li><b>Opstarten.</b> <code>boot()</code> laadt de begindataset (maand) + de wereldkaart, koppelt de schakelknoppen, en start het meescrollende gids-visje.</li>
+</ol>
+
+<pre><span class="c">// het hart van de lazy-init</span>
+<span class="k">const</span> sectionObserver = <span class="k">new</span> IntersectionObserver((entries) =&gt; {
+  entries.forEach(entry =&gt; {
+    <span class="k">if</span> (!entry.isIntersecting) <span class="k">return</span>;          <span class="c">// nog niet in beeld → niks doen</span>
+    <span class="k">if</span> (!entry.target.dataset.inited) {           <span class="c">// nog niet getekend?</span>
+      entry.target.dataset.inited = <span class="s">'1'</span>;
+      chapterInit[entry.target.id]?.(entry.target); <span class="c">// teken de grafiek</span>
+    }
+  });
+});</pre>
+
+<div class="note"><b>Levenscyclus (<code>lifecycle</code>).</b> Elke grafiek "registreert" zijn opruim-werk (timers, observers, animaties) in een gedeelde lijst. Zo kan de dirigent bij een wissel of bij het verlaten van de pagina alles netjes stoppen — geen geheugenlekken of spookanimaties.</div>
+</section>
+
+<!-- ============ 5. FUNDERING ============ -->
+<section class="pagebreak">
+<h2>5 · De gedeelde fundering (data &amp; hulpjes)</h2>
+<p>Zeven kleine modules die alle grafieken gebruiken. Kort uitgelegd:</p>
+
+<div class="file-card avoid">
+<h3><code>constants.js</code> — de vaste gegevens</h3>
+<p>Pure data, geen logica: het kleurenpalet (<code>COLORS</code>), lettertypes, maandnamen, de lijst <b>vissoorten</b> (<code>visData</code> — met naam, gewicht, typische lengte, vorm, kleur), landcoördinaten voor de kaart en begroetingen per taal.</p>
+</div>
+
+<div class="file-card avoid">
+<h3><code>state.js</code> — de gedeelde waarheid</h3>
+<p>Eén object <code>state</code> met de actieve dataset (totalen, uren per dag, periode-label…). Plus <code>lifecycle</code> (opruimlijst) en <code>raf()</code>, een wrapper om <code>requestAnimationFrame</code> die het animatieframe registreert zodat het later gestopt kan worden.</p>
+</div>
+
+<div class="file-card avoid">
+<h3><code>utils.js</code> — kleine gereedschappen</h3>
+<ul>
+  <li><code>$</code> en <code>$$</code> — korte manieren om één of meerdere HTML-elementen op te zoeken.</li>
+  <li><code>formatNumber</code> — toont getallen netjes met Nederlandse punten (49736 → "49.736").</li>
+  <li><code>reduceMotion()</code> — waar/onwaar of animaties uit moeten.</li>
+  <li><code>mulberry32</code>/<code>rng</code> — een <i>seeded</i> toevalsgenerator: met dezelfde startwaarde altijd dezelfde "willekeur", zodat posities bij elke render gelijk zijn.</li>
+</ul>
+</div>
+
+<div class="file-card avoid">
+<h3><code>dataLoad.js</code> — data ophalen &amp; jaar verzinnen</h3>
+<p><code>loadData(url)</code> haalt een JSON-bestand op en kopieert alles naar <code>state</code>. <code>synthesizeYear()</code> blaast de maand-snapshot op tot een heel jaar (de echte jaardata is te groot voor de browser), met een zachte seizoensgolf.</p>
+</div>
+
+<div class="file-card avoid">
+<h3><code>tooltip.js</code> — één gedeelde tooltip</h3>
+<p><code>showTooltip(html, x, y)</code> en <code>hideTooltip()</code> vullen en positioneren één enkel tooltip-element dat de hele pagina deelt — efficiënter dan per grafiek een eigen tooltip.</p>
+</div>
+
+<div class="file-card avoid">
+<h3><code>fishImage.js</code> — vis-foto's inkleuren</h3>
+<p>De vis-PNG's zijn neutraal grijs. <code>ensureTintFilter()</code> maakt een SVG-filter dat de foto eerst grijs maakt en daarna met de soort-kleur vermenigvuldigt — zo houden de vissen hun textuur maar krijgen ze hun eigen kleur (<i>luminantie-behoudend tinten</i>).</p>
+</div>
+
+<div class="file-card avoid">
+<h3><code>swimFish.js</code> — het meescrollende gids-visje</h3>
+<p>Het kleine visje (het baars-plaatje) dat met je meescrolt. Elke frame zoekt het de grafiek die het dichtst bij het midden van het scherm staat en cirkelt daar soepel omheen met de animatiebibliotheek GSAP. Buiten beeld dobbert het rechtsonder rond.</p>
+</div>
+</section>
+
+<!-- ============ 6. STRUCTURELE COMPONENTEN ============ -->
+<section class="pagebreak">
+<h2>6 · Structurele componenten</h2>
+<p>Drie kleine React-componenten zonder eigen grafiek-script.</p>
+
+<div class="file-card avoid">
+<h3><code>FishSprite.jsx</code> <span class="tag jsx">.jsx</span></h3>
+<p class="path">components/mitchell-components/FishSprite.jsx</p>
+<p>Een onzichtbare SVG (<code>width="0"</code>) met een set herbruikbare vis-silhouetten (<code>&lt;symbol&gt;</code>): rond, baars, roofvis, lang, klein. Andere grafieken kunnen zo'n silhouet aanroepen i.p.v. het telkens opnieuw te tekenen. Met <code>fill="currentColor"</code> neemt elk silhouet de kleur over die de aanroeper instelt.</p>
+</div>
+
+<div class="file-card avoid">
+<h3><code>DataSwitch.jsx</code> <span class="tag jsx">.jsx</span></h3>
+<p class="path">components/mitchell-components/DataSwitch.jsx</p>
+<p>De drie knoppen <b>Week · Maand · Jaar</b> bovenaan. Het component levert alleen de knoppen met een <code>data-period</code>-attribuut; de werking (klik → andere dataset) zit in <code>mitchell.js</code> (<code>setPeriod</code>). "Maand" staat standaard actief.</p>
+</div>
+
+<div class="file-card avoid">
+<h3><code>SectionWave.jsx</code> <span class="tag jsx">.jsx</span></h3>
+<p class="path">components/mitchell-components/SectionWave.jsx</p>
+<p>De golvende overgang tussen twee secties. Krijgt twee kleuren mee: <code>top</code> (sectie erboven) en <code>bottom</code> (eronder). De golf-vorm is een breed, periodiek SVG-pad dat met een subtiele CSS-animatie horizontaal driftt, zodat het naadloos doorloopt.</p>
+</div>
+</section>
+
+<!-- ============ 7. DATACAROUSEL ============ -->
+<section class="pagebreak">
+<h2>7 · De feiten-carrousel — <code>DataCarousel.jsx</code> <span class="tag jsx">.jsx</span></h2>
+<p class="path">components/mitchell-components/DataCarousel.jsx</p>
+<p>Een doorbladerbare reeks "Wist je dat?"-kaartjes. Dit is een <b>volledig React-component</b> (geen los chart-script) dat de data zelf inleest en omzet naar feiten.</p>
+
+<h3>Stap voor stap</h3>
+<ol class="steps">
+  <li><b>Data ophalen.</b> In een <code>useEffect</code> wordt <code>/json/vis-data.json</code> opgehaald. De vlag <code>alive</code> voorkomt dat de data nog wordt gezet als het component intussen verdwenen is.</li>
+  <li><b>Feiten bouwen.</b> <code>buildFacts(d)</code> rekent uit de ruwe data zeven feiten uit, bijvoorbeeld: het drukste uur (alle uren over de dagen opgeteld), het meest gespotte vissoort, het percentage mobiele bezoekers, en het topland.</li>
+  <li><b>Carrousel-techniek.</b> De bibliotheek <i>Embla</i> (<code>useEmblaCarousel</code>) verzorgt het vegen/scrollen. Bij elke wissel onthoudt het component welk kaartje actief is en of de vorige/volgende-pijl aan moet.</li>
+  <li><b>Toelichting (?).</b> Een <span class="kbd">?</span>-knop toont per feit een korte bronvermelding (<code>note</code>).</li>
+</ol>
+
+<pre><span class="c">// voorbeeld van één afgeleid feit</span>
+<span class="k">const</span> byHour = <span class="k">new</span> Array(<span class="s">24</span>).fill(<span class="s">0</span>);
+(d.weekHours || []).forEach((v, i) =&gt; { byHour[i % <span class="s">24</span>] += v; });  <span class="c">// tel per uur op</span>
+<span class="k">const</span> busyHour = byHour.indexOf(Math.max(...byHour));            <span class="c">// drukste uur</span></pre>
+
+<div class="note">De highlights in de zinnen (de paarse cijfers) komen uit het kleine hulpje <code>hl(x)</code>, dat een stukje tekst vetgedrukt en gekleurd maakt.</div>
+</section>
+
+<!-- ============ 8. AQUARIUM ============ -->
+<section class="pagebreak">
+<h2>8 · Het aquarium — <code>Aquarium.jsx</code> + <code>aquarium.js</code></h2>
+<p class="path">components/mitchell-components/Aquarium.jsx &nbsp;·&nbsp; scripts/mitchell/charts/aquarium.js</p>
+
+<h3>Het component <span class="tag jsx">.jsx</span></h3>
+<p>Heel kort: een titel, een lege <code>&lt;div id="aquariumStage"&gt;</code> (het podium), een rij met filter-knoppen (<code>#aquariumFilters</code>) en een tip. Verder niets — het script vult de rest.</p>
+
+<h3>Het script <span class="tag js">.js</span> — stap voor stap</h3>
+<p>Dit is de enige grafiek op een <i>canvas</i> (i.p.v. SVG), omdat er tientallen visjes tegelijk bewegen — canvas is daarvoor sneller.</p>
+<ol class="steps">
+  <li><b>Canvas opzetten.</b> Een <code>&lt;canvas&gt;</code> wordt in het podium gezet en op schermscherpte (<i>device pixel ratio</i>) afgesteld, zodat het niet wazig is.</li>
+  <li><b>Steekproef van ~80 vissen.</b> Per soort wordt het aantal visjes bepaald in verhouding tot hoe vaak die soort gezien is (<code>v.count / total × 80</code>). Vaker gezien = meer visjes.</li>
+  <li><b>Grootte op schaal.</b> Elk visje krijgt een grootte op basis van het gewicht: <code>∛gewicht</code> (derdemachtswortel), want massa schaalt met lengte³. Zo staan de soorten in realistische verhouding (meerval groot, alver klein). Ook krijgt elk visje een eigen lengte in cm (± wat variatie) voor de hover.</li>
+  <li><b>Visjes inkleuren (sprite).</b> <code>buildSprite()</code> tekent de vis-PNG op een onzichtbaar mini-canvas en loopt pixel voor pixel langs om hem in de soort-kleur te zetten (grijswaarde × kleur), met behoud van textuur. Het resultaat wordt gecachet, zodat dit maar één keer per soort+kleur gebeurt.</li>
+  <li><b>De animatielus.</b> Elke frame (<code>requestAnimationFrame</code>) beweegt elk visje: een beetje koers, een zachte golf, lichte aantrekking naar het midden, een vleugje toeval ("dwalen") en wrijving (afremmen). Aan de rand zwemt het er aan de andere kant weer in.</li>
+  <li><b>Interactie.</b> <b>Klik</b> = de visjes schrikken (ze krijgen een duwtje weg van de muis) + een rimpel (<code>aquarium-rip</code>). <b>Hover</b> = tooltip met naam en grootte (bijv. "Baars ~32 cm"). De filter-knoppen onderaan zetten soorten aan/uit.</li>
+  <li><b>Teller.</b> Een getal telt soepel op naar het totaal aantal waarnemingen (met een ease-curve).</li>
+  <li><b>Zuinig.</b> Een <i>IntersectionObserver</i> start de animatie pas als het aquarium in beeld is en stopt 'm zodra het weg scrolt.</li>
+</ol>
+
+<pre><span class="c">// kern van de zwem-natuurkunde, per visje, per frame</span>
+fish.x += fish.velocityX; fish.y += fish.velocityY + Math.sin(fish.wigglePhase) * <span class="s">0.04</span>;  <span class="c">// koers + golf</span>
+fish.velocityX += (<span class="s">50</span> - fish.x) * CENTER_PULL;            <span class="c">// zachte trek naar midden</span>
+fish.velocityX *= FRICTION;                                  <span class="c">// wrijving (afremmen)</span></pre>
+</section>
+
+<!-- ============ 9. RADAR ============ -->
+<section class="pagebreak">
+<h2>9 · De sonar/radar — <code>RadarChapter.jsx</code> + <code>radar.js</code></h2>
+<p class="path">components/mitchell-components/RadarChapter.jsx &nbsp;·&nbsp; scripts/mitchell/charts/radar.js</p>
+
+<h3>Het component <span class="tag jsx">.jsx</span></h3>
+<p>Een titel en een vierkant podium <code>#radarStage</code> met daarin een leeg detailpaneel <code>#radarDetail</code>. Het script tekent de radar en zet er een tijdslider onder.</p>
+
+<h3>Het idee</h3>
+<p>Een sonar-scherm: elke vissoort is een "ping". <b>Hoe vaker gezien, hoe dichter bij het midden.</b> Een draaiende straal (sweep) veegt rond en licht de pings op die hij passeert.</p>
+
+<h3>Het script <span class="tag js">.js</span> — stap voor stap</h3>
+<ol class="steps">
+  <li><b>Decor.</b> Concentrische ringen, een dradenkruis, een subtiele schijf-vulling en de draaiende sweep-wig (een kleurverloop) worden als SVG getekend.</li>
+  <li><b>Pings plaatsen.</b> De afstand tot het midden volgt uit het aantal waarnemingen via een <i>wortelschaal</i> (<code>scaleSqrt</code>). De hoek is willekeurig, maar via <i>rejection sampling</i> (gewoon opnieuw proberen tot het past) komen soorten niet bovenop elkaar. Per ping onthouden we de vaste hoek, zodat hij later alleen radiaal beweegt.</li>
+  <li><b>Naglooi (afterglow).</b> In de animatielus onthoudt elke ping wanneer de sweep er voor het laatst overheen kwam (<code>litAt</code>). Daarna zakt de helderheid in ~1,6 s weg naar een lage vloer. Zo "tast" de radar bij elke draai opnieuw af in plaats van alles vast aan te laten staan.</li>
+  <li><b>De tijdslider (scrubber).</b> Onder de radar staat een schuif. De tijdvakken hangen af van de periode:
+    <ul>
+      <li><b>week</b> → per <b>dag</b></li>
+      <li><b>maand</b> → per <b>week</b></li>
+      <li><b>jaar</b> → per <b>maand</b></li>
+    </ul>
+    Stand 0 = de hele periode (de totalen).</li>
+  <li><b>Verdeling per tijdvak.</b> Er bestaat geen kant-en-klare data per soort per tijdvak, dus die wordt <i>afgeleid</i>: de echte drukte-vorm (belletjes per dag) als basis, met een vaste variatie per soort eroverheen — zó genormaliseerd dat elke soort over de tijdvakken exact optelt tot zijn totaal.</li>
+  <li><b>Relatief positioneren.</b> Bij elk tijdvak wordt de afstandschaal opnieuw genormaliseerd op de drukste soort van dát moment. Daardoor komt de drukste vis naar het midden en staan ze altijd ten opzichte van elkaar — niet allemaal samengeperst aan de rand.</li>
+  <li><b>Info op hover.</b> Beweeg over een ping → het detailpaneel toont naam, aantal, piekmaand, diepte en gewicht; de vis licht op met een kader. Ga je eraf, dan verdwijnt het paneel weer. Werkt ook met toetsenbord (focus).</li>
+</ol>
+
+<pre><span class="c">// naglooi: helderheid op basis van tijd sinds de sweep passeerde</span>
+<span class="k">const</span> age = (now - ping.litAt) / GLOW_MS;
+<span class="k">const</span> glow = age &gt;= <span class="s">1</span> ? <span class="s">0</span> : (<span class="s">1</span> - age) * (<span class="s">1</span> - age);  <span class="c">// zacht uitdovend</span>
+<span class="k">return</span> MIN_GLOW + (<span class="s">1</span> - MIN_GLOW) * glow;             <span class="c">// nooit helemaal weg</span></pre>
+
+<div class="note"><b>Bewuste keuze.</b> De afstand is <i>relatief per tijdvak</i>: een vis dicht bij het midden in een rustige week kan absoluut gezien minder waarnemingen hebben dan een vis aan de rand in een drukke week. Het exacte aantal staat altijd in het label naast de vis.</div>
+</section>
+
+<!-- ============ 10. LANGUAGES ============ -->
+<section class="pagebreak">
+<h2>10 · Het talenkoor — <code>LanguagesChapter.jsx</code> + <code>languages.js</code></h2>
+<p class="path">components/mitchell-components/LanguagesChapter.jsx &nbsp;·&nbsp; scripts/mitchell/charts/languages.js</p>
+
+<h3>Het component <span class="tag jsx">.jsx</span></h3>
+<p>Een titel en een leeg podium <code>#langStage</code>. Verder vult het script alles.</p>
+
+<h3>Het idee</h3>
+<p>Elke taal is een zwevend woord — een begroeting (bijv. "Vis", "Fish", "魚"). Hoe groter het woord, hoe meer bezoekers die taal spraken.</p>
+
+<h3>Het script <span class="tag js">.js</span> — stap voor stap</h3>
+<ol class="steps">
+  <li><b>Top 24 talen.</b> De talen worden op aantal bezoekers gesorteerd; de begroeting per taal komt uit een tabel (<code>GREETINGS</code>).</li>
+  <li><b>Lettergrootte.</b> Een <code>scaleSqrt</code> (15–70px) zet het bezoekersaantal om naar tekstgrootte. Wortelschaal = de <b>oppervlakte</b> schaalt eerlijk mee, niet de hoogte.</li>
+  <li><b>Uit elkaar duwen.</b> Een <i>force-simulatie</i> van D3 zorgt dat de woorden netjes verdeeld worden: een lichte trek naar het midden (<code>forceX</code>/<code>forceY</code>), een afstotende kracht (<code>charge</code>) en een botsing-kracht (<code>collide</code>) die overlap voorkomt.</li>
+  <li><b>Dobberen.</b> Zodra de simulatie tot rust komt, krijgt elk woord een zachte, eindeloze dobber-beweging (een sinus rond zijn rustplek).</li>
+  <li><b>Toegankelijk &amp; interactief.</b> Elk woord heeft een <code>aria-label</code> ("Japans: 1.234 bezoekers") zodat voorleessoftware het als één eenheid voorleest, en toont bij hover een tooltip met percentage.</li>
+</ol>
+
+<pre><span class="c">// de vier krachten die de woorden ordenen</span>
+d3.forceSimulation(words)
+  .force(<span class="s">'x'</span>, d3.forceX(CENTER_X).strength(<span class="s">0.04</span>))    <span class="c">// naar het midden</span>
+  .force(<span class="s">'charge'</span>, d3.forceManyBody().strength(<span class="s">-4</span>))  <span class="c">// licht afstoten</span>
+  .force(<span class="s">'collide'</span>, d3.forceCollide(word =&gt; word.radius)); <span class="c">// niet overlappen</span></pre>
+</section>
+
+<!-- ============ 11. NET ============ -->
+<section class="pagebreak">
+<h2>11 · Het net — <code>NetChapter.jsx</code> + <code>net.js</code></h2>
+<p class="path">components/mitchell-components/NetChapter.jsx &nbsp;·&nbsp; scripts/mitchell/charts/net.js</p>
+
+<h3>Het component <span class="tag jsx">.jsx</span></h3>
+<p>Titel, een schakelaar met drie knoppen (<b>Aantal · Biomassa · Gewicht/vis</b>), een podium <code>#netStage</code> en een info-regel <code>#netInfo</code>.</p>
+
+<h3>Het idee</h3>
+<p>Alle soorten als bellen in een net. De grootte van een bel hangt af van de gekozen weergave: het <b>aantal</b>, het <b>gemiddeld gewicht</b>, of de <b>biomassa</b> (aantal × gewicht).</p>
+
+<h3>Het script <span class="tag js">.js</span> — stap voor stap</h3>
+<ol class="steps">
+  <li><b>Het net.</b> Bovenaan zakt een net-patroon (gebogen SVG-lijnen) in beeld met een korte animatie.</li>
+  <li><b>Bellen rangschikken.</b> <i>Circle packing</i> (<code>d3.pack</code>) stopt de cirkels — op grootte gesomd — zo compact mogelijk in het vlak.</li>
+  <li><b>Drie weergaven.</b> Een functie per weergave bepaalt de belgrootte: <code>count</code>, <code>weight</code>, of <code>count × weight</code> (biomassa).</li>
+  <li><b>Morphen bij wisselen.</b> Met een <i>data-join</i> (enter/update/exit) animeren de bestaande bellen soepel naar hun nieuwe plek en grootte als je van weergave wisselt — ze "morphen" in plaats van opnieuw te verschijnen.</li>
+  <li><b>Inhoud van een bel.</b> Elke bel krijgt een kleurverloop, een glansplekje, het ingekleurde vis-plaatje (zie <code>fishImage.js</code>) en een label.</li>
+  <li><b>Interactie.</b> Klik of hover op een bel → de info-regel toont de cijfers (bijv. "… kg biomassa (aantal × gewicht)"). De schakelknoppen wisselen de weergave.</li>
+</ol>
+
+<pre><span class="c">// de drie manieren om de belgrootte te bepalen</span>
+<span class="k">const</span> valueForStat = {
+  count:   species =&gt; species.count,
+  weight:  species =&gt; species.weight,
+  biomass: species =&gt; species.count * species.weight,   <span class="c">// aantal × gewicht</span>
+};</pre>
+</section>
+
+<!-- ============ 12. BEGRIPPEN ============ -->
+<section class="pagebreak">
+<h2>12 · Begrippenlijst — jargon uitgelegd</h2>
+<table>
+<tr><th style="width:150px">Term</th><th>In gewone taal</th></tr>
+<tr><td><b>React-component</b></td><td>Een herbruikbaar stukje pagina, geschreven in <code>.jsx</code> (HTML met JavaScript erin). Levert de structuur en onthoudt toestand.</td></tr>
+<tr><td><b>D3</b></td><td>Een bibliotheek voor datavisualisatie. Helpt vooral met <i>schalen</i> (data omzetten naar pixels) en het beheren van SVG-vormen.</td></tr>
+<tr><td><b>SVG vs canvas</b></td><td>SVG = losse, schaalbare vormen (goed voor klikbare elementen). Canvas = één tekenvlak waarop je snel heel veel dingen tekent (goed voor tientallen bewegende visjes).</td></tr>
+<tr><td><b>IntersectionObserver</b></td><td>Een browser-mechanisme dat meldt wanneer een element in of uit beeld scrolt. Hier gebruikt om grafieken pas te tekenen/animeren als je ze ziet.</td></tr>
+<tr><td><b>requestAnimationFrame</b></td><td>Vraagt de browser om vóór elke schermverversing (~60×/sec) een functie te draaien. De basis van vloeiende animatie.</td></tr>
+<tr><td><b>scaleSqrt (wortelschaal)</b></td><td>Zet een getal om naar een grootte via de wortel, zodat de <i>oppervlakte</i> eerlijk meeschaalt — twee keer zoveel = twee keer zo veel vlak, niet vier keer.</td></tr>
+<tr><td><b>Force-simulatie</b></td><td>Een nep-natuurkunde van D3: elementen trekken/duwen elkaar tot ze een nette verdeling vinden (gebruikt bij het talenkoor).</td></tr>
+<tr><td><b>Circle packing</b></td><td>Cirkels zo compact mogelijk in een vlak passen, op grootte (gebruikt bij het net).</td></tr>
+<tr><td><b>Data-join (enter/update/exit)</b></td><td>D3-manier om data aan vormen te koppelen: nieuwe data → nieuwe vormen (enter), gewijzigde → bijwerken (update), verdwenen → weghalen (exit). Maakt soepele overgangen mogelijk.</td></tr>
+<tr><td><b>Lazy loading</b></td><td>Iets pas doen wanneer het nodig is (hier: een grafiek pas tekenen als hij in beeld komt).</td></tr>
+<tr><td><b>Seeded random</b></td><td>"Willekeur" met een vaste startwaarde, zodat je elke keer dezelfde reeks krijgt — handig voor reproduceerbare posities.</td></tr>
+<tr><td><b>device pixel ratio</b></td><td>Hoeveel echte schermpixels één CSS-pixel beslaat (op retina-schermen 2×). Canvas wordt hierop afgesteld om scherp te blijven.</td></tr>
+<tr><td><b>tinten (luminantie-behoudend)</b></td><td>Een grijze foto inkleuren door de helderheid te behouden en met een kleur te vermenigvuldigen — textuur blijft, kleur verandert.</td></tr>
+</table>
+</section>
+
+<!-- ============ 13. BIJLAGE ============ -->
+<section class="pagebreak">
+<h2>13 · Bijlage — de <code>legacy/</code>-map</h2>
+<p>Beide mappen bevatten een submap <code>legacy/</code> met <b>oudere, niet meer gebruikte</b> versies van grafieken en hoofdstukken (o.a. de Hero-deeltjeswolk, de Ring-kalender, de Wereldkaart, en eerdere experimenten zoals <code>funnel</code>, <code>peaks</code>, <code>tide</code>, <code>shoal</code>).</p>
+<p>Deze staan <b>niet</b> op de huidige Mitchell-pagina (in <code>Mitchell.jsx</code> zijn ze uitgecommentarieerd) en zijn daarom in deze gids buiten beschouwing gelaten. De werkende pagina bestaat uit de vijf besproken hoofdstukken: <b>Carrousel, Aquarium, Radar, Talen</b> en <b>Net</b>.</p>
+
+<div class="note"><b>Wil je de legacy-bestanden er ook bij?</b> Die kunnen op dezelfde manier worden uitgelegd; ze gebruiken dezelfde bouwstenen (state, D3, IntersectionObserver). Vraag het gerust.</div>
+
+<p class="small" style="margin-top:30px">Gegenereerd uit de broncode van de Visdeurbel-visualisatie · Mitchell-pagina · automatische code-uitleg.</p>
+</section>
+
+</body>
+</html>

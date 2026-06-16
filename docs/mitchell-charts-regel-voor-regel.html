@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8" />
+<title>Charts — regel voor regel uitgelegd</title>
+<style>
+  :root{ --green:#01463c; --green-mid:#015a4e; --bell:#9b74ff; --teal:#1eacb0; --gold:#f0af00;
+         --ink:#1d2b28; --muted:#5a6b67; --line:#d9e0dd; --bg:#fdfbf6; }
+  @page { size: A4; margin: 16mm 14mm; }
+  *{ box-sizing:border-box; }
+  body{ font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif; color:var(--ink); line-height:1.5; font-size:10pt; margin:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  h1,h2,h3,h4{ color:var(--green); line-height:1.2; }
+  h1{ font-size:25pt; margin:0 0 6px; }
+  h2{ font-size:16pt; margin:0 0 8px; padding-bottom:5px; border-bottom:3px solid var(--green); }
+  h3{ font-size:12pt; margin:16px 0 4px; color:var(--green-mid); }
+  h4{ font-size:10.5pt; margin:12px 0 3px; }
+  p{ margin:5px 0; }
+  ul{ margin:5px 0; padding-left:18px; }
+  li{ margin:2px 0; }
+  code{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:8.6pt; background:#eef3f1; color:#0a3f37; padding:0 3px; border-radius:3px; }
+  pre{ background:#0c2b26; color:#e8f3ef; padding:9px 11px; border-radius:7px; margin:8px 0 6px;
+       font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:8pt; line-height:1.5;
+       white-space:pre-wrap; word-break:break-word; }
+  pre .c{ color:#8fbcb1; } pre .k{ color:#b79bff; } pre .s{ color:#ffd27a; } pre .n{ color:#7fd6c8; }
+  pre .ln{ color:#4d7a72; user-select:none; }
+  .lead{ font-size:11.5pt; color:var(--muted); }
+  .tag{ display:inline-block; font-size:7.5pt; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:999px; vertical-align:middle; margin-left:6px; }
+  .tag.js{ background:#fdeccb; color:#8a5a00; }
+  .note{ background:#f3f7f5; border-left:4px solid var(--teal); padding:7px 11px; border-radius:0 6px 6px 0; margin:8px 0; }
+  .tip{ background:#fff6e6; border-left:4px solid var(--gold); padding:7px 11px; border-radius:0 6px 6px 0; margin:8px 0; }
+  .tip b, .note b{ color:var(--green); }
+  .ll{ list-style:none; padding-left:0; margin:6px 0 10px; }
+  .ll > li{ margin:5px 0; padding-left:0; }
+  .ll code{ background:#e7efe c; }
+  .pagebreak{ page-break-before:always; }
+  .avoid{ page-break-inside:avoid; }
+  .cover{ text-align:center; padding-top:54mm; }
+  .cover .sub{ color:var(--muted); font-size:13pt; margin-top:8px; }
+  .pill{ display:inline-block; background:var(--green); color:#fff; border-radius:999px; padding:3px 12px; font-size:9pt; font-weight:700; }
+  .path{ font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:8.4pt; color:var(--muted); }
+  .small{ font-size:9pt; color:var(--muted); }
+  table{ border-collapse:collapse; width:100%; margin:8px 0; font-size:9pt; }
+  th,td{ border:1px solid var(--line); padding:4px 7px; text-align:left; vertical-align:top; }
+  th{ background:#eef3f1; color:var(--green); }
+  b.fn{ color:var(--green-mid); font-family:"SF Mono",monospace; font-size:9pt; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <span class="pill">Diepe code-uitleg</span>
+  <h1>De grafieken, regel voor regel</h1>
+  <p class="sub">aquarium.js · languages.js · net.js · radar.js<br/>Elke code-snippet uitgelegd zodat je het zelf kunt aanpassen</p>
+  <p class="small" style="margin-top:36px">Vervolg op "De Visdeurbel-datavisualisatie — stap voor stap".<br/>Bestanden in <span class="path">src/scripts/mitchell/charts/</span></p>
+</section>
+
+<!-- ===== LEESWIJZER ===== -->
+<section class="pagebreak">
+<h2>Zo lees je dit document</h2>
+<p class="lead">Per grafiek lopen we de code <b>van boven naar beneden</b> door in kleine blokjes. Onder elk blokje staat per regel wat hij doet — en waar nuttig een <b>Aanpassen-tip</b>.</p>
+<ul>
+  <li><b>Code-blokken</b> zijn de échte regels uit het bestand (donkere achtergrond).</li>
+  <li>De <b>nummers</b> links in een blok verwijzen naar het regelnummer in het bronbestand.</li>
+  <li><span class="tip" style="display:inline;padding:1px 6px"><b>Aanpassen</b></span> = een concrete knop waar je aan kunt draaien (kleur, snelheid, aantallen…).</li>
+</ul>
+<div class="note"><b>Terugkerende begrippen</b> — <code>const</code>/<code>let</code> = een waarde een naam geven (const = vast, let = mag wijzigen). <code>=&gt;</code> = een "pijl-functie" (kort recept). <code>d3</code> = de tekenbibliotheek. <code>state</code> = de gedeelde data. <code>$('#id')</code> = zoek het HTML-element met dat id. Een volledige begrippenlijst staat achterin.</div>
+<div class="note"><b>Beschrijvende namen.</b> De code gebruikt uitgeschreven namen: <code>context</code> (het canvas-penseel), <code>pixelRatio</code> (schermscherpte), <code>stageWidth/stageHeight</code> (afmetingen), <code>fishes</code> (de visjes), <code>velocityX/velocityY</code> (snelheid). Zo lees je vrijwel uit de naam al wat iets doet.</div>
+</section>
+
+<!-- ============================================================= -->
+<!-- ===================== AQUARIUM.JS ========================== -->
+<!-- ============================================================= -->
+<section class="pagebreak">
+<h2>1 · aquarium.js <span class="tag js">canvas</span></h2>
+<p class="path">src/scripts/mitchell/charts/aquarium.js</p>
+<p>Tientallen visjes zwemmen rond op één <code>&lt;canvas&gt;</code>. Aantal per soort = hoe vaak gezien; grootte = gewicht. Klik = schrikken + rimpel, hover = naam &amp; lengte.</p>
+
+<h3>1.1 — Imports (regel 1–4)</h3>
+<pre><span class="ln">1</span> <span class="k">import</span> { $, formatNumber, reduceMotion } <span class="k">from</span> <span class="s">'../utils.js'</span>;
+<span class="ln">2</span> <span class="k">import</span> { fishImagePath, hexToRgb01 } <span class="k">from</span> <span class="s">'../fishImage.js'</span>;
+<span class="ln">3</span> <span class="k">import</span> { showTooltip, hideTooltip } <span class="k">from</span> <span class="s">'../tooltip.js'</span>;
+<span class="ln">4</span> <span class="k">import</span> { state, lifecycle, raf } <span class="k">from</span> <span class="s">'../state.js'</span>;</pre>
+<ul class="ll">
+  <li><b class="fn">$</b> = element opzoeken; <b class="fn">formatNumber</b> = getal met punten; <b class="fn">reduceMotion</b> = "animaties uit?".</li>
+  <li><b class="fn">fishImagePath</b> = pad naar de vis-PNG; <b class="fn">hexToRgb01</b> = hex-kleur → 3 getallen 0–1 (voor het inkleuren).</li>
+  <li><b class="fn">showTooltip/hideTooltip</b> = de gedeelde tooltip tonen/verbergen.</li>
+  <li><b class="fn">state</b> = gedeelde data, <b class="fn">lifecycle</b> = opruimlijst, <b class="fn">raf</b> = animatieframe dat netjes te stoppen is.</li>
+</ul>
+
+<h3>1.2 — Start &amp; canvas opzetten (regel 13–20)</h3>
+<pre><span class="ln">13</span> <span class="k">export function</span> initAquarium() {
+<span class="ln">14</span>   <span class="k">const</span> { TOTAL, visData } = state;
+<span class="ln">15</span>   <span class="k">const</span> { cleanups } = lifecycle;
+<span class="ln">16</span>   <span class="k">const</span> stage = $(<span class="s">'#aquariumStage'</span>);
+<span class="ln">17</span>   <span class="k">if</span> (!stage) <span class="k">return</span>;
+<span class="ln">18</span>   stage.querySelectorAll(<span class="s">'canvas, .aquarium-counter'</span>).forEach(n =&gt; n.remove());
+<span class="ln">19</span>   <span class="k">const</span> canvas = document.createElement(<span class="s">'canvas'</span>);
+<span class="ln">20</span>   stage.appendChild(canvas);</pre>
+<ul class="ll">
+  <li><code>14</code> Haal <code>TOTAL</code> (totaal waarnemingen) en <code>visData</code> (de vissoorten) uit de gedeelde data.</li>
+  <li><code>15</code> Pak de opruimlijst, zodat we later onze timers/animaties kunnen afmelden.</li>
+  <li><code>16–17</code> Zoek het podium-<code>div</code>; bestaat het niet, stop dan meteen (voorkomt fouten).</li>
+  <li><code>18</code> Ruim een eventueel oud canvas/teller op (bij hertekenen na periodewissel).</li>
+  <li><code>19–20</code> Maak een nieuw <code>&lt;canvas&gt;</code> en hang het in het podium.</li>
+</ul>
+
+<h3>1.3 — Teller, tekencontext &amp; scherpte (regel 21–35)</h3>
+<pre><span class="ln">21</span>   <span class="k">const</span> counter = document.createElement(<span class="s">'div'</span>);
+<span class="ln">22</span>   counter.className = <span class="s">'aquarium-counter'</span>;
+<span class="ln">23</span>   counter.setAttribute(<span class="s">'aria-live'</span>, <span class="s">'polite'</span>);
+<span class="ln">24</span>   stage.appendChild(counter);
+<span class="ln">25</span>   <span class="k">const</span> context = canvas.getContext(<span class="s">'2d'</span>);
+<span class="ln">26</span>   <span class="k">const</span> pixelRatio = Math.min(window.devicePixelRatio || <span class="s">1</span>, <span class="s">2</span>);
+<span class="ln">27</span>   <span class="k">let</span> stageWidth = <span class="s">0</span>, stageHeight = <span class="s">0</span>;
+<span class="ln">28</span>   <span class="k">function</span> resize() {
+<span class="ln">29</span>     <span class="k">const</span> rect = stage.getBoundingClientRect();
+<span class="ln">30</span>     stageWidth = rect.width; stageHeight = rect.height;
+<span class="ln">31</span>     canvas.width = stageWidth * pixelRatio; canvas.height = stageHeight * pixelRatio;
+<span class="ln">32</span>     context.setTransform(pixelRatio, <span class="s">0</span>, <span class="s">0</span>, pixelRatio, <span class="s">0</span>, <span class="s">0</span>);
+<span class="ln">33</span>   }
+<span class="ln">34</span>   resize();
+<span class="ln">35</span>   <span class="k">const</span> resizeObserver = <span class="k">new</span> ResizeObserver(resize); resizeObserver.observe(stage);</pre>
+<ul class="ll">
+  <li><code>21–24</code> Maak het teller-vakje. <code>aria-live="polite"</code> laat voorleessoftware de oplopende teller rustig melden.</li>
+  <li><code>25</code> <code>context</code> is het "penseel": alle tekenopdrachten lopen hierover.</li>
+  <li><code>26</code> <code>pixelRatio</code> = schermscherpte (retina = 2). Met <code>Math.min(…, 2)</code> kappen we op 2 af — hoger kost veel rekenkracht zonder zichtbaar verschil.</li>
+  <li><code>27</code> <code>stageWidth</code>/<code>stageHeight</code> in CSS-pixels; nog 0, worden in <code>resize()</code> gevuld.</li>
+  <li><code>28–33</code> <b class="fn">resize()</b>: meet het podium, zet het canvas op echte pixels (× <code>pixelRatio</code>) en schaal het penseel met <code>setTransform</code> zodat je in gewone pixels kunt tekenen (scherp, niet wazig).</li>
+  <li><code>34–35</code> Eén keer meten, en met een <code>ResizeObserver</code> opnieuw meten als het venster verandert.</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Wil je scherper op zeer hoge schermen? Verhoog de <code>2</code> in regel 26 (kost performance).</div>
+
+<h3>1.4 — Totaal &amp; samenvatting (regel 37–46)</h3>
+<pre><span class="ln">37</span>   <span class="k">const</span> total = TOTAL || visData.reduce((sum, v) =&gt; sum + v.count, <span class="s">0</span>) || <span class="s">1</span>;
+<span class="ln">38</span>   <span class="k">const</span> totalEl = $(<span class="s">'#aquariumTotal'</span>); <span class="k">if</span> (totalEl) totalEl.textContent = formatNumber(total);
+<span class="ln">41</span>   <span class="k">const</span> sortedSpecies = visData.slice().sort((a, b) =&gt; (b.count || <span class="s">0</span>) - (a.count || <span class="s">0</span>));
+<span class="ln">42</span>   <span class="k">const</span> top3Names = sortedSpecies.slice(<span class="s">0</span>, <span class="s">3</span>).map(s =&gt; s.naam).join(<span class="s">', '</span>);
+<span class="ln">43-46</span> <span class="c">// zet samenvattingszin in #aquariumSummary</span></pre>
+<ul class="ll">
+  <li><code>37</code> <code>total</code> = het totaal. Eerst <code>TOTAL</code>; is dat 0, tel dan alle <code>count</code>'s op (<code>reduce</code>); en <code>|| 1</code> voorkomt deling-door-nul later.</li>
+  <li><code>38</code> Toon het totaal in de kop (<code>#aquariumTotal</code>), netjes geformatteerd.</li>
+  <li><code>41</code> <code>slice()</code> maakt een <b>kopie</b> (anders sorteer je de gedeelde <code>visData</code>!), daarna sorteren op aantal, hoog→laag.</li>
+  <li><code>42</code> Pak de <code>top3Names</code> en plak ze met komma's aan elkaar voor de zin.</li>
+</ul>
+
+<h3>1.5 — Instelbare waarden (regel 48–58)</h3>
+<pre><span class="ln">49</span>   <span class="k">const</span> FISH_COUNT   = <span class="s">80</span>;       <span class="c">// totaal aantal visjes</span>
+<span class="ln">50</span>   <span class="k">const</span> SIZE_SCALE   = <span class="s">0.85</span>;     <span class="c">// algehele grootte</span>
+<span class="ln">51</span>   <span class="k">const</span> SCARE_RADIUS = <span class="s">35</span>;       <span class="c">// schrik-straal (in %)</span>
+<span class="ln">52-53</span> <span class="k">const</span> SCARE_PUSH_X/Y = <span class="s">2.5</span>/<span class="s">1.6</span>;   <span class="c">// hoe hard ze wegschieten</span>
+<span class="ln">54</span>   <span class="k">const</span> CENTER_PULL  = <span class="s">0.00006</span>;  <span class="c">// trek naar het midden</span>
+<span class="ln">55-56</span> <span class="k">const</span> WANDER/FRICTION = <span class="s">0.01</span>/<span class="s">0.992</span>; <span class="c">// dwalen / afremmen</span>
+<span class="ln">57-58</span> <span class="k">const</span> DRAW_ALPHA/COUNTER_MS = <span class="s">0.92</span>/<span class="s">3800</span>;</pre>
+<ul class="ll">
+  <li>Alle "draaiknoppen" van het aquarium staan hier bij elkaar, met uitleg-comment per regel. Verderop in de code worden ze bij naam gebruikt (bijv. <code>FRICTION</code>) i.p.v. losse getallen — zo verander je gedrag op één plek.</li>
+</ul>
+
+<h3>1.6 — Vis-plaatjes inkleuren: de cache (regel 60–74)</h3>
+<pre><span class="ln">61-62</span> <span class="k">const</span> spriteCache = {}, imageCache = {};
+<span class="ln">63</span>   <span class="k">function</span> loadImage(url) {
+<span class="ln">64</span>     <span class="k">if</span> (imageCache[url]) <span class="k">return</span> imageCache[url];   <span class="c">// al geladen? hergebruik</span>
+<span class="ln">65-68</span>   <span class="k">const</span> img = <span class="k">new</span> Image(); img.src = url; imageCache[url] = img; <span class="k">return</span> img;
+<span class="ln">70</span>   <span class="k">function</span> buildSprite(naam, color) {
+<span class="ln">71</span>     <span class="k">const</span> key = naam + color;
+<span class="ln">72</span>     <span class="k">if</span> (spriteCache[key]) <span class="k">return</span> spriteCache[key]; <span class="c">// al ingekleurd? hergebruik</span>
+<span class="ln">73</span>     <span class="k">const</span> img = loadImage(fishImagePath(naam));
+<span class="ln">74</span>     <span class="k">if</span> (!img.complete || !img.naturalWidth) <span class="k">return</span> <span class="k">null</span>; <span class="c">// nog niet binnen</span></pre>
+<ul class="ll">
+  <li><code>61–62</code> Twee "kaartenbakken": <code>spriteCache</code> (ingekleurde resultaten) en <code>imageCache</code> (rauwe afbeeldingen). Cachen = werk maar één keer doen.</li>
+  <li><code>63–68</code> <b class="fn">loadImage</b>: is de afbeelding al geladen, geef 'm terug; anders start het laden en onthoud 'm.</li>
+  <li><code>70–72</code> <b class="fn">buildSprite</b>: de sleutel is <code>naam+color</code>; bestaat die al, klaar. Zo krijgt elke soort+kleur precies één ingekleurde versie.</li>
+  <li><code>74</code> Is de PNG nog niet binnen (<code>complete</code>/<code>naturalWidth</code>), geef <code>null</code> terug — de tekenlus probeert het dan volgende frame opnieuw.</li>
+</ul>
+
+<h3>1.7 — Pixel-voor-pixel inkleuren (regel 75–105)</h3>
+<pre><span class="ln">75-76</span> <span class="k">const</span> aspectRatio = …; <span class="k">const</span> spriteWidth = <span class="s">64</span>, spriteHeight = <span class="s">64</span> * aspectRatio;
+<span class="ln">77-81</span> <span class="c">// teken de PNG op een mini-canvas 'spriteCanvas' (64px breed)</span>
+<span class="ln">87</span>     <span class="k">const</span> whiteMix = <span class="s">0.4</span>, brightnessLift = <span class="s">1.12</span>;
+<span class="ln">88</span>     <span class="k">const</span> [red, green, blue] = hexToRgb01(color);
+<span class="ln">89-91</span> <span class="k">const</span> tintR = red + (<span class="s">1</span> - red) * whiteMix; <span class="c">// kleur richting wit (lichter)</span>
+<span class="ln">93-94</span> <span class="k">const</span> imageData = spriteContext.getImageData(…); <span class="k">const</span> pixels = imageData.data;
+<span class="ln">95</span>     <span class="k">for</span> (<span class="k">let</span> i = <span class="s">0</span>; i &lt; pixels.length; i += <span class="s">4</span>) {
+<span class="ln">96</span>       <span class="k">if</span> (pixels[i + <span class="s">3</span>] === <span class="s">0</span>) <span class="k">continue</span>;  <span class="c">// transparant → overslaan</span>
+<span class="ln">97</span>       <span class="k">const</span> luminance = <span class="s">0.299</span>*pixels[i] + <span class="s">0.587</span>*pixels[i+<span class="s">1</span>] + <span class="s">0.114</span>*pixels[i+<span class="s">2</span>];
+<span class="ln">98-100</span> pixels[i] = Math.min(<span class="s">255</span>, luminance * tintR * brightnessLift); <span class="c">// grijs × kleur</span>
+<span class="ln">102-104</span> spriteContext.putImageData(imageData, …); spriteCache[key] = spriteCanvas; <span class="k">return</span> spriteCanvas;</pre>
+<ul class="ll">
+  <li><code>75–76</code> Bereken de beeldverhouding en zet de sprite op 64px breed (hoogte volgt de verhouding).</li>
+  <li><code>87</code> <code>whiteMix</code> = hoeveel de kleur richting wit wordt gemengd (lichter); <code>brightnessLift</code> = extra helderheid. Hoger = lichtere visjes.</li>
+  <li><code>88–91</code> Zet de hex-kleur om naar drie getallen 0–1 en meng elke component richting wit: <code>kleur + (1−kleur)·whiteMix</code>.</li>
+  <li><code>93–94</code> Lees alle pixels uit. <code>pixels</code> is één lange rij: per pixel 4 waarden (rood, groen, blauw, doorzichtigheid).</li>
+  <li><code>95–96</code> Loop met stappen van 4 (één pixel per keer); een volledig doorzichtige pixel overslaan.</li>
+  <li><code>97</code> Bereken de <b>grijswaarde</b> <code>luminance</code> met de standaard ogen-weging (groen telt het zwaarst). Zo behouden we licht/donker = textuur.</li>
+  <li><code>98–100</code> Vermenigvuldig die grijswaarde met de doelkleur → de vis krijgt zijn kleur maar houdt zijn schaduwen. <code>Math.min(255,…)</code> voorkomt te-felle pixels.</li>
+  <li><code>102–104</code> Zet de bewerkte pixels terug, bewaar in de cache en geef de ingekleurde mini-canvas terug.</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Donkerder/feller visjes: verlaag <code>whiteMix</code> of <code>brightnessLift</code> (regel 87). Een andere kleur per soort regel je in <code>constants.js</code> (<code>color</code>), niet hier.</div>
+
+<h3>1.8 — Grootte op schaal &amp; de steekproef van ~80 (regel 111–127)</h3>
+<pre><span class="ln">111</span>   <span class="k">const</span> sizeForWeight = (kg) =&gt; Math.cbrt(kg) * SIZE_SCALE;
+<span class="ln">114</span>   <span class="k">const</span> fishes = [];
+<span class="ln">115</span>   visData.forEach(species =&gt; {
+<span class="ln">116</span>     <span class="k">const</span> fishCountForSpecies = Math.max(<span class="s">1</span>, Math.round((species.count / total) * FISH_COUNT));
+<span class="ln">117</span>     <span class="k">for</span> (<span class="k">let</span> i = <span class="s">0</span>; i &lt; fishCountForSpecies; i++) fishes.push({
+<span class="ln">118</span>       x: Math.random()*<span class="s">100</span>, y: Math.random()*<span class="s">100</span>,
+<span class="ln">119</span>       velocityX: (Math.random()-<span class="s">0.5</span>)*<span class="s">0.4</span>, velocityY: (Math.random()-<span class="s">0.5</span>)*<span class="s">0.2</span>,
+<span class="ln">120-121</span> color: species.color, naam: species.naam, size: sizeForWeight(species.weight),
+<span class="ln">124</span>       lengthCm: Math.round((species.lengte || <span class="s">30</span>) * (<span class="s">0.82</span> + Math.random()*<span class="s">0.36</span>)),
+<span class="ln">125</span>       wigglePhase: Math.random()*Math.PI*<span class="s">2</span>, visible: <span class="k">true</span>,
+<span class="ln">126-127</span>   });
+</pre>
+<ul class="ll">
+  <li><code>111</code> <b class="fn">sizeForWeight</b>: grootte = <code>∛gewicht × SIZE_SCALE</code>. Derdemachtswortel omdat massa met lengte³ groeit → juiste verhouding tussen soorten.</li>
+  <li><code>115–116</code> Voor elke soort: aantal visjes = aandeel in het totaal × <code>FISH_COUNT</code>, minimaal 1 (anders verdwijnt een zeldzame soort).</li>
+  <li><code>118</code> Startpositie willekeurig in 0–100 (we werken in <b>procenten</b> van het kijkglas, niet in pixels — handig bij resize).</li>
+  <li><code>119</code> Startsnelheid <code>velocityX</code>/<code>velocityY</code> licht willekeurig (de <code>-0.5</code> maakt 'm even vaak negatief als positief = beide richtingen).</li>
+  <li><code>120–121</code> Bewaar kleur, naam en de berekende grootte.</li>
+  <li><code>124</code> Lengte per individu: typische soort-lengte (<code>species.lengte</code>) ± ~18% toeval, voor de hover-tekst.</li>
+  <li><code>125</code> <code>wigglePhase</code> = een willekeurige start-fase voor de zwem-golf; <code>visible</code> = aan/uit via de filters.</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Meer/minder visjes: <code>FISH_COUNT</code> (regel 49). Algehele grootte: <code>SIZE_SCALE</code> (regel 50).</div>
+
+<h3>1.9 — Filter-chips per soort (regel 129–145)</h3>
+<pre><span class="ln">133</span>     visData.forEach(species =&gt; {
+<span class="ln">134-137</span> <span class="c">// maak een knop met de soort-naam en -kleur (via CSS-variabele --chip)</span>
+<span class="ln">138</span>       chip.addEventListener(<span class="s">'click'</span>, () =&gt; {
+<span class="ln">139</span>         <span class="k">const</span> muted = chip.classList.toggle(<span class="s">'muted'</span>);
+<span class="ln">140</span>         chip.setAttribute(<span class="s">'aria-pressed'</span>, String(!muted));
+<span class="ln">141</span>         fishes.forEach(fish =&gt; { <span class="k">if</span> (fish.naam === species.naam) fish.visible = !muted; });
+<span class="ln">142-143</span>     });</pre>
+<ul class="ll">
+  <li><code>134–137</code> Maak per soort een knopje (chip) met de naam en de soort-kleur.</li>
+  <li><code>139</code> <code>classList.toggle('muted')</code> zet de gedempte stijl aan/uit én geeft terug of hij nu aan staat.</li>
+  <li><code>140</code> Houd het toegankelijkheids-attribuut <code>aria-pressed</code> in sync.</li>
+  <li><code>141</code> Zet alle <code>fishes</code> van die soort op zichtbaar/onzichtbaar — de tekenlus slaat onzichtbare over.</li>
+</ul>
+
+<h3>1.10 — Klik = schrikken + rimpel (regel 147–170)</h3>
+<pre><span class="ln">147-148</span> <span class="k">const</span> toPercent = (event, rect) =&gt; [(event.clientX-rect.left)/rect.width*<span class="s">100</span>, …]; <span class="c">// muis → procent</span>
+<span class="ln">151-153</span> canvas.addEventListener(<span class="s">'click'</span>, (event) =&gt; { <span class="k">const</span> rect = …; <span class="k">const</span> [clickX, clickY] = toPercent(event, rect);
+<span class="ln">154-156</span> fishes.forEach(fish =&gt; { <span class="k">const</span> deltaX = fish.x-clickX, deltaY = fish.y-clickY; <span class="k">const</span> distance = Math.sqrt(…);
+<span class="ln">158-160</span> <span class="k">if</span> (distance &gt;= SCARE_RADIUS) <span class="k">return</span>; <span class="k">const</span> strength = (SCARE_RADIUS-distance)/SCARE_RADIUS; <span class="k">const</span> safeDistance = Math.max(<span class="s">0.1</span>, distance);
+<span class="ln">161-162</span> fish.velocityX += (deltaX/safeDistance)*strength*SCARE_PUSH_X; fish.velocityY += …*SCARE_PUSH_Y;
+<span class="ln">164-169</span> <span class="c">// maak een rimpel-element op de klikplek, verwijder na 950ms</span></pre>
+<ul class="ll">
+  <li><code>147–148</code> <b class="fn">toPercent</b> rekent de muispositie om naar dezelfde procent-coördinaten als de visjes. Eén hulpje, gedeeld door klik én hover.</li>
+  <li><code>154–156</code> Bereken per vis de afstand tot de klik (<code>distance</code> via Pythagoras).</li>
+  <li><code>158</code> Te ver weg (≥ <code>SCARE_RADIUS</code>)? Niet schrikken.</li>
+  <li><code>159–162</code> <code>strength</code> = sterkte (dichterbij = sterker). <code>deltaX/safeDistance</code> is de richting wég van de klik; <code>Math.max(0.1,…)</code> voorkomt delen door 0.</li>
+  <li><code>164–169</code> Maak een <code>&lt;span class="aquarium-rip"&gt;</code> op de klikplek (de CSS doet de rimpel-animatie) en ruim 'm na 950ms op.</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Groter schrikbereik: <code>SCARE_RADIUS</code> (regel 51). Heftiger wegschieten: <code>SCARE_PUSH_X/Y</code> (regel 52–53).</div>
+
+<h3>1.11 — Hover = naam &amp; lengte (regel 172–184)</h3>
+<pre><span class="ln">173</span>     <span class="k">const</span> [pointerX, pointerY] = toPercent(event, canvas.getBoundingClientRect());
+<span class="ln">174-175</span> <span class="k">let</span> closestFish = <span class="k">null</span>, closestDistance = <span class="s">4</span>; <span class="c">// alleen binnen 4% van een visje</span>
+<span class="ln">176-180</span> fishes.forEach(fish =&gt; { <span class="k">if</span> (!fish.visible) <span class="k">return</span>; <span class="k">const</span> distance = Math.hypot(…); <span class="k">if</span> (distance &lt; closestDistance) { … } });
+<span class="ln">181</span>     <span class="k">if</span> (closestFish) { …; showTooltip(<span class="s">`…${closestFish.naam}…~${closestFish.lengthCm} cm…`</span>, …); }
+<span class="ln">182</span>     <span class="k">else</span> { …; hideTooltip(); }</pre>
+<ul class="ll">
+  <li><code>173–175</code> Reken de muispositie om en zoek het dichtstbijzijnde visje, maar alleen binnen 4 (procent) — anders geen tooltip.</li>
+  <li><code>176–180</code> Loop alle zichtbare visjes langs en onthoud de dichtstbijzijnde (<code>Math.hypot</code> = afstand).</li>
+  <li><code>181</code> Is er één dichtbij: cursor → pointer en toon de tooltip met <b>naam + ~lengte cm</b>.</li>
+  <li><code>182</code> Anders: cursor → kruisje en verberg de tooltip.</li>
+</ul>
+
+<h3>1.12 — De tekenlus <b class="fn">tick()</b> (regel 187–231)</h3>
+<pre><span class="ln">188</span>     context.clearRect(<span class="s">0</span>, <span class="s">0</span>, stageWidth, stageHeight);   <span class="c">// scherm leegvegen</span>
+<span class="ln">189-191</span> <span class="c">// teken een zachte radiale gloed als achtergrond</span>
+<span class="ln">192</span>     fishes.forEach(fish =&gt; {
+<span class="ln">194-196</span> fish.x += fish.velocityX; fish.y += fish.velocityY + Math.sin(fish.wigglePhase)*<span class="s">0.04</span>; fish.wigglePhase += <span class="s">0.08</span>;
+<span class="ln">198-199</span> fish.velocityX += (<span class="s">50</span>-fish.x)*CENTER_PULL; fish.velocityY += (<span class="s">50</span>-fish.y)*CENTER_PULL;
+<span class="ln">200-201</span> fish.velocityX += (Math.random()-<span class="s">0.5</span>)*WANDER; …                <span class="c">// dwalen</span>
+<span class="ln">202-203</span> fish.velocityX *= FRICTION; fish.velocityY *= FRICTION;          <span class="c">// wrijving</span>
+<span class="ln">206-209</span> <span class="k">if</span> (fish.x &lt; -<span class="s">5</span>) fish.x = <span class="s">105</span>; …                          <span class="c">// rand → andere kant</span>
+<span class="ln">211</span>       <span class="k">if</span> (!fish.visible) <span class="k">return</span>;
+<span class="ln">212-213</span> <span class="k">const</span> sprite = buildSprite(fish.naam, fish.color); <span class="k">if</span> (!sprite) <span class="k">return</span>;
+<span class="ln">216-217</span> <span class="k">const</span> pixelX = (fish.x/<span class="s">100</span>)*stageWidth, pixelY = (fish.y/<span class="s">100</span>)*stageHeight; <span class="c">// procent → pixels</span>
+<span class="ln">218-219</span> <span class="k">const</span> angle = Math.atan2(fish.velocityY, fish.velocityX); <span class="k">const</span> flip = Math.abs(angle) &gt; Math.PI/<span class="s">2</span> ? -<span class="s">1</span> : <span class="s">1</span>;
+<span class="ln">222-228</span> context.save(); context.translate(pixelX, pixelY); context.rotate(…); context.scale(<span class="s">1</span>, flip); context.drawImage(sprite, …); context.restore();
+<span class="ln">230</span>     <span class="k">if</span> (running) frameId = raf(tick);                  <span class="c">// volgende frame</span></pre>
+<ul class="ll">
+  <li><code>188</code> Veeg het hele canvas leeg vóór een nieuw frame (anders smeren de visjes uit).</li>
+  <li><code>189–191</code> Teken een zachte turquoise gloed in het midden als achtergrond.</li>
+  <li><code>194–196</code> Beweeg: tel snelheid bij de positie op; <code>Math.sin(wigglePhase)</code> geeft een zachte verticale golf; de fase tikt door.</li>
+  <li><code>198–199</code> Zachte trek naar het midden (50%) via <code>CENTER_PULL</code>: hoe verder weg, hoe sterker het tikje terug.</li>
+  <li><code>200–201</code> Een vleugje toeval (<code>WANDER</code>) = "dwalen", zodat het natuurlijk oogt.</li>
+  <li><code>202–203</code> Wrijving: snelheid × <code>FRICTION</code> per frame, anders blijven ze versnellen.</li>
+  <li><code>206–209</code> Zwemt een vis voorbij de rand (−5 of 105), zet 'm aan de overkant terug (eindeloos kijkglas).</li>
+  <li><code>211–213</code> Onzichtbaar (uitgefilterd) of sprite nog niet geladen → dit frame overslaan.</li>
+  <li><code>216–219</code> Reken procent-positie om naar pixels; <code>angle</code> = kijkrichting uit de snelheid; <code>flip</code> spiegelt de vis als hij naar links zwemt.</li>
+  <li><code>222–228</code> <code>save/translate/rotate/scale/drawImage/restore</code> = teken de sprite op de juiste plek, gedraaid en evt. gespiegeld.</li>
+  <li><code>230</code> Vraag het volgende frame aan — maar alleen als <code>running</code> nog waar is (zo stopt de lus netjes).</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Rustiger zwemmen: verhoog <code>FRICTION</code> richting <code>0.98</code> (regel 56) of verklein <code>WANDER</code>. Sterkere samenscholing: verhoog <code>CENTER_PULL</code> (regel 54).</div>
+
+<h3>1.13 — Teller-animatie &amp; aan/uit met de scroll (regel 232–254)</h3>
+<pre><span class="ln">232-241</span> <span class="c">// animateCounter: telt in COUNTER_MS (3800ms) soepel op naar 'total' (ease-curve)</span>
+<span class="ln">243</span>   <span class="k">const</span> visibilityObserver = <span class="k">new</span> IntersectionObserver(([entry]) =&gt; {
+<span class="ln">244-245</span>   <span class="k">if</span> (entry.isIntersecting) { <span class="k">if</span> (!running &amp;&amp; !reduceMotion()) { running = <span class="k">true</span>; tick(); }
+<span class="ln">246-250</span>     <span class="c">// teller één keer animeren; bij 'animaties uit' meteen eindstand</span>
+<span class="ln">251</span>   } <span class="k">else</span> { running = <span class="k">false</span>; cancelAnimationFrame(frameId); }
+<span class="ln">252-253</span> }, { threshold: <span class="s">0.1</span> }); visibilityObserver.observe(stage);
+<span class="ln">254</span>   cleanups.push(() =&gt; { running = <span class="k">false</span>; cancelAnimationFrame(frameId); …; visibilityObserver.disconnect(); resizeObserver.disconnect(); });</pre>
+<ul class="ll">
+  <li><code>232–241</code> <b class="fn">animateCounter</b> laat het getal in 3,8s soepel oplopen met een ease-curve (eerst versnellen, dan afremmen).</li>
+  <li><code>244–245</code> De <code>IntersectionObserver</code> start de tekenlus zodra het aquarium in beeld is (en animaties aan staan).</li>
+  <li><code>246–250</code> De teller wordt maar één keer geanimeerd (<code>dataset.animated</code>); bij "animaties uit" springt hij meteen naar de eindstand.</li>
+  <li><code>251</code> Scrolt het weg: stop de lus en annuleer het frame (spaart de accu).</li>
+  <li><code>252–253</code> <code>threshold: 0.1</code> = "in beeld" zodra 10% zichtbaar is.</li>
+  <li><code>254</code> Opruimwerk: stop alles en koppel observers los. Belangrijk vóór een periodewissel.</li>
+</ul>
+</section>
+
+<!-- ============================================================= -->
+<!-- ===================== LANGUAGES.JS ========================= -->
+<!-- ============================================================= -->
+<section class="pagebreak">
+<h2>2 · languages.js <span class="tag js">d3 · SVG</span></h2>
+<p class="path">src/scripts/mitchell/charts/languages.js</p>
+<p>Per taal een zwevend begroetingswoord; lettergrootte = aantal bezoekers. Een D3-<i>force-simulatie</i> duwt de woorden uit elkaar, daarna dobberen ze zacht.</p>
+
+<h3>2.1 — Instelbare waarden &amp; afmetingen (regel 13–23)</h3>
+<pre><span class="ln">14</span> <span class="k">const</span> MAX_LANGUAGES = <span class="s">24</span>;          <span class="c">// hoeveel talen (drukste eerst)</span>
+<span class="ln">15</span> <span class="k">const</span> FONT_SIZE_MIN/MAX = <span class="s">15</span>/<span class="s">70</span>;     <span class="c">// kleinste/grootste woord (px)</span>
+<span class="ln">16-17</span> <span class="k">const</span> PULL_TO_CENTER_X/Y = <span class="s">0.04</span>/<span class="s">0.06</span>;  <span class="c">// trek naar het midden</span>
+<span class="ln">18-20</span> <span class="k">const</span> REPEL_STRENGTH = -<span class="s">4</span>; SETTLE_TICKS = <span class="s">220</span>; BOB_RADIUS = <span class="s">5</span>;
+<span class="ln">22-23</span> <span class="k">const</span> STAGE_WIDTH = <span class="s">900</span>, STAGE_HEIGHT = <span class="s">540</span>, CENTER_X/Y = …;</pre>
+<ul class="ll">
+  <li>Alle draaiknoppen staan bovenaan het bestand (buiten de functie, want ze veranderen niet per render): hoeveel talen, de lettergrootte-range, de krachten van de simulatie en de dobber-straal.</li>
+  <li><code>22–23</code> Vast tekenvlak 900×540 (de SVG schaalt later mee); <code>CENTER_X/Y</code> = midden.</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Meer talen: <code>MAX_LANGUAGES</code> (14). Grotere woorden: <code>FONT_SIZE_MIN/MAX</code> (15). Heftiger dobberen: <code>BOB_RADIUS</code> (20).</div>
+
+<h3>2.2 — Start: data → woorden → tekenen (regel 25–61)</h3>
+<pre><span class="ln">26-28</span> <span class="k">const</span> { languagesData } = state; <span class="k">const</span> stage = $(<span class="s">'#langStage'</span>);
+<span class="ln">30-31</span> <span class="k">const</span> words = buildWords(languagesData); <span class="k">if</span> (!words.length) { …<span class="s">'Geen taaldata.'</span>…; <span class="k">return</span>; }
+<span class="ln">32</span>   <span class="k">const</span> totalVisitors = d3.sum(words, word =&gt; word.visitors);
+<span class="ln">34-36</span> <span class="k">const</span> svg = d3.select(stage).append(<span class="s">'svg'</span>)…; <span class="k">const</span> wordGroups = drawWords(svg, words); attachTooltip(wordGroups, totalVisitors);
+<span class="ln">57-60</span> <span class="c">// zet de stat-zin "…X verschillende talen…" in #langStat</span></pre>
+<ul class="ll">
+  <li><code>26–28</code> Pak de talen-data uit <code>state</code> en het podium.</li>
+  <li><code>30–31</code> <b class="fn">buildWords</b> (zie 2.4) zet de ruwe data om in tekenbare woorden; geen data → nette melding en stop.</li>
+  <li><code>32</code> <code>totalVisitors</code> = som van alle bezoekers (nodig voor de percentages in de tooltip).</li>
+  <li><code>34–36</code> Maak de SVG, teken de woorden (<b class="fn">drawWords</b>, 2.5) en koppel de tooltip (<b class="fn">attachTooltip</b>, 2.6).</li>
+</ul>
+
+<h3>2.3 — De force-simulatie &amp; rust/dobberen (regel 38–55)</h3>
+<pre><span class="ln">39</span>   <span class="k">const</span> simulation = d3.forceSimulation(words)
+<span class="ln">40-41</span>   .force(<span class="s">'x'</span>, d3.forceX(CENTER_X).strength(PULL_TO_CENTER_X)) .force(<span class="s">'y'</span>, d3.forceY(CENTER_Y)…)
+<span class="ln">42</span>     .force(<span class="s">'charge'</span>, d3.forceManyBody().strength(REPEL_STRENGTH))
+<span class="ln">43</span>     .force(<span class="s">'collide'</span>, d3.forceCollide(word =&gt; word.radius).strength(<span class="s">0.9</span>))
+<span class="ln">44</span>     .on(<span class="s">'tick'</span>, () =&gt; positionWords(wordGroups));
+<span class="ln">46-50</span> <span class="k">if</span> (reduceMotion()) { simulation.stop(); <span class="k">for</span> (…<span class="s">SETTLE_TICKS</span>…) simulation.tick(); positionWords(…); }
+<span class="ln">51-53</span> <span class="k">else</span> simulation.on(<span class="s">'end'</span>, () =&gt; startBobbing(words, wordGroups, cleanups));
+<span class="ln">55</span>   cleanups.push(() =&gt; simulation.stop());</pre>
+<ul class="ll">
+  <li><code>39</code> Start een <b>force-simulatie</b>: een nep-natuurkunde die elk woord een positie geeft.</li>
+  <li><code>40–41</code> <code>forceX</code>/<code>forceY</code> trekken zacht naar het midden (sterkte uit <code>PULL_TO_CENTER_X/Y</code>).</li>
+  <li><code>42</code> <code>charge</code> met negatieve sterkte (<code>REPEL_STRENGTH</code>) = woorden stoten elkaar licht af.</li>
+  <li><code>43</code> <code>collide</code> met straal <code>word.radius</code> = harde grens die overlap voorkomt.</li>
+  <li><code>44</code> Bij elke <b>tick</b> (rekenstap) verplaats je elke groep via <b class="fn">positionWords</b>.</li>
+  <li><code>46–50</code> <b>Animaties uit?</b> Reken in één keer <code>SETTLE_TICKS</code> stappen door en zet de woorden meteen neer.</li>
+  <li><code>51–53</code> Anders: zodra de simulatie tot rust komt (<code>'end'</code>) start het zachte dobberen (2.7).</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Strakker op een kluitje: verhoog <code>PULL_TO_CENTER_X/Y</code>. Meer lucht tussen woorden: maak <code>REPEL_STRENGTH</code> negatiever.</div>
+
+<h3>2.4 — <b class="fn">buildWords()</b>: data → tekenbare woorden (regel 64–86)</h3>
+<pre><span class="ln">65-66</span> <span class="k">const</span> topLanguages = (languagesData || []).slice(<span class="s">0</span>, MAX_LANGUAGES); <span class="k">if</span> (!…length) <span class="k">return</span> [];
+<span class="ln">68</span>   <span class="k">const</span> maxVisitors = d3.max(topLanguages, lang =&gt; lang.n);
+<span class="ln">70</span>   <span class="k">const</span> fontSizeScale = d3.scaleSqrt().domain([<span class="s">0</span>, maxVisitors]).range([FONT_SIZE_MIN, FONT_SIZE_MAX]);
+<span class="ln">72</span>   <span class="k">const</span> palette = [COLORS.green, COLORS.greenMid, COLORS.teal, COLORS.pink, COLORS.goldDeep];
+<span class="ln">74-76</span> <span class="k">return</span> topLanguages.map((lang, i) =&gt; { <span class="k">const</span> [greeting, name] = GREETINGS[lang.code] || […]; <span class="k">const</span> fontSize = fontSizeScale(lang.n);
+<span class="ln">77-84</span> <span class="k">return</span> { code, visitors: lang.n, greeting, name, fontSize, color: palette[i % …], radius: …, x: …, y: … }; });</pre>
+<ul class="ll">
+  <li><code>65–66</code> Neem de <b>top <code>MAX_LANGUAGES</code></b> talen (drukste eerst); geen data → lege lijst.</li>
+  <li><code>68–70</code> <b class="fn">fontSizeScale</b>: zet bezoekers om naar lettergrootte. <code>scaleSqrt</code> = wortelschaal, zodat de <b>oppervlakte</b> eerlijk meeschaalt.</li>
+  <li><code>72</code> Vijf kleuren om uit te kiezen (bewust geen paars: dat valt weg op de paarse sectie).</li>
+  <li><code>75</code> Zoek de begroeting + nette naam op in <code>GREETINGS</code>; onbekend → leeg woord + landcode in hoofdletters.</li>
+  <li><code>77–84</code> Per taal een object: <code>greeting</code> (het woord), <code>visitors</code>, <code>fontSize</code>, <code>color</code>, een <code>radius</code> (botsstraal, breder bij langere/grotere woorden) en een willekeurige startplek rond het midden.</li>
+</ul>
+
+<h3>2.5 — <b class="fn">drawWords()</b> &amp; <b class="fn">positionWords()</b> (regel 89–113)</h3>
+<pre><span class="ln">90-92</span> <span class="k">const</span> wordGroups = svg.selectAll(<span class="s">'g.lang-word'</span>).data(words).join(<span class="s">'g'</span>)…attr(<span class="s">'aria-label'</span>, word =&gt; <span class="s">`${word.name}: … bezoekers`</span>);
+<span class="ln">94-98</span> wordGroups.append(<span class="s">'text'</span>)…attr(<span class="s">'font-size'</span>, word =&gt; word.fontSize)…text(word =&gt; word.greeting);
+<span class="ln">101-105</span> wordGroups.filter(word =&gt; word.fontSize &gt; <span class="s">30</span>).append(<span class="s">'text'</span>)…text(word =&gt; word.name);
+<span class="ln">111-112</span> <span class="c">// positionWords: wordGroups.attr('transform', word =&gt; `translate(${word.x},${word.y})`)</span></pre>
+<ul class="ll">
+  <li><code>90–92</code> <b>Data-join</b>: koppel <code>words</code> aan <code>&lt;g&gt;</code>-groepen (één per taal). <code>aria-label</code> = "Japans: 1.234 bezoekers" voor voorleessoftware.</li>
+  <li><code>94–98</code> Voeg het grote begroetingswoord toe; <code>font-size</code> en kleur komen per taal uit de data.</li>
+  <li><code>101–105</code> Alleen bij grotere woorden (<code>fontSize &gt; 30</code>) een klein taalnaam-label eronder — anders wordt het te druk.</li>
+  <li><code>111–112</code> <b class="fn">positionWords</b> verplaatst elke groep naar zijn huidige <code>x,y</code>. Dit roept zowel de simulatie-tick als het dobberen aan.</li>
+</ul>
+
+<h3>2.6 — <b class="fn">attachTooltip()</b> (regel 116–126)</h3>
+<pre><span class="ln">117</span>   <span class="k">const</span> percentage = word =&gt; (word.visitors / totalVisitors * <span class="s">100</span>).toFixed(<span class="s">1</span>);
+<span class="ln">118-120</span> wordGroups.on(<span class="s">'mouseenter mousemove'</span>, (event, word) =&gt; showTooltip(<span class="s">`…${word.name}…${formatNumber(word.visitors)} bezoekers · ${percentage(word)}%`</span>, …))
+<span class="ln">121</span>     .on(<span class="s">'mouseleave blur'</span>, () =&gt; hideTooltip())
+<span class="ln">122-124</span>   .on(<span class="s">'focus'</span>, (event, word) =&gt; { … showTooltip(…, box.left + box.width/<span class="s">2</span>, box.top); });</pre>
+<ul class="ll">
+  <li><code>117</code> <b class="fn">percentage</b>: aandeel van deze taal in het totaal, op 1 decimaal.</li>
+  <li><code>118–120</code> Bij hover: tooltip met naam, aantal en percentage.</li>
+  <li><code>121</code> Muis eraf of focus weg → tooltip verbergen.</li>
+  <li><code>122–124</code> Bij toetsenbord-focus de tooltip boven het woord plaatsen (<code>getBoundingClientRect</code> geeft de schermpositie).</li>
+</ul>
+
+<h3>2.7 — <b class="fn">startBobbing()</b>: zacht dobberen (regel 129–146)</h3>
+<pre><span class="ln">130</span>   words.forEach(word =&gt; { word.baseX = word.x; word.baseY = word.y; word.phase = Math.random()*Math.PI*<span class="s">2</span>; });
+<span class="ln">134-135</span> <span class="k">const</span> bobFrame = () =&gt; { <span class="k">const</span> elapsedSeconds = (performance.now() - startTime) / <span class="s">1000</span>;
+<span class="ln">136-138</span> words.forEach(word =&gt; { word.x = word.baseX + Math.sin(elapsedSeconds*<span class="s">0.5</span> + word.phase)*BOB_RADIUS; word.y = …Math.cos(…)…; });
+<span class="ln">140-145</span> positionWords(wordGroups); bobFrameId = raf(bobFrame); }; … cleanups.push(() =&gt; cancelAnimationFrame(bobFrameId));</pre>
+<ul class="ll">
+  <li><code>130</code> Bewaar de rustplek (<code>baseX/baseY</code>) en geef elk woord een willekeurige <code>phase</code> (zodat ze niet synchroon deinen).</li>
+  <li><code>134–138</code> <b class="fn">bobFrame</b>: verplaats elk woord met een trage sinus/cosinus rond zijn rustplek (uitslag = <code>BOB_RADIUS</code>) = zacht dobberen.</li>
+  <li><code>140–145</code> Teken de nieuwe posities en vraag het volgende frame; bij opruimen het frame annuleren.</li>
+</ul>
+</section>
+
+<!-- ============================================================= -->
+<!-- ======================== NET.JS ============================ -->
+<!-- ============================================================= -->
+<section class="pagebreak">
+<h2>3 · net.js <span class="tag js">d3 · circle packing</span></h2>
+<p class="path">src/scripts/mitchell/charts/net.js</p>
+<p>Alle soorten als bellen in een net. Belgrootte = <b>aantal</b>, <b>gewicht/vis</b> of <b>biomassa</b> (aantal × gewicht). Wisselen laat de bellen soepel "morphen".</p>
+
+<h3>3.1 — Instelbare waarden &amp; de drie weergaven (regel 13–36)</h3>
+<pre><span class="ln">14-19</span> <span class="k">const</span> STAGE_WIDTH/HEIGHT, NET_BOTTOM, BUBBLE_PADDING, FALL_FROM_OFFSET, FISH_SIZE_FACTOR/MAX, LABEL_MIN_RADIUS;
+<span class="ln">22-26</span> <span class="k">const</span> valueForStat = { count: species =&gt; species.count, weight: species =&gt; species.weight, biomass: species =&gt; species.count * species.weight };
+<span class="ln">27-31</span> <span class="k">const</span> summaryForStat = { … };   <span class="c">// tekst per weergave (info-regel)</span>
+<span class="ln">32-36</span> <span class="k">const</span> explanationForStat = { … }; <span class="c">// uitleg-zin onderaan</span></pre>
+<ul class="ll">
+  <li><code>14–19</code> De draaiknoppen: tekenvlak, hoe ver het net hangt (<code>NET_BOTTOM</code>), ruimte tussen bellen (<code>BUBBLE_PADDING</code>), invalhoogte, vis-grootte en de drempel waaronder het label verdwijnt.</li>
+  <li><code>22–26</code> <b class="fn">valueForStat</b>: drie recepten voor de belgrootte. <code>biomass</code> = <code>count × weight</code>. Dit is het hart van de grafiek.</li>
+  <li><code>27–31</code> <b class="fn">summaryForStat</b>: de tekst in de info-regel per weergave (bijv. "… kg biomassa (aantal × gewicht)").</li>
+  <li><code>32–36</code> <b class="fn">explanationForStat</b>: korte uitleg-zin die onder de grafiek verschijnt.</li>
+</ul>
+
+<h3>3.2 — Opzet (regel 38–48)</h3>
+<pre><span class="ln">39-43</span> <span class="k">const</span> { visData } = state; <span class="k">const</span> stageEl = $(<span class="s">'#netStage'</span>); <span class="k">const</span> infoEl = $(<span class="s">'#netInfo'</span>); <span class="k">const</span> svg = d3.select(stageEl).append(<span class="s">'svg'</span>)…;
+<span class="ln">45-48</span> drawNet(svg); <span class="k">const</span> bubbleLayer = svg.append(<span class="s">'g'</span>)…; <span class="k">const</span> defs = svg.append(<span class="s">'defs'</span>); <span class="k">let</span> currentStat = <span class="s">'biomass'</span>;</pre>
+<ul class="ll">
+  <li><code>39–43</code> Pak data, podium en info-regel; maak de SVG.</li>
+  <li><code>45</code> <b class="fn">drawNet</b> (zie 3.8) tekent het zakkende net.</li>
+  <li><code>46–48</code> Een laag voor de bellen, een <code>defs</code> voor de kleurverlopen, en de startweergave <code>'biomass'</code>.</li>
+</ul>
+
+<h3>3.3 — <b class="fn">createBubble()</b>: de inhoud van een bel (regel 51–66)</h3>
+<pre><span class="ln">52-56</span> <span class="k">const</span> gradientId = <span class="s">`bubGrad-…`</span>; <span class="k">const</span> gradient = defs.append(<span class="s">'radialGradient'</span>)…;  <span class="c">// licht → soort-kleur</span>
+<span class="ln">58-59</span> group.append(<span class="s">'circle'</span>).attr(<span class="s">'class'</span>,<span class="s">'bub-main'</span>).attr(<span class="s">'r'</span>, bubble.r).attr(<span class="s">'fill'</span>, <span class="s">`url(#${gradientId})`</span>)…
+<span class="ln">60-62</span> group.append(<span class="s">'circle'</span>).attr(<span class="s">'class'</span>,<span class="s">'bub-shine'</span>)…   <span class="c">// glansplekje</span>
+<span class="ln">63</span>     group.append(<span class="s">'g'</span>).attr(<span class="s">'class'</span>,<span class="s">'bub-fish'</span>)…       <span class="c">// plek voor het vis-plaatje</span>
+<span class="ln">64-65</span> group.append(<span class="s">'text'</span>).attr(<span class="s">'class'</span>,<span class="s">'bub-label'</span>)…   <span class="c">// het naam-label</span></pre>
+<ul class="ll">
+  <li><code>52–56</code> Maak een eigen radiaal kleurverloop (lichte kern → soort-kleur rand) met een uniek <code>id</code>.</li>
+  <li><code>58–59</code> De hoofdcirkel, gevuld met dat kleurverloop. <code>bubble.r</code> = de door packing berekende straal.</li>
+  <li><code>60–62</code> Een klein lichter cirkeltje als "glans" linksboven.</li>
+  <li><code>63</code> Een lege groep waar straks het ingekleurde vis-plaatje in komt.</li>
+  <li><code>64–65</code> Het tekst-label met de soortnaam.</li>
+</ul>
+
+<h3>3.4 — <b class="fn">updateBubble()</b>: plaatje, info &amp; soepel groeien (regel 70–88)</h3>
+<pre><span class="ln">71-72</span> <span class="k">const</span> fishSize = Math.min(bubble.r * FISH_SIZE_FACTOR, FISH_SIZE_MAX); <span class="k">const</span> tintFilterId = ensureTintFilter(svg, bubble.data.color);
+<span class="ln">73-75</span> group.select(<span class="s">'.bub-fish'</span>).html(<span class="s">`&lt;image href="…" filter="url(#${tintFilterId})"/&gt;`</span>);
+<span class="ln">78-80</span> <span class="k">const</span> showInfo = () =&gt; { infoEl.textContent = <span class="s">`${bubble.data.naam} — ${summaryForStat[stat](bubble.data)}.`</span>; }; group.on(<span class="s">'click'</span>, showInfo).on(<span class="s">'mouseenter'</span>, showInfo).on(<span class="s">'keydown'</span>, …);
+<span class="ln">82-87</span> group.select(<span class="s">'.bub-main'</span>).transition().duration(<span class="s">800</span> * motionScale).attr(<span class="s">'r'</span>, bubble.r); … label: opacity = bubble.r &gt; LABEL_MIN_RADIUS ? <span class="s">0.92</span> : <span class="s">0</span>;</pre>
+<ul class="ll">
+  <li><code>71–72</code> Plaatjesgrootte ~<code>FISH_SIZE_FACTOR</code>× de straal (max <code>FISH_SIZE_MAX</code>). <code>ensureTintFilter</code> levert het kleur-filter (uit <code>fishImage.js</code>).</li>
+  <li><code>73–75</code> Zet het vis-plaatje in de bel, ingekleurd via dat filter.</li>
+  <li><code>78–80</code> <b class="fn">showInfo</b>: schrijf de cijfers van deze soort in de info-regel — bij klik, hover én Enter/Spatie (toetsenbord).</li>
+  <li><code>82–87</code> Animeer (<code>transition</code>) de cirkel, de glans en het label naar hun nieuwe grootte. <code>motionScale</code> is 0 bij "animaties uit" (dan meteen, geen overgang). Het label vervaagt als de bel kleiner is dan <code>LABEL_MIN_RADIUS</code>.</li>
+</ul>
+
+<h3>3.5 — <b class="fn">renderBubbles()</b>: data-join enter/update/exit (regel 91–115)</h3>
+<pre><span class="ln">92-95</span> <span class="k">const</span> packedBubbles = packBubbles(stat); <span class="k">const</span> existingBubbles = bubbleLayer.selectAll(<span class="s">'.net-bubble'</span>).data(packedBubbles, bubble =&gt; bubble.data.naam);
+<span class="ln">98-99</span> existingBubbles.exit().transition()…<span class="s">scale(0)</span>.remove();                        <span class="c">// verdwenen → krimpen</span>
+<span class="ln">102-105</span> <span class="k">const</span> enteringBubbles = existingBubbles.enter().append(<span class="s">'g'</span>)…<span class="s">scale(0)</span>; enteringBubbles.each(… createBubble …);  <span class="c">// nieuw, hoog &amp; klein</span>
+<span class="ln">108</span>     enteringBubbles.merge(existingBubbles).each(… updateBubble …);                         <span class="c">// nieuw + bestaand bijwerken</span>
+<span class="ln">110-114</span> enteringBubbles.transition()…<span class="s">scale(1)</span>; existingBubbles.transition()…<span class="s">scale(1)</span>;          <span class="c">// naar eindplek animeren</span></pre>
+<ul class="ll">
+  <li><code>92–95</code> Reken de posities uit (<b class="fn">packBubbles</b>, 3.6) en koppel ze met de <b>naam als sleutel</b>. Zo weet D3 welke bel bij welke soort hoort, ook na een wissel.</li>
+  <li><code>98–99</code> <b>exit</b> = soorten die er niet meer zijn → laat ze naar <code>scale(0)</code> krimpen en verwijder.</li>
+  <li><code>102–105</code> <b>enter</b> = nieuwe bellen → maak een groep, klein en <code>FALL_FROM_OFFSET</code> hoger (ze "vallen" straks in het net), en bouw de inhoud met <code>createBubble</code>.</li>
+  <li><code>108</code> <code>enter.merge(existing)</code> = nieuwe én bestaande bellen samen bijwerken met <code>updateBubble</code>.</li>
+  <li><code>110–114</code> Animeer iedereen naar zijn eindplek en volle grootte (<code>scale(1)</code>) — hierdoor "morphen" de bellen bij een wissel.</li>
+</ul>
+<div class="note"><b>Waarom dit slim is.</b> Door de naam als sleutel te gebruiken, blijft elke bel "dezelfde" tussen weergaven en schuift hij netjes naar zijn nieuwe grootte/plek — in plaats van weg te knipperen en opnieuw te verschijnen.</div>
+
+<h3>3.6 — <b class="fn">packBubbles()</b>: circle packing (regel 118–123)</h3>
+<pre><span class="ln">119</span>   <span class="k">const</span> bubbleData = visData.map(species =&gt; ({ ...species, value: valueForStat[stat](species) }));
+<span class="ln">120</span>   <span class="k">const</span> packLayout = d3.pack().size([STAGE_WIDTH-<span class="s">40</span>, STAGE_HEIGHT-<span class="s">100</span>]).padding(BUBBLE_PADDING);
+<span class="ln">121-122</span> <span class="k">const</span> hierarchyRoot = d3.hierarchy({ children: bubbleData }).sum(species =&gt; species.value); <span class="k">return</span> packLayout(hierarchyRoot).leaves();</pre>
+<ul class="ll">
+  <li><code>119</code> Geef elke soort een <code>value</code> volgens de gekozen weergave (de <code>...species</code> kopieert de bestaande velden).</li>
+  <li><code>120</code> <b class="fn">d3.pack</b> = de circle-packing-machine; <code>size</code> = beschikbaar vlak, <code>padding</code> = ruimte tussen bellen.</li>
+  <li><code>121–122</code> <code>d3.hierarchy(...).sum(...)</code> sommeert de <code>value</code>'s; <code>packLayout(...).leaves()</code> rekent posities + stralen uit en geeft de losse bellen terug.</li>
+</ul>
+
+<h3>3.7 — De schakelknoppen (regel 125–145)</h3>
+<pre><span class="ln">125-126</span> renderBubbles(currentStat); infoEl.textContent = explanationForStat[currentStat];   <span class="c">// eerste render</span>
+<span class="ln">130-134</span> <span class="k">const</span> updateActiveToggle = () =&gt; $$(<span class="s">'.net-toggle-btn'</span>).forEach(button =&gt; { … markeer actief … });
+<span class="ln">135-137</span> $$(<span class="s">'.net-toggle-btn'</span>).forEach(button =&gt; { button.onclick = () =&gt; { <span class="k">if</span> (button.dataset.stat === currentStat) <span class="k">return</span>;
+<span class="ln">138-141</span>   currentStat = button.dataset.stat; updateActiveToggle(); renderBubbles(currentStat); infoEl.textContent = …; }; });
+<span class="ln">145</span>   cleanups.push(() =&gt; { $$(<span class="s">'.net-toggle-btn'</span>).forEach(button =&gt; { button.onclick = <span class="k">null</span>; }); });</pre>
+<ul class="ll">
+  <li><code>125–126</code> Teken de eerste keer en zet de uitleg-zin.</li>
+  <li><code>130–134</code> <b class="fn">updateActiveToggle</b> markeert de actieve knop (class + <code>aria-selected</code>).</li>
+  <li><code>136</code> <code>button.onclick = …</code> (i.p.v. <code>addEventListener</code>): zo overschrijf je bij hertekenen de oude handler i.p.v. er steeds één bij te stapelen.</li>
+  <li><code>137–141</code> Klik op de al-actieve knop? Niets. Anders: onthoud de nieuwe weergave, markeer 'm en teken opnieuw → de bellen morphen.</li>
+  <li><code>145</code> Bij opruimen de klik-handlers losmaken (geen geheugenlek).</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Andere startweergave: <code>'biomass'</code> (regel 48). Meer ruimte tussen bellen: <code>BUBBLE_PADDING</code> (16). Drempel waaronder het label verdwijnt: <code>LABEL_MIN_RADIUS</code> (19).</div>
+
+<h3>3.8 — <b class="fn">drawNet()</b>: het zakkende net (regel 149–169)</h3>
+<pre><span class="ln">152-156</span> <span class="k">for</span> (… i ≤ <span class="s">16</span> …) netGroup.append(<span class="s">'path'</span>)…;  <span class="c">// 17 verticale "touwen" (golvend via Math.sin)</span>
+<span class="ln">157-161</span> <span class="k">for</span> (… j ≤ <span class="s">8</span> …) netGroup.append(<span class="s">'path'</span>)…;   <span class="c">// 9 horizontale touwen, licht doorhangend (Q-boog)</span>
+<span class="ln">166-168</span> netGroup.attr(<span class="s">'transform'</span>,<span class="s">`translate(0,-${FALL_FROM_OFFSET})`</span>).transition()…attr(<span class="s">'transform'</span>,<span class="s">'translate(0,0)'</span>);</pre>
+<ul class="ll">
+  <li><code>152–156</code> Teken 17 verticale touwen als licht golvende paden (de <code>Math.sin(i)</code> geeft de slinger).</li>
+  <li><code>157–161</code> Teken 9 horizontale touwen, elk iets doorhangend (<code>Q</code> = een gebogen lijn).</li>
+  <li><code>166–168</code> Begin het net <code>FALL_FROM_OFFSET</code> hoger en laat het met een <code>transition</code> in beeld zakken (overgeslagen bij "animaties uit").</li>
+</ul>
+</section>
+
+<!-- ============================================================= -->
+<!-- ======================== RADAR.JS ========================== -->
+<!-- ============================================================= -->
+<section class="pagebreak">
+<h2>4 · radar.js <span class="tag js">d3 · SVG · animatie</span></h2>
+<p class="path">src/scripts/mitchell/charts/radar.js</p>
+<p>Een sonar: elke soort is een "ping", afstand tot het midden = hoe vaak gezien. Een draaiende straal licht de pings op (naglooi). Een tijdslider scrubt door dag/week/maand.</p>
+
+<h3>4.1 — Instelbare waarden &amp; twee hulpjes (regel 16–35)</h3>
+<pre><span class="ln">16-17</span> <span class="k">const</span> WIDTH = <span class="s">620</span>, HEIGHT = <span class="s">620</span>, CENTER_X/Y = …, RADIUS = <span class="s">270</span>;
+<span class="ln">18-20</span> <span class="k">const</span> INNER_DISTANCE = <span class="s">70</span>, OUTER_DISTANCE = RADIUS-<span class="s">55</span>, ABSENT_DISTANCE = OUTER_DISTANCE+<span class="s">10</span>;
+<span class="ln">21-29</span> <span class="k">const</span> MIN_GAP, JITTER_RANGE, PLACE_ATTEMPTS, SWEEP_SPEED(_REDUCED), REVEAL_ARC, MIN_GLOW, GLOW_MS, SCRUB_MS;
+<span class="ln">32</span>   <span class="k">const</span> polarToPoint = (angle, distance) =&gt; [CENTER_X + Math.cos(angle)*distance, CENTER_Y + Math.sin(angle)*distance];
+<span class="ln">34-35</span> <span class="k">const</span> makeDistanceScale = (maxCount) =&gt; d3.scaleSqrt().domain([<span class="s">0</span>, maxCount]).range([OUTER_DISTANCE, INNER_DISTANCE]).clamp(<span class="k">true</span>);</pre>
+<ul class="ll">
+  <li><code>16–20</code> Vierkant vlak 620×620; <code>RADIUS</code> = buitenste ring; <code>INNER_DISTANCE</code> = dichtst bij het midden, <code>OUTER_DISTANCE</code> = bij de rand, <code>ABSENT_DISTANCE</code> = nét buiten de rand (0 waarnemingen).</li>
+  <li><code>21–29</code> Alle gevoels-knoppen: minimale tussenruimte, jitter, plaatsings-pogingen, draaisnelheid, naglooi-duur, laagste helderheid.</li>
+  <li><code>32</code> <b class="fn">polarToPoint</b>: zet een hoek + afstand om naar een <code>[x, y]</code> op het scherm.</li>
+  <li><code>34–35</code> <b class="fn">makeDistanceScale</b>: zet een aantal om naar een afstand. Let op de <b>omgekeerde</b> range <code>[OUTER, INNER]</code>: 0 → buiten, <code>maxCount</code> → binnen. <code>clamp(true)</code> houdt het binnen de grenzen.</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> Sneller draaien: <code>SWEEP_SPEED</code> (24). Langer naglinsteren: <code>GLOW_MS</code> (28). Pings nooit helemaal kwijt: <code>MIN_GLOW</code> (27) hoger.</div>
+
+<h3>4.2 — Start: decor, pings &amp; tijdvakken (regel 37–57)</h3>
+<pre><span class="ln">38-40</span> <span class="k">const</span> { visData, weekHours, weekDayLabels, weekDays, currentPeriod } = state; <span class="k">const</span> svg = d3.select($(<span class="s">'#radarStage'</span>))…;
+<span class="ln">42-43</span> drawDecor(svg); <span class="k">const</span> sweep = drawSweep(svg);
+<span class="ln">46-49</span> <span class="k">const</span> maxCount = Math.max(...visData.map(v =&gt; v.count || <span class="s">0</span>), <span class="s">1</span>); <span class="k">const</span> placementScale = makeDistanceScale(maxCount); <span class="k">const</span> distanceForCount = (count, jitter, scale=…) =&gt; count &gt; <span class="s">0</span> ? scale(count)+jitter : ABSENT_DISTANCE;
+<span class="ln">51-53</span> <span class="k">const</span> pings = placePings(visData, distanceForCount); <span class="k">const</span> timeBuckets = buildTimeBuckets(…); <span class="k">const</span> totalObservations = pings.reduce(…);
+<span class="ln">55-57</span> <span class="k">const</span> pingsGroup = svg.append(<span class="s">'g'</span>); pings.forEach(ping =&gt; drawPing(ping, pings, pingsGroup, detailPanel, svg));</pre>
+<ul class="ll">
+  <li><code>38–40</code> Haal alles uit <code>state</code>: soorten, uren-per-dag, daglabels/datums en de actieve periode (die bepaalt straks de tijdvakken).</li>
+  <li><code>42–43</code> Teken het decor (4.4) en de sweep-wig (4.5).</li>
+  <li><code>46–49</code> <code>maxCount</code> = drukste soort; <b class="fn">distanceForCount</b> geeft de afstand voor een aantal (0 → net buiten de rand).</li>
+  <li><code>51–53</code> Plaats de pings (4.6), bouw de tijdvakken (4.10) en tel het totaal aantal waarnemingen.</li>
+  <li><code>55–57</code> Teken elke ping (4.7).</li>
+</ul>
+
+<h3>4.3 — De tijdslider &amp; scrubben <b class="fn">applyTime()</b> (regel 59–92)</h3>
+<pre><span class="ln">60-62</span> <span class="k">const</span> sliderLabel = makeSliderLabel(); <span class="k">const</span> slider = makeSlider(timeBuckets); mountScrubber(sliderLabel, slider, cleanups);
+<span class="ln">65-69</span> <span class="k">function</span> applyTime(bucketIndex) { <span class="k">const</span> isWholePeriod = bucketIndex === <span class="s">0</span>; sliderLabel.textContent = isWholePeriod ? <span class="s">`Hele …`</span> : <span class="s">`${timeBuckets.labels[bucketIndex-1]}…`</span>;
+<span class="ln">73-74</span> <span class="k">const</span> countPerPing = pings.map(ping =&gt; isWholePeriod ? ping.total : timeBuckets.perSpecies.get(ping.speciesIndex)?.[bucketIndex-<span class="s">1</span>] ?? <span class="s">0</span>); <span class="k">const</span> distanceScale = makeDistanceScale(Math.max(...countPerPing, <span class="s">1</span>));
+<span class="ln">76-82</span> pings.forEach((ping, index) =&gt; { <span class="k">const</span> count = countPerPing[index]; <span class="k">const</span> distance = count &gt; <span class="s">0</span> ? distanceScale(count)+ping.jitter : ABSENT_DISTANCE; [ping.x, ping.y] = polarToPoint(ping.angle, distance); ping.elem.transition()…; });
+<span class="ln">83-85</span> ping.labelTextEl.text(<span class="s">`${ping.naam} · ${formatNumber(count)}`</span>); … <span class="k">if</span> (ping.selected) ping.showDetail();
+<span class="ln">88-92</span> slider.addEventListener(<span class="s">'input'</span>, () =&gt; applyTime(+slider.value)); applyTime(<span class="s">0</span>); drawSummary(…); startSweep(sweep, pings, cleanups);</pre>
+<ul class="ll">
+  <li><code>60–62</code> Bouw de slider-bouwstenen (4.9) en plaats de scrubber ónder de radar.</li>
+  <li><code>66–69</code> <code>bucketIndex 0</code> = hele periode; anders een tijdvak. Zet de labeltekst boven de slider.</li>
+  <li><code>73</code> Haal het aantal per soort op voor deze stand (totaal, óf uit de verdeling van dit tijdvak).</li>
+  <li><code>74</code> <b>Sleutel-stap:</b> maak een <b>nieuwe</b> schaal genormaliseerd op de drukste soort van <i>dit</i> tijdvak. Daardoor staan de vissen altijd ten opzichte van elkáár.</li>
+  <li><code>76–82</code> Bereken per ping de nieuwe afstand (met de vaste <code>jitter</code>) en daaruit <code>x,y</code> — de hoek blijft gelijk, dus de ping beweegt alleen naar binnen/buiten; animeer er soepel naartoe.</li>
+  <li><code>83–85</code> Werk het label-aantal bij en ververs het detailpaneel als deze ping geselecteerd is.</li>
+  <li><code>88–92</code> Koppel de slider aan <code>applyTime</code>, zet 'm op stand 0, teken de samenvatting (4.8) en start de sweep (4.8).</li>
+</ul>
+<div class="tip"><b>Aanpassen.</b> <b>Absolute</b> afstanden (vergelijkbaar tussen tijdvakken) i.p.v. relatief? Gebruik in regel 74 weer <code>maxCount</code> i.p.v. de tijdvak-max. Tragere overgang: <code>SCRUB_MS</code> (29).</div>
+
+<h3>4.4 — <b class="fn">drawDecor()</b>: schijf, ringen &amp; dradenkruis (regel 96–117)</h3>
+<pre><span class="ln">98-99</span> svg.append(<span class="s">'circle'</span>)…attr(<span class="s">'r'</span>, RADIUS).attr(<span class="s">'fill'</span>, <span class="s">'rgba(1,70,60,0.03)'</span>);   <span class="c">// lichte vulling</span>
+<span class="ln">102-108</span> <span class="k">for</span> (<span class="k">let</span> ring = <span class="s">1</span>; ring &lt;= <span class="s">4</span>; ring++) { <span class="k">const</span> isOuterRing = ring === <span class="s">4</span>; svg.append(<span class="s">'circle'</span>)…attr(<span class="s">'r'</span>, RADIUS*ring/<span class="s">4</span>)…(buitenrand solide, rest gestippeld) }
+<span class="ln">112-116</span> <span class="k">const</span> crosshairColor = …; svg.append(<span class="s">'line'</span>)… (horizontaal) … svg.append(<span class="s">'line'</span>)… (verticaal)   <span class="c">// dradenkruis</span></pre>
+<ul class="ll">
+  <li><code>98–99</code> Een heel lichte schijf-vulling zodat de radar zich aftekent tegen de achtergrond.</li>
+  <li><code>102–108</code> Teken 4 ringen op straal <code>R/4, R/2, 3R/4, R</code>. <code>isOuterRing</code> = de buitenste: donkerder/dikker en solide; de rest lichter en gestippeld (<code>stroke-dasharray</code>).</li>
+  <li><code>112–116</code> Twee lijnen (horizontaal + verticaal) door het midden vormen het dradenkruis.</li>
+</ul>
+
+<h3>4.5 — <b class="fn">drawSweep()</b>: de draaiende wig (regel 120–133)</h3>
+<pre><span class="ln">121-124</span> <span class="k">const</span> gradient = svg.append(<span class="s">'defs'</span>).append(<span class="s">'linearGradient'</span>)…;   <span class="c">// transparant → groen</span>
+<span class="ln">126-129</span> <span class="k">const</span> [endX, endY] = polarToPoint(-Math.PI/<span class="s">4</span>, RADIUS); <span class="k">const</span> sweep = svg.append(<span class="s">'path'</span>).attr(<span class="s">'d'</span>, <span class="s">`M ${CENTER_X} ${CENTER_Y} L … A …`</span>)…;  <span class="c">// taartpunt van 45°</span>
+<span class="ln">131-132</span> svg.append(<span class="s">'circle'</span>)…attr(<span class="s">'r'</span>, <span class="s">5</span>)…; <span class="k">return</span> sweep;                       <span class="c">// stip in het midden</span></pre>
+<ul class="ll">
+  <li><code>121–124</code> Een lineair kleurverloop: doorzichtig aan de ene kant, groen aan de andere — geeft de sweep zijn "veeg".</li>
+  <li><code>126–129</code> De sweep is een taartpunt-pad (<code>M</code> = ga naar, <code>L</code> = lijn, <code>A</code> = boog) van 45°. We geven 'm terug om straks te draaien.</li>
+  <li><code>131–132</code> Een klein stipje markeert het exacte midden.</li>
+</ul>
+
+<h3>4.6 — <b class="fn">placePings()</b> &amp; <b class="fn">pickFreeSpot()</b>: zonder overlap (regel 136–164)</h3>
+<pre><span class="ln">137-138</span> <span class="k">const</span> seed = mulberry32(<span class="s">42</span>); <span class="k">const</span> pings = [];                       <span class="c">// vaste seed → zelfde plaatsing</span>
+<span class="ln">139-142</span> visData.forEach((species, speciesIndex) =&gt; { <span class="k">const</span> jitter = (seed()-<span class="s">0.5</span>)*JITTER_RANGE; <span class="k">const</span> distance = distanceForCount(species.count, jitter); <span class="k">const</span> freeSpot = pickFreeSpot(distance, pings, seed);
+<span class="ln">143-147</span> pings.push({ ...species, ...freeSpot, speciesIndex, jitter, total: …, current: …, litAt: -<span class="s">1e9</span>, hover: <span class="k">false</span>, selected: <span class="k">false</span> }); });
+<span class="ln">156-161</span> <span class="k">for</span> (<span class="k">let</span> attempt = <span class="s">0</span>; attempt &lt; PLACE_ATTEMPTS; attempt++) { <span class="k">const</span> angle = seed()*Math.PI*<span class="s">2</span>; … <span class="k">const</span> nearestDistance = …; <span class="k">if</span> (nearestDistance &gt;= MIN_GAP) <span class="k">return</span> { angle, x, y }; … }</pre>
+<ul class="ll">
+  <li><code>137–138</code> Een <i>seeded</i> toevalsgenerator (startwaarde 42) → elke render dezelfde plaatsing.</li>
+  <li><code>140</code> Een vaste <code>jitter</code> per ping (zodat hij bij scrubben niet "rondspringt", alleen radiaal beweegt).</li>
+  <li><code>141–142</code> De startafstand op basis van het totaal-aantal, plus een vrije plek (<code>pickFreeSpot</code>).</li>
+  <li><code>143–147</code> Bewaar de ping: alle soort-velden (<code>...species</code>), de hoek/positie (<code>...freeSpot</code>), de index, jitter, <code>total</code>/<code>current</code> en de animatie-vlaggen (<code>litAt</code> = wanneer laatst opgelicht, <code>hover</code>, <code>selected</code>).</li>
+  <li><code>156–161</code> <b>Rejection sampling</b>: probeer tot <code>PLACE_ATTEMPTS</code>× een willekeurige hoek; is de afstand tot de dichtstbijzijnde ping groot genoeg (<code>MIN_GAP</code>), neem die. Lukt het niet, neem de beste poging.</li>
+</ul>
+
+<h3>4.7 — <b class="fn">drawPing()</b>: tekenen + info op hover (regel 167–215)</h3>
+<pre><span class="ln">168-172</span> <span class="k">const</span> pingGroup = pingsGroup.append(<span class="s">'g'</span>)…attr(<span class="s">'opacity'</span>, <span class="s">0</span>)…;        <span class="c">// start onzichtbaar</span>
+<span class="ln">174-175</span> pingGroup.append(<span class="s">'circle'</span>)…r <span class="s">18</span> (halo); …r <span class="s">8</span> (kern)
+<span class="ln">177-181</span> <span class="c">// ingekleurd vis-plaatje via ensureTintFilter</span>
+<span class="ln">184-190</span> <span class="k">const</span> labelOnRight = …; ping.labelTextEl = pingGroup.append(<span class="s">'text'</span>)…text(<span class="s">`${ping.naam} · ${formatNumber(ping.count)}`</span>);
+<span class="ln">192-199</span> <span class="k">const</span> showDetail = () =&gt; { … detailPanel.innerHTML = <span class="s">`…piekmaand, diepte, gewicht…`</span>; detailPanel.classList.add(<span class="s">'visible'</span>); };
+<span class="ln">200-211</span> <span class="k">const</span> hideDetail = () =&gt; { … }; pingGroup.on(<span class="s">'mouseenter'</span>, …showDetail).on(<span class="s">'mouseleave'</span>, hideDetail).on(<span class="s">'focus'</span>, showDetail).on(<span class="s">'blur'</span>, hideDetail);</pre>
+<ul class="ll">
+  <li><code>168–172</code> Een groep per ping, <b>start onzichtbaar</b> (<code>opacity 0</code>) — de sweep onthult 'm straks.</li>
+  <li><code>174–175</code> Twee cirkels: een grote vage halo (r=18) en een vollere kern (r=8) in de soort-kleur.</li>
+  <li><code>177–181</code> Het ingekleurde vis-plaatje, met het tint-filter uit <code>fishImage.js</code>.</li>
+  <li><code>184–190</code> Het label "naam · aantal". <code>labelOnRight</code> bepaalt of het rechts of links van de vis staat (zodat het niet buiten beeld valt). We bewaren het in <code>ping.labelTextEl</code> om het bij scrubben te updaten.</li>
+  <li><code>192–199</code> <b class="fn">showDetail</b>: maak deze ping de geselecteerde (de rest niet) en vul het detailpaneel met naam, huidig aantal, piekmaand, diepte en gewicht.</li>
+  <li><code>200–211</code> <b class="fn">hideDetail</b> zet alles terug. Koppel: muis erop / focus → tonen; muis eraf / blur → verbergen.</li>
+</ul>
+<div class="tip"><b>Aanpassen (info).</b> Welke regels in het paneel staan, zit in <code>showDetail</code> (regel 197). Wil je info láten staan i.p.v. verdwijnen: haal het verbergen uit <code>hideDetail</code>.</div>
+
+<h3>4.8 — <b class="fn">startSweep()</b> draaien &amp; <b class="fn">glowOpacity()</b> naglooi (regel 227–259)</h3>
+<pre><span class="ln">230-232</span> <span class="k">function</span> tick(now) { sweepAngle += reduceMotion() ? SWEEP_SPEED_REDUCED : SWEEP_SPEED; sweep.attr(<span class="s">'transform'</span>, <span class="s">`rotate(…)`</span>);
+<span class="ln">234-237</span> pings.forEach(ping =&gt; { <span class="k">const</span> angleBehindSweep = (ping.angle - sweepAngle + Math.PI*<span class="s">4</span>) % (Math.PI*<span class="s">2</span>); <span class="k">if</span> (angleBehindSweep &lt; REVEAL_ARC) ping.litAt = now; ping.elem.attr(<span class="s">'opacity'</span>, glowOpacity(ping, now)); });
+<span class="ln">243-248</span> <span class="c">// IntersectionObserver: start tick in beeld, stop buiten beeld</span>
+<span class="ln">252-258</span> <span class="k">function</span> glowOpacity(ping, now) { <span class="k">if</span> (reduceMotion()) <span class="k">return</span> <span class="s">1</span>; <span class="k">if</span> (ping.hover||ping.selected) <span class="k">return</span> <span class="s">1</span>; <span class="k">if</span> (ping.litAt &lt; <span class="s">0</span>) <span class="k">return</span> <span class="s">0</span>; <span class="k">const</span> age = (now-ping.litAt)/GLOW_MS; <span class="k">const</span> glow = age &gt;= <span class="s">1</span> ? <span class="s">0</span> : (<span class="s">1</span>-age)*(<span class="s">1</span>-age); <span class="k">return</span> MIN_GLOW + (<span class="s">1</span>-MIN_GLOW)*glow; }</pre>
+<ul class="ll">
+  <li><code>230–232</code> Elke frame draait de sweep een stukje verder (<code>SWEEP_SPEED</code>, sneller bij "animaties uit") en past de rotatie toe.</li>
+  <li><code>234–237</code> <code>angleBehindSweep</code> = hoekverschil tussen ping en sweep. Veegt de sweep er net overheen (<code>&lt; REVEAL_ARC</code>), onthoud dán "nu opgelicht" (<code>ping.litAt = now</code>), en pas de helderheid toe.</li>
+  <li><code>243–248</code> Start de lus als de radar in beeld is, stop 'm als hij weg scrolt (accu sparen).</li>
+  <li><code>252–258</code> <b class="fn">glowOpacity</b>: animaties uit → vol; hover/geselecteerd → vol; nog nooit gezien → onzichtbaar; anders een <b>uitdovende gloed</b> (kwadratisch) die nooit onder <code>MIN_GLOW</code> zakt.</li>
+</ul>
+
+<h3>4.9 — Tijdslider-bouwstenen (regel 262–292)</h3>
+<pre><span class="ln">262-266</span> <span class="k">function</span> makeSliderLabel() { … <span class="c">// het tekstlabel boven de slider</span>
+<span class="ln">267-278</span> <span class="k">function</span> makeSlider(timeBuckets) { … range van <span class="s">0</span> t/m timeBuckets.labels.length, stap <span class="s">1</span>, start <span class="s">0</span> …
+<span class="ln">279-292</span> <span class="k">function</span> mountScrubber(label, slider, cleanups) { … $(<span class="s">'#radarStage'</span>).insertAdjacentElement(<span class="s">'afterend'</span>, scrubberBox); cleanups.push(() =&gt; scrubberBox.remove()); }</pre>
+<ul class="ll">
+  <li><code>262–266</code> <b class="fn">makeSliderLabel</b>: het tekstlabel dat boven de slider de huidige stand toont.</li>
+  <li><code>267–278</code> <b class="fn">makeSlider</b>: een schuifbalk (<code>input type=range</code>) van 0 t/m het aantal tijdvakken; stap 1; start op 0 (= hele periode).</li>
+  <li><code>279–292</code> <b class="fn">mountScrubber</b>: maak een doosje (gecentreerd, lichte achtergrond) en plaats het <b>direct ná</b> de radar — dus eronder, zonder de radar te bedekken. Bij opruimen weghalen.</li>
+</ul>
+
+<h3>4.10 — <b class="fn">buildTimeBuckets()</b> &amp; <b class="fn">groupDays()</b> (regel 295–352)</h3>
+<pre><span class="ln">299-304</span> <span class="c">// dayTotals: tel per dag alle 24 uren uit weekHours op (de echte "drukte-vorm")</span>
+<span class="ln">306</span>   <span class="k">const</span> groups = groupDays(currentPeriod, dayCount, weekDayLabels, weekDays);
+<span class="ln">309-311</span> <span class="k">const</span> bucketTotals = groups.map(… sommeer dayTotals …); <span class="k">const</span> weights = bucketTotals.map(v =&gt; v/bucketTotalsSum);
+<span class="ln">314-317</span> visData.forEach((species, speciesIndex) =&gt; { perSpecies.set(speciesIndex, distributeOverBuckets(species.count||<span class="s">0</span>, weights, mulberry32(<span class="s">1000</span>+speciesIndex*<span class="s">7</span>))); });
+<span class="ln">325-327</span> <span class="k">if</span> (period === <span class="s">'week'</span>) <span class="k">return</span> … elke dag = 1 tijdvak …
+<span class="ln">329-341</span> <span class="k">if</span> (period === <span class="s">'jaar'</span>) { … groepeer per kalendermaand op basis van de datum … }
+<span class="ln">344-351</span> <span class="c">// anders (maand): hak de dagen in blokken van 7 → "Week 1…5"</span></pre>
+<ul class="ll">
+  <li><code>299–304</code> Maak <code>dayTotals</code>: per dag de som van de 24 uur-waarden uit <code>weekHours</code>.</li>
+  <li><code>306</code> <b class="fn">groupDays</b> bepaalt de tijdvakken op basis van de periode.</li>
+  <li><code>309–311</code> <code>bucketTotals</code> = totale drukte per tijdvak; <code>weights</code> = die drukte als fractie van het geheel (samen 1).</li>
+  <li><code>314–317</code> Verdeel per soort het totaal over de tijdvakken (<code>distributeOverBuckets</code>, 4.11), met een eigen seed per soort.</li>
+  <li><code>325–327</code> <b>week</b>: elke dag wordt een eigen tijdvak (label = de datum).</li>
+  <li><code>329–341</code> <b>jaar</b>: groepeer de dagen per kalendermaand (op basis van de datum); label = maandnaam.</li>
+  <li><code>344–351</code> <b>maand</b>: hak de dagen in blokken van 7 → "Week 1…5", met de datumreeks als sub-label.</li>
+</ul>
+
+<h3>4.11 — <b class="fn">distributeOverBuckets()</b>: kloppend tot het totaal (regel 356–370)</h3>
+<pre><span class="ln">357-360</span> <span class="k">const</span> raw = weights.map(weight =&gt; Math.max(<span class="s">0.0001</span>, weight*(<span class="s">0.5</span>+seed()))); … <span class="k">const</span> exact = raw.map(x =&gt; (x/rawSum)*total); <span class="k">const</span> rounded = exact.map(Math.round);
+<span class="ln">362-368</span> <span class="k">let</span> diff = total - …; <span class="k">const</span> order = … (grootste rest eerst) …; <span class="k">for</span> (… diff !== <span class="s">0</span> …) { rounded[i] += step; diff -= step; }</pre>
+<ul class="ll">
+  <li><code>357</code> <code>raw</code> = de drukte-vorm (<code>weights</code>) met een soort-eigen variatie <code>(0.5 + seed())</code> eroverheen, zodat niet alle soorten identiek bewegen.</li>
+  <li><code>359–360</code> Schaal terug zodat de som = het soort-totaal, en rond af op hele vissen.</li>
+  <li><code>362–368</code> Afronden verandert de som; het verschil (<code>diff</code>) wordt over de tijdvakken met de grootste afrondings-rest verdeeld zodat de som <b>exact</b> klopt.</li>
+</ul>
+<div class="note"><b>Waarom afgeleid?</b> Er is geen kant-en-klare data "soort × tijdvak". We gebruiken de échte drukte per dag als vorm en verdelen elk soort-totaal daarover, met een vleugje variatie. Realistisch én altijd kloppend met het totaal.</div>
+</section>
+
+<!-- ===== BEGRIPPEN ===== -->
+<section class="pagebreak">
+<h2>Snelle begrippenlijst</h2>
+<table>
+<tr><th style="width:150px">Term</th><th>In gewone taal</th></tr>
+<tr><td><b>canvas</b></td><td>Eén tekenvlak waarop je snel heel veel dingen tekent (aquarium). Je veegt het elk frame leeg en tekent opnieuw.</td></tr>
+<tr><td><b>SVG</b></td><td>Losse, schaalbare vormen (cirkels, tekst, paden) — goed voor klikbare/animeerbare elementen (radar, net, talen).</td></tr>
+<tr><td><b>context</b></td><td>Het "penseel" van een canvas; alle tekenopdrachten lopen erover. In de code heet het <code>context</code>.</td></tr>
+<tr><td><b>requestAnimationFrame / raf</b></td><td>Vraagt de browser vóór elke schermverversing (~60×/sec) een functie te draaien. De motor van elke animatielus.</td></tr>
+<tr><td><b>IntersectionObserver</b></td><td>Meldt wanneer iets in/uit beeld scrolt. Gebruikt om animaties te starten/stoppen en grafieken pas te tekenen als je ze ziet.</td></tr>
+<tr><td><b>scaleSqrt</b></td><td>Een D3-schaal die via de wortel rekent, zodat de <i>oppervlakte</i> eerlijk meeschaalt (twee keer zoveel = twee keer zo veel vlak).</td></tr>
+<tr><td><b>force-simulatie</b></td><td>Nep-natuurkunde van D3: elementen trekken/duwen tot ze een nette verdeling vinden (talen).</td></tr>
+<tr><td><b>circle packing (d3.pack)</b></td><td>Cirkels zo compact mogelijk in een vlak passen, op grootte (net).</td></tr>
+<tr><td><b>data-join (enter/update/exit)</b></td><td>D3 koppelt data aan vormen: nieuw → enter, gewijzigd → update, weg → exit. Maakt soepele overgangen.</td></tr>
+<tr><td><b>seeded random (mulberry32)</b></td><td>"Toeval" met een vaste startwaarde → elke keer dezelfde reeks. Zo staan pings/posities reproduceerbaar.</td></tr>
+<tr><td><b>rejection sampling</b></td><td>Net zo lang een willekeurige plek proberen tot hij aan een eis voldoet (hier: niet te dicht op een andere ping).</td></tr>
+<tr><td><b>jitter</b></td><td>Een beetje vaste rommel op een waarde, zodat dingen niet té perfect/regelmatig ogen.</td></tr>
+<tr><td><b>transition</b></td><td>D3 animeert een eigenschap (positie, grootte, kleur) soepel van oud naar nieuw over een tijdsduur.</td></tr>
+<tr><td><b>ease-curve</b></td><td>Versnellen/afremmen tijdens een animatie i.p.v. constante snelheid (voelt natuurlijker).</td></tr>
+<tr><td><b>pixelRatio (device pixel ratio)</b></td><td>Hoeveel echte pixels één CSS-pixel beslaat (retina = 2). Canvas wordt hierop afgesteld om scherp te blijven; in de code heet het <code>pixelRatio</code>.</td></tr>
+<tr><td><b>cleanups / lifecycle</b></td><td>Lijst met "opruim"-functies. Bij een periodewissel of paginaverlaten worden ze gedraaid zodat niets blijft hangen.</td></tr>
+</table>
+
+<div class="note"><b>Tot slot.</b> Alle vier de bestanden volgen hetzelfde stramien: <b>data uit <code>state</code> → vorm berekenen → tekenen → interactie koppelen → animeren met <code>raf</code> → opruimen via <code>cleanups</code></b>. Herken je dat patroon, dan kun je elke grafiek lezen en aanpassen.</div>
+
+<p class="small" style="margin-top:24px">Gegenereerd uit de actuele broncode · vervolg op de overzichts-PDF · regel-voor-regel uitleg.</p>
+</section>
+
+</body>
+</html>

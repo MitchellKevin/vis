@@ -1,0 +1,117 @@
+/* ============================================================================
+ * Mitchell — feiten-carousel ("Wist je dat?")
+ * Lichte/warme visdeurbel-sfeer: crème vlak, grote Bricolage-koppen met paarse
+ * highlights, emoji en ronde outline-knoppen. Tokens uit visdeurbel-tokens.css.
+ * ========================================================================== */
+
+.fact-carousel {
+  width: 100%;
+  padding: var(--space-11) var(--space-6);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgb(240 175 0 / 0.07), transparent 60%),
+    var(--bg-page);
+}
+
+.fact-carousel__head {
+  max-width: var(--layout-max-width);
+  margin: 0 auto var(--space-9);
+  text-align: center;
+}
+.fact-carousel__eyebrow {
+  font: var(--text-p2-bold);
+  color: var(--color-teal);
+  margin: 0 0 var(--space-2);
+}
+.fact-carousel__title {
+  font: var(--text-h2);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* ── Slides ──────────────────────────────────────────── */
+.fact-carousel__viewport { overflow: hidden; }
+.fact-carousel__container { display: flex; align-items: center; }
+.fact-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: 0 var(--space-5);
+  text-align: center;
+}
+.fact-slide__emoji { font-size: clamp(40px, 7vw, 72px); line-height: 1; }
+.fact-slide__text {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(28px, 4.4vw, 54px);
+  line-height: 1.18;
+  color: var(--text-primary);
+}
+.fact__hl { color: var(--color-purple-bell); font-weight: 800; }
+
+/* ── Toelichting (?) ─────────────────────────────────── */
+.fact-carousel__note {
+  max-width: 54ch;
+  margin: var(--space-6) auto 0;
+  min-height: 1.5em;
+  text-align: center;
+  font: var(--text-p2);
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.fact-carousel__note[data-open='true'] { opacity: 1; }
+
+/* ── Controls ────────────────────────────────────────── */
+.fact-carousel__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  max-width: var(--layout-max-width);
+  margin: var(--space-7) auto 0;
+}
+.fact-carousel__arrows { display: flex; gap: var(--space-2); flex-shrink: 0; }
+
+.fact-arrow,
+.fact-help {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.12s ease;
+}
+.fact-arrow:hover:not(:disabled),
+.fact-help:hover { background: rgb(1 70 60 / 0.07); transform: translateY(-1px); }
+.fact-arrow:active:not(:disabled),
+.fact-help:active { transform: translateY(0); }
+.fact-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+.fact-arrow:focus-visible,
+.fact-help:focus-visible { outline: 2px solid var(--color-purple-bell); outline-offset: 2px; }
+.fact-help { flex-shrink: 0; }
+.fact-help[aria-pressed='true'] { background: var(--color-purple); }
+
+.fact-carousel__line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-default);
+  opacity: 0.25;
+}
+
+@media (max-width: 600px) {
+  .fact-carousel { padding: var(--space-9) var(--space-4); }
+  .fact-carousel__controls { gap: var(--space-3); }
+}

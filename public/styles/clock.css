@@ -1,0 +1,299 @@
+/* ============================================================================
+ * Clock (belritme) — radiale 24-uurs klok van de visdeurbel-meldingen.
+ *
+ * De sectie staat op de donkergroene pagina en draagt zelf data-theme="dark",
+ * zodat de semantische tokens (--text-primary, --text-muted, --border-default,
+ * --accent-primary, --bg-surface) automatisch naar hun donkere waarden wijzen.
+ * Zo blijft alles in de huisstijl zonder losse kleurwaarden.
+ * ========================================================================== */
+
+.clock {
+  --clock-hairline: rgb(1 70 60 / 0.2);
+
+  background: var(--bg-page);
+  max-width: var(--layout-max-width);
+  margin-inline: auto;
+  padding: var(--space-10) var(--layout-gutter) var(--space-11);
+  color: var(--text-primary);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.clock__head {
+  /* .clock__head is een <header>; overschrijf de globale header-flex
+     (index.css) zodat titel en paragraaf netjes onder elkaar staan. */
+  display: block;
+  text-align: center;
+  max-width: 60ch;
+  margin-inline: auto;
+}
+
+.clock__head h2 {
+  font: var(--text-h2);
+  margin-bottom: var(--space-3);
+}
+
+.clock__sub {
+  font: var(--text-p1);
+  color: var(--text-muted);
+}
+
+/* ── Layout: alles netjes in het midden ────────────────────────────────────── */
+
+.clock__layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+}
+
+.clock__face-wrap {
+  width: 100%;
+  display: grid;
+  place-items: center;
+  min-height: 480px;
+}
+
+.clock__loading {
+  color: var(--text-muted);
+  font: var(--text-p1);
+}
+
+.clock__face {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  overflow: visible;
+}
+
+/* De klok en de tijdlijn verschijnen met een klein "groei"-effect. */
+.clock__face,
+.clock__timeline {
+  animation: clock-appear 320ms ease;
+}
+
+/* ── De wijzers ────────────────────────────────────────────────────────────── */
+
+.clock__hand {
+  /* Alle wijzers dezelfde kleur; alleen de lengte toont hoe druk een uur is. */
+  stroke: var(--color-purple);
+  stroke-width: 20;
+  stroke-linecap: round;
+  cursor: pointer;
+  transition: stroke-width 160ms ease, filter 160ms ease;
+  transform-box: fill-box;
+}
+
+.clock__hand:hover,
+.clock__hand--active {
+  stroke-width: 26;
+  filter: drop-shadow(0 0 6px rgb(240 175 0 / 0.55));
+}
+
+.clock__hand:focus-visible {
+  outline: none;
+  stroke-width: 26;
+  filter: drop-shadow(0 0 0 3px var(--color-off-white));
+}
+
+/* ── Naaf (het midden van de klok) met de cijfers ──────────────────────────── */
+
+.clock__hub {
+  fill: var(--color-gold-light);
+  stroke: var(--color-green-dark);
+  stroke-width: 1.5;
+}
+
+.clock__hub-time {
+  fill: var(--color-green-dark);
+  font: var(--text-h3);
+  font-family: var(--font-display);
+}
+
+.clock__hub-value {
+  fill: var(--color-green-dark);
+  font: 800 32px/1 var(--font-display);
+}
+
+.clock__hub-label {
+  fill: rgb(1 70 60 / 0.7);
+  font: var(--text-p2);
+  font-family: var(--font-body);
+}
+
+/* ── Tijd-labels (op de klok én op de tijdlijn) ────────────────────────────── */
+
+.clock__tick {
+  fill: var(--text-primary);
+  font: var(--text-nav-caps);
+  font-family: var(--font-display);
+}
+
+/* ── Tijdlijn van één uur (na klik op een wijzer) ──────────────────────────── */
+
+.clock__timeline {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* Signature huisstijl-knop: pill met 1px rand en paarse "deurbel"-vulling. */
+.clock__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-button);
+  background: var(--accent-primary);
+  color: var(--color-green-dark);
+  font: var(--text-button);
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.clock__back:hover {
+  transform: translateY(-1px);
+  background: var(--accent-primary-strong);
+}
+
+.clock__back:active {
+  transform: translateY(0);
+}
+
+.clock__back:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.clock__timeline-title {
+  font: var(--text-h3);
+  margin: var(--space-6) 0 var(--space-2);
+}
+
+.clock__timeline-sub {
+  font: var(--text-p1);
+  color: var(--text-muted);
+  max-width: 56ch;
+  margin-inline: auto;
+}
+
+.clock__timeline-svg {
+  width: 100%;
+  height: auto;
+  margin-top: var(--space-6);
+  overflow: visible;
+}
+
+/* De tijd-as en de streepjes erop. */
+.clock__timeline-axis {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* Het dunne lijntje van elke vis naar zijn minuut op de as. */
+.clock__timeline-thread {
+  stroke: var(--clock-hairline);
+  stroke-width: 1.5;
+}
+
+/* Het stipje op de as waar het lijntje uitkomt. */
+.clock__timeline-dot {
+  fill: var(--color-gold);
+}
+
+.clock__timeline-spot {
+  font: var(--text-p1);
+  min-height: 1.6em;
+  margin: var(--space-5) 0 0;
+}
+
+/* ── Vissen (op de tijdlijn) ───────────────────────────────────────────────── */
+
+.clock__fish {
+  cursor: pointer;
+  filter: drop-shadow(0 2px 3px rgb(1 70 60 / 0.45));
+  animation: clock-fish-bob 4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.18s);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.clock__fish:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+@keyframes clock-fish-bob {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -3px; }
+}
+
+@keyframes clock-appear {
+  from { opacity: 0; scale: 0.92; }
+  to   { opacity: 1; scale: 1; }
+}
+
+/* Visueel verborgen, wel leesbaar voor screenreaders. */
+.clock__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Responsief ────────────────────────────────────────────────────────────── */
+
+@media (min-width: 769px) {
+  .clock {
+    grid-template-columns: 1fr 1fr;
+    /* Lijn de titel/uitleg uit met de bovenkant van de klok i.p.v. centreren
+       t.o.v. de hele rechterkolom (klok + duiding), anders zakt de tekst
+       onder de klok weg. */
+    align-items: start;
+    gap: var(--space-4);
+    padding-block: var(--space-8);
+  }
+
+  .clock__face-wrap {
+    min-height: 0;
+  }
+
+  .clock__head {
+    text-align: left;
+    max-width: none;
+    margin-inline: 0;
+    padding-right: var(--space-6);
+  }
+
+  .clock__layout {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .clock__head h2 { font: var(--text-h2-m); }
+  .clock__sub { font: var(--text-p1-m); }
+  .clock__face-wrap { min-height: 0; }
+}
+
+/* ── Toegankelijkheid: animaties uit ───────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .clock__fish { animation: none; }
+  .clock__hand { transition: none; }
+  .clock__face,
+  .clock__timeline { animation: none; }
+}

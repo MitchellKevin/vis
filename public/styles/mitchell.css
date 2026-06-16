@@ -87,6 +87,57 @@ body.mitchell-page {
 .visible .reveal:nth-child(3) { transition-delay: 0.2s; }
 .visible .reveal:nth-child(4) { transition-delay: 0.3s; }
 
+/* ── Twee-koloms hoofdstukken: tekst + knoppen | visualisatie ──────────
+ * Actieve viz-hoofdstukken zetten de tekst aan de ene en de grafiek aan de
+ * andere kant (om en om via --reverse) i.p.v. alles gecentreerd. Op smalle
+ * schermen valt het terug op één gecentreerde kolom (tekst boven de grafiek). */
+.chapter-inner.chapter-split {
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: clamp(var(--space-6), 5vw, var(--space-10));
+}
+/* om en om: grafiek links, tekst rechts */
+.chapter-split--reverse > .chapter-text { order: 2; }
+.chapter-split--reverse > .chapter-viz  { order: 1; }
+
+/* Tekstkolom links uitgelijnd i.p.v. gecentreerd */
+.chapter-split > .chapter-text { max-width: none; margin: 0; text-align: left; }
+.chapter-split > .chapter-text .lede { margin-left: 0; margin-right: 0; max-width: 48ch; }
+.chapter-split > .chapter-text .chapter-stat { margin-left: 0; margin-right: 0; }
+
+/* Vizkolom: de grafiek vult de kolom (geen auto-marge/centrering meer) */
+.chapter-split > .chapter-viz {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.chapter-split > .chapter-viz .aquarium-stage,
+.chapter-split > .chapter-viz .radar-stage,
+.chapter-split > .chapter-viz .lang-stage,
+.chapter-split > .chapter-viz .net-stage { width: 100%; margin: 0; }
+.chapter-split > .chapter-viz .net-info { margin: var(--space-4) auto 0; }
+
+/* Knoppen/chips in de tekstkolom links uitlijnen */
+.chapter-split > .chapter-text .aquarium-filters { justify-content: flex-start; margin: var(--space-5) 0 0; max-width: none; }
+.chapter-split > .chapter-text .aquarium-tip { text-align: left; margin: var(--space-4) 0 0; }
+.chapter-split > .chapter-text .net-controls-wrap { align-items: flex-start; margin: var(--space-6) 0 0; }
+
+@media (max-width: 900px) {
+  .chapter-inner.chapter-split { grid-template-columns: 1fr; gap: var(--space-7); }
+  .chapter-split > .chapter-text,
+  .chapter-split > .chapter-viz { order: 0; }
+  .chapter-split > .chapter-text { text-align: center; margin: 0 auto; max-width: 52ch; }
+  .chapter-split > .chapter-text .lede,
+  .chapter-split > .chapter-text .chapter-stat { margin-left: auto; margin-right: auto; }
+  .chapter-split > .chapter-text .aquarium-filters { justify-content: center; }
+  .chapter-split > .chapter-text .aquarium-tip { text-align: center; }
+  .chapter-split > .chapter-text .net-controls-wrap { align-items: center; }
+}
+
 /* Donkere (inverse) hoofdstukken — zelfde palet, omgekeerd */
 .chapter--dark {
   background: var(--color-green-dark);
@@ -218,12 +269,25 @@ body.mitchell-page {
 .screen-win:focus-visible rect { stroke-width: 2.5; }
 
 /* ── Koor van talen ──────────────────────────────────── */
-.lang-stage { width: min(94vw, 900px); aspect-ratio: 900 / 540; margin: var(--space-6) auto 0; }
-.lang-stage svg { width: 100%; height: 100%; }
-.lang-word { cursor: pointer; }
-.lang-word text { transition: filter 0.2s ease; }
-.lang-word:hover text:first-child,
-.lang-word:focus-visible text:first-child { filter: drop-shadow(0 0 10px currentColor); outline: none; }
+.lang-stage {
+  width: min(94vw, 900px);
+  margin: var(--space-6) auto 0;
+}
+.lang-stage svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.lang-word {
+  cursor: default;
+}
+.lang-word:hover,
+.lang-word:focus-visible {
+  opacity: 0.7;
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
 
 /* ── Draaiende globe ─────────────────────────────────── */
 .globe-stage { width: min(92vw, 600px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; }
@@ -259,8 +323,37 @@ body.mitchell-page {
 .pond-counter { bottom: var(--space-4); right: var(--space-4); }
 
 /* ── Wereldkaart ─────────────────────────────────────── */
-.world-stage { width: min(96vw, 1100px); aspect-ratio: 980 / 540; margin: var(--space-7) auto 0; }
+.world-stage {
+  width: min(96vw, 1100px);
+  margin: var(--space-7) auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+.world-svg-host { width: 100%; aspect-ratio: 980 / 540; }
 .world-stage svg { width: 100%; height: 100%; }
+.world-toggle {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid rgb(253 247 239 / 0.35);
+  border-radius: var(--radius-pill);
+  background: rgb(253 247 239 / 0.06);
+}
+.world-toggle-btn {
+  font: var(--text-p2-bold);
+  color: var(--color-off-white);
+  padding: var(--space-2) var(--space-5);
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.world-toggle-btn:hover { background: rgb(253 247 239 / 0.1); }
+.world-toggle-btn.is-active { background: var(--color-purple); color: var(--color-green-dark); }
+.world-toggle-btn:focus-visible { outline: 2px solid var(--color-purple); outline-offset: 2px; }
 .world-dot { cursor: pointer; }
 .world-dot:focus-visible { outline: none; }
 .world-dot:hover .world-dot-glow,
@@ -426,8 +519,16 @@ body.mitchell-page {
 
 .net-stage { width: min(94vw, 900px); aspect-ratio: 900 / 680; margin: var(--space-5) auto 0; }
 .net-stage svg { width: 100%; height: 100%; }
-.net-rope { stroke: rgb(253 247 239 / 0.28); stroke-width: 1; fill: none; }
+.net-stage {
+  background-image:
+    linear-gradient(rgba(253,247,239,0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(253,247,239,0.15) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
 .net-bubble { cursor: pointer; transition: filter 0.2s ease; transform-box: fill-box; }
+.bub-main { stroke: rgb(1 70 60 / 0.28); stroke-width: 1; }
+.bub-shine { fill: rgb(253 247 239 / 0.45); }
+.bub-label { font-family: var(--font-display); font-weight: 800; fill: var(--color-green-dark); text-anchor: middle; }
 .net-bubble:hover, .net-bubble:focus-visible {
   filter: brightness(1.12) drop-shadow(0 0 10px currentColor);
   outline: none;
@@ -443,15 +544,61 @@ body.mitchell-page {
 
 /* ── Radar ───────────────────────────────────────────── */
 .radar-stage { width: min(94vw, 620px); aspect-ratio: 1 / 1; margin: var(--space-7) auto 0; position: relative; }
+.radar-scrubber {
+  width: min(94%, 460px); margin: 20px auto 0;
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
+  font-family: var(--font-body); box-sizing: border-box;
+  background: rgba(253,247,239,0.78);
+  padding: 8px 14px 10px; border-radius: 14px; border: 1px solid rgba(1,70,60,0.16);
+}
+.radar-scrubber div { font-weight: 700; font-size: 13px; color: var(--color-green-dark); text-align: center; }
+.radar-scrubber input[type=range] { width: 100%; accent-color: var(--color-green-dark); }
 .radar-stage svg { width: 100%; height: 100%; }
-.radar-ping { cursor: pointer; }
+
+/* Sweep arm — CSS rotation in SVG coordinate space */
+.radar-sweep-group {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: radar-sweep-rotate 10s linear infinite;
+}
+@keyframes radar-sweep-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Pings — glow in sync with sweep via per-element animation-delay */
+.radar-ping {
+  cursor: pointer;
+  animation: radar-ping-glow 10s linear infinite;
+}
+@keyframes radar-ping-glow {
+  0%   { opacity: 1;    }
+  40%  { opacity: 0.3;  }
+  99%  { opacity: 0.12; }
+  100% { opacity: 1;    }
+}
+.radar-ping:hover,
+.radar-ping:focus-visible,
+.radar-ping.selected {
+  opacity: 1 !important;
+  animation-play-state: paused;
+}
 .radar-ping:hover .radar-ping-bg { opacity: 0.4; }
 .radar-ping.selected .radar-ping-bg { opacity: 0.6; animation: radar-pulse 1.4s ease-out infinite; }
 @keyframes radar-pulse {
   0%   { transform: scale(1);   opacity: 0.5; }
   100% { transform: scale(2.2); opacity: 0; }
 }
-.fish-wiggle { animation: swim-wiggle 1.6s ease-in-out infinite; transform-origin: 60% 50%; }
+
+/* Pause both animations when radar is off-screen */
+.radar-stage.is-paused .radar-sweep-group,
+.radar-stage.is-paused .radar-ping { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-sweep-group { animation: none; }
+  .radar-ping { animation: none; opacity: 1 !important; }
+}
+.fish-wiggle { animation: swim-wiggle 2s ease-in-out infinite; transform-origin: 20% 10%; }
 @keyframes swim-wiggle {
   0%, 100% { transform: rotate(-2deg) translateY(0); }
   50%      { transform: rotate(2deg) translateY(-1px); }
@@ -650,7 +797,7 @@ body.mitchell-page {
 .swim-fish {
   position: fixed;
   left: 0; top: 0;
-  width: 60px; height: 30px;
+  width: 90px; height: 45px;
   z-index: 50;
   pointer-events: none;
   will-change: transform;
@@ -669,5 +816,5 @@ body.mitchell-page {
   65%      { transform: rotate(8deg); }
 }
 @media (max-width: 768px) {
-  .swim-fish { width: 46px; height: 23px; }
+  .swim-fish { width: 68px; height: 34px; }
 }

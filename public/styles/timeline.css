@@ -1,0 +1,375 @@
+:root {
+  --scroll-container-height: 400px;
+  --spacing: 2rem;
+  --fish-img-size: 50px;
+  --bar-height: 30px;
+  --triangle-height: 30px;
+}
+
+/* https://a11yproject.com */
+.visually-hidden {
+  border: 0;
+  clip-path: inset(50%);
+  height: 1px;
+  margin: 0;
+  overflow: clip;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+
+
+/* MARK: Day scroll */
+.day-scroll {
+  padding: 10em 3em;
+
+  .table-scroll-container {
+    position: relative;
+    width: 100%;
+    max-height: var(--scroll-container-height);
+    border-radius: var(--radius-card);
+
+    overflow-x: hidden; /* overflow clip does not work here. Bugs for certain devices with horizontal scroll bar */
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scroll-timeline: --scroll-container-timeline;
+
+    .sticky-container {
+      top: 0;
+      width: 100%;
+      height: var(--scroll-container-height);
+      position: sticky;
+      margin-bottom: calc(var(--scroll-container-height) * -1);
+      z-index: 3;
+
+      .water-visual {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: calc(var(--scroll-container-height) / 1.5);
+        background: var(--color-teal); /* color needs to be manually changed in ::before background-image svg path */
+        opacity: 0.7;
+        pointer-events: none;
+        z-index: 2;
+
+        &::before {
+          content: "";
+          position: absolute;
+          top: -20px;
+          left: 0;
+          width: 100%;
+          height: 20px;
+
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 20' preserveAspectRatio='none'%3E%3Cpath d='M 0 10 Q 150 15, 300 10 T 600 10 T 900 10 T 1200 10 L 1200 20 L 0 20 Z' fill='%231eacb0'/%3E%3C/svg%3E");
+          /* svg written by Claude */
+          background-size: 600px 20px;
+          background-repeat: repeat-x;
+
+          animation: wave-move 10s linear infinite;
+        }
+      }
+
+      .moon,
+      .sun {
+        position: absolute;
+        bottom: calc(var(--scroll-container-height)*-2);
+        left: 50%;
+        transform: translate(-50%, calc(var(--scroll-container-height)*-3 + 5rem)); /* translateY before rotate so it animates from origin point */
+        width: calc(var(--scroll-container-height)/10);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1;
+
+        overflow: clip;
+      }
+
+      .moon {
+        background-color: white;
+        rotate: var(--rotation-moon);
+        box-shadow: 0 0 1.5rem white;
+        animation: moon-rotation linear;
+        animation-timeline: --scroll-container-timeline;
+
+        &::before {
+          position: absolute;
+          content: "";
+          border-radius: 50%;
+          aspect-ratio: 1;
+          width: 25%;
+          background: rgb(212, 212, 212);
+          box-shadow:
+            0 20px rgb(212, 212, 212),
+            20px 25px rgb(212, 212, 212),
+            25px 10px rgb(212, 212, 212);
+        }
+      }
+
+      .sun {
+        background-color: rgb(255, 235, 137);
+        rotate: var(--rotation-sun);
+        box-shadow: 0 0 1.5rem rgb(255, 235, 137);
+        animation: sun-rotation linear;
+        animation-timeline: --scroll-container-timeline;
+      }
+
+      .canal-bottom {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        opacity: .5;
+
+        .canal-bike {
+          position: absolute;
+          max-width: clamp(4rem, 50%, 15rem);
+          bottom: 0;
+          right: 0;
+          margin-inline: 2em;
+        }
+
+        .canal-bag {
+          display: none; /* gets display when motion:no-preference */
+          position: absolute;
+          max-width: clamp(1rem, 8%, 5rem);
+          bottom: 1rem;
+          animation: floating-bag 30s linear infinite;
+        }
+      }
+    }
+
+    .background-visual {
+      position: absolute;
+      width: 100%;
+      height: calc(var(--scroll-container-height)*24);
+      top: 0;
+      z-index: 1;
+      background: linear-gradient(to bottom,
+          var(--color-purple-dark-mode) 0%,
+          var(--color-purple-dark-mode) 25%,
+
+          var(--color-pink) 30%,
+          var(--color-gold) 35%,
+
+          lightblue 40%,
+          lightblue 75%,
+
+          var(--color-gold) 80%,
+          var(--color-pink) 85%,
+
+          var(--color-purple-dark-mode) 90%,
+          var(--color-purple-dark-mode) 100%);
+    }
+
+    table {
+      position: relative;
+      width: 100%;
+      border-collapse: separate;
+      max-width: 600px;
+      padding-inline: var(--spacing);
+      justify-self: center;
+      color: var(--color-off-white);
+      z-index: 4;
+
+      tr {
+        scroll-snap-align: center;
+        scroll-snap-stop: always;
+
+        display: flex;
+        gap: calc(var(--spacing)/2);
+        align-items: center;
+        min-height: var(--scroll-container-height);
+
+        p {
+          margin: 0;
+        }
+
+        .timestamp {
+          position: relative;
+
+          &::after {
+            content: "";
+            position: absolute;
+            bottom: calc(var(--scroll-container-height)/-1 + var(--spacing));
+            left: 50%;
+            width: 1px;
+            height: calc(var(--scroll-container-height)/1 - var(--spacing));
+            background: var(--color-off-white);
+            opacity: .5;
+          }
+        }
+
+        img {
+          max-width: var(--fish-img-size);
+          transform: scaleX(-1) translateX(calc(var(--fish-img-size)*-1)) scale(calc(clamp(1, 1 + (var(--fish-length) * 0.04), 3.5)));
+          animation:
+            wiggle 2s linear infinite,
+            timeline-swim ease-in-out both;
+
+          animation-timeline:
+            auto,
+            view(block);
+          animation-composition: add;
+        }
+
+        .all-info {
+          position: absolute;
+          display: flex;
+          flex-direction: column;
+          right: 0;
+          color: var(--color-green-dark);
+          margin-right: var(--spacing);
+          padding: calc(var(--spacing)/2);
+          background: var(--color-off-white);
+          border: 1px solid var(--color-off-white);
+          border-radius: var(--radius-card);
+
+          p:nth-of-type(1) {
+            font: var(--text-p2);
+          }
+
+          p:nth-of-type(2) {
+            font: var(--text-p1-bold);
+          }
+
+          p:nth-of-type(3) {
+            font: var(--text-p2);
+          }
+        }
+      }
+
+      tr:last-child .timestamp::after {
+        display: none;
+      }
+    }
+  }
+}
+
+
+@property --rotation-moon {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --rotation-sun {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes wave-move {
+    from {
+      background-position-x: 0;
+    }
+
+    to {
+      background-position-x: 600px;
+    }
+  }
+
+  @keyframes wiggle {
+
+    0%,
+    100% {
+      transform: translateY(0) rotate(-2deg);
+    }
+
+    50% {
+      transform: translateY(-4px) rotate(2deg);
+    }
+  }
+
+  @keyframes timeline-swim {
+    0% {
+      transform: translateX(100dvw) translateY(calc(var(--scroll-container-height)/2*-1)) scale(0.4);
+    }
+
+    50% {
+      transform: translateX(0) translateY(0);
+    }
+
+    100% {
+      transform: translateX(-100dvw) translateY(calc(var(--scroll-container-height))) scale(0.4);
+    }
+  }
+
+
+  @keyframes moon-rotation {
+    0% {
+      --rotation-moon: 0deg;
+    }
+
+    40% {
+      --rotation-moon: 40deg;
+    }
+
+    52% {
+      --rotation-moon: 180deg;
+      /* 12 uur smiddags */
+    }
+
+    60% {
+      --rotation-moon: 270deg;
+    }
+
+    100% {
+      --rotation-moon: 360deg;
+    }
+  }
+
+  @keyframes sun-rotation {
+    0% {
+      --rotation-sun: 180deg;
+    }
+
+    20% {
+      --rotation-sun: 320deg;
+    }
+
+    52% {
+      --rotation-sun: 360deg;
+      /* 12 uur smiddags */
+    }
+
+    90% {
+      --rotation-sun: 400deg;
+    }
+
+    100% {
+      --rotation-sun: 540deg;
+    }
+  }
+
+  .canal-bag{
+    display: block !important;
+  }
+
+  @keyframes floating-bag {
+    0% {
+      left: 100%;
+      transform: translateY(-15px) rotate(0deg);
+    }
+
+    15% {
+      transform: translateY(-100px) rotate(30deg);
+    }
+
+    30% {
+      transform: translateY(0) rotate(65deg);
+    }
+
+    45% {
+      transform: translateY(-15px) rotate(90deg);
+    }
+
+    60% {
+      left: -100%;
+      transform: translateY(0) rotate(65deg);
+    }
+    100%{
+      left: -100%;
+    }
+  }
+}

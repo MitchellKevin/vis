@@ -1,12 +1,12 @@
-// ── URLs ─────────────────────────────────────────────────────────────────────
+//  URLs 
 export const TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
 export const DATA_URLS = {
-  maand: '/json/event-maand.json',
-  week:  '/json/event-week.json',
+  maand: '/json/event-maand-slim.json',
+  week:  '/json/event-week-slim.json',
 };
 
-// ── Globe geometry ────────────────────────────────────────────────────────────
+//  Globe geometry 
 export const PAD = 60;
 export const W   = 370 + PAD * 2;
 export const H   = 340 + PAD * 2;
@@ -14,63 +14,38 @@ export const R   = 145;   // default globe radius
 
 export const UTRECHT = [5.1214, 52.0908];
 
-// ── Map mode definitions ──────────────────────────────────────────────────────
+//  Map mode definitions 
 export const MAP_MODES = [
-  { key: 'choropleth', label: 'Bezoeken'  },
-  { key: 'bubble',     label: 'Bellen'    },
-  { key: 'uploadrate', label: 'Upload %'  },
-  { key: 'pies',       label: 'Taarten'   },
-  { key: 'flows',      label: 'Lijnen'    },
-  { key: 'device',     label: 'Apparaat'  },
-  { key: 'fish',       label: 'Vis soort' },
-  { key: 'time',       label: 'Tijdstip'  },
-  { key: 'os',         label: 'OS'        },
-  { key: 'browser',    label: 'Browser'   },
+  { key: 'choropleth_flows', label: 'Bezoeken+Lijnen' },
+  { key: 'fish',             label: 'Vis soort'       },
+  { key: 'time',             label: 'Tijdstip'        },
 ];
 
-// ── Design colours ────────────────────────────────────────────────────────────
+//  Design colours (all from visdeurbel-tokens.css brand palette) 
 export const C = {
-  land:      '#d4ede9',
-  landHover: '#b0d9d4',
-  water:     '#c2e8f5',
-  waterDeep: '#7abcd8',
-  green:     '#1eacb0',
-  greenDark: '#01463c',
-  coral:     '#ff80b9',
-  stroke:    'rgba(1,70,60,0.2)',
-  graticule: 'rgba(1,70,60,0.07)',
+  land:      '#c8ebe6',  // tint of --color-green-dark (light)
+  landHover: '#a8d9d4',  // tint of --color-teal (mid)
+  water:     '#c0e8f5',  // tint of --color-teal (blue-ish)
+  waterDeep: '#1eacb0',  // --color-teal
+  green:     '#1eacb0',  // --color-teal
+  greenDark: '#01463c',  // --color-green-dark
+  coral:     '#ff80b9',  // --color-pink
+  stroke:    'rgba(1,70,60,0.2)',   // --color-green-dark @ 20%
+  graticule: 'rgba(1,70,60,0.07)', // --color-green-dark @ 7%
 };
 
+// Fish species  all from brand palette
 export const FISH_COLORS = {
-  Baars:      '#2196F3',
-  Brasem:     '#FF9800',
-  Karper:     '#9C27B0',
-  Snoekbaars: '#F44336',
-  Paling:     '#795548',
-  unknown:    '#9E9E9E',
+  Baars:      '#1eacb0',  // --color-teal
+  Brasem:     '#f0af00',  // --color-gold
+  Karper:     '#9b74ff',  // --color-purple-bell
+  Snoekbaars: '#ff80b9',  // --color-pink
+  Paling:     '#01463c',  // --color-green-dark
+  unknown:    '#c0a8ff',  // --color-purple
 };
 
-export const OS_COLORS = {
-  Windows:   '#0078D4',
-  macOS:     '#999999',
-  iOS:       '#A2AAAD',
-  Android:   '#3DDC84',
-  Linux:     '#E95420',
-  'Chrome OS':'#FBBC04',
-  Overig:    '#B0BEC5',
-};
 
-export const BROWSER_COLORS = {
-  Chrome:  '#4285F4',
-  Safari:  '#006CFF',
-  Edge:    '#0078D4',
-  Firefox: '#FF7139',
-  Samsung: '#1428A0',
-  Opera:   '#FF1B2D',
-  Overig:  '#B0BEC5',
-};
-
-// ── Lookup tables ─────────────────────────────────────────────────────────────
+//  Lookup tables 
 export const UNKNOWN_VALS = ['unknown', 'Unknown', 'onbekend', 'Onbekend', 'Overig'];
 
 export const ALPHA2_TO_NUMERIC = {

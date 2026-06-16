@@ -4,6 +4,10 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--bg-page);
   color: var(--text-primary);
@@ -15,7 +19,6 @@ body {
 
 header {
   width: 100%;
-  padding: var(--space-6) var(--space-6) 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -35,7 +38,11 @@ main {
   max-width: var(--layout-max-width);
   width: 100%;
   margin: 0 auto;
-  padding: var(--space-11) var(--space-6);
+  padding-block: var(--space-11);
+}
+
+section{
+  padding-inline: var(--space-6);
 }
 
 .hero {

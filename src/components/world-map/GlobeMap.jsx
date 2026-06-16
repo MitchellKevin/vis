@@ -1,63 +1,70 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
-import { C, FISH_COLORS, OS_COLORS, BROWSER_COLORS, CENTROIDS, UTRECHT, MAP_MODES, W, H, R } from './constants.js';
+import { C, FISH_COLORS, CENTROIDS, UTRECHT, MAP_MODES, W, H, R } from './constants.js';
 import { flag, buildTooltipRows } from './utils.js';
 import { MODE_RENDERERS } from './mapModes.js';
 import MapTooltip  from './MapTooltip.jsx';
 import MapLegend   from './MapLegend.jsx';
 import CountryList from './CountryList.jsx';
 
-const COLORS = { C, FISH_COLORS, OS_COLORS, BROWSER_COLORS };
+// Bundle colour tokens so helpers can receive them without a second constants import
+const COLORS = { C, FISH_COLORS };
 
+// Main interactive map component  renders an SVG globe or flat world map with drag, zoom, flow arcs and tooltips
 export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotateTo }) {
-  // ── D3 refs (not React state — mutations shouldn't trigger re-render) ────
-  const svgRef         = useRef(null);
-  const projRef        = useRef(null);
-  const pathGenRef     = useRef(null);
-  const draggingRef    = useRef(false);
-  const dragStartRef   = useRef(null);
-  const rotateStartRef = useRef(null);
-  const panStartRef    = useRef(null);
-  const autoRotateRef  = useRef(true);
-  const rotateTimerRef = useRef(null);
-  const rafRef         = useRef(null);
-  const flowRafRef     = useRef(null);
-  const flowStateRef   = useRef(null);
-  const initialized    = useRef(false);
 
-  // ── React state (drives re-render of tabs / tooltip / legend) ────────────
-  const [mode,     setMode    ] = useState('choropleth');
-  const [projType, setProjType] = useState('globe');        // 'globe' | 'map'
+  //  D3 refs (mutations don't need to trigger re-renders) 
+  const svgRef         = useRef(null);  // SVG DOM element
+  const projRef        = useRef(null);  // current D3 projection instance
+  const pathGenRef     = useRef(null);  // current D3 geoPath generator
+  const draggingRef    = useRef(false); // true while the user is dragging
+  const dragStartRef   = useRef(null);  // cursor position at drag start
+  const rotateStartRef = useRef(null);  // projection rotation at drag start (globe mode)
+  const autoRotateRef  = useRef(true);  // whether the globe is currently auto-spinning
+  const rotateTimerRef = useRef(null);  // setTimeout id for re-enabling auto-rotate after pause
+  const rafRef         = useRef(null);  // rAF id for the main rotation loop
+  const flowRafRef     = useRef(null);  // rAF id for the flow arc animation loop
+  const flowStateRef   = useRef(null);  // latest arc point data (reprojected in redrawAll)
+  const initialized    = useRef(false); // guards the init effect so it only runs once
+
+  // Initial globe radius — 2.4x fills the panel more at startup
+  const INIT_R = Math.round(R * 2.4);
+
+  //  React state (drives tooltip / legend / tab re-renders) 
+  const [mode,     setMode    ] = useState('choropleth_flows');
   const [tooltip,  setTooltip ] = useState({ visible: false, x: 0, y: 0, name: '', rows: [] });
   const [legend,   setLegend  ] = useState(null);
 
-  // Refs that mirror state — used inside D3 callbacks to avoid stale closures
-  const modeRef     = useRef('choropleth');
-  const projTypeRef = useRef('globe');
+  // modeRef mirrors mode state so D3 callbacks read the latest value without stale closures
+  const modeRef     = useRef('choropleth_flows');
 
-  // ── Auto-rotate helpers ──────────────────────────────────────────────────
+  //  Auto-rotate helpers 
+
+  // Pauses auto-rotation and schedules a resume 4 s later (globe mode only)
   const stopAutoRotate = useCallback(() => {
     autoRotateRef.current = false;
     clearTimeout(rotateTimerRef.current);
     rotateTimerRef.current = setTimeout(() => {
-      if (projTypeRef.current === 'globe') autoRotateRef.current = true;
+      autoRotateRef.current = true;
     }, 4000);
   }, []);
 
-  // ── Expose fly-to-country for CountryList ────────────────────────────────
+  //  Fly-to: called by CountryList when the user clicks a country card 
+
+  // Sets onRotateTo.current to a function that smoothly rotates the globe to the given lon/lat
   useEffect(() => {
     if (!onRotateTo) return;
     onRotateTo.current = (lon, lat) => {
-      if (projTypeRef.current !== 'globe') return;
+
       stopAutoRotate();
       const proj  = projRef.current; if (!proj) return;
       const start = proj.rotate();
-      const end   = [-lon, -lat, 0];
+      const end   = [-lon, -lat, 0]; // negate because projection rotate is the inverse of globe rotate
       const interp = d3.interpolate(start, end);
       const dur = 800, t0 = performance.now();
       function step(ts) {
         const t    = Math.min(1, (ts - t0) / dur);
-        const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease-in-out quadratic
         proj.rotate(interp(ease));
         redrawAll();
         if (t < 1) requestAnimationFrame(step);
@@ -66,48 +73,53 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     };
   });
 
-  // ── Visibility check (globe only — flat map always visible) ──────────────
+
+  // Returns true when a screen point (px, py in SVG coords) is inside the globe circle
+  function isOnGlobe(px, py) {
+    const proj = projRef.current; if (!proj) return false;
+    const [cx, cy] = proj.translate();   // centre of the globe in SVG coords
+    const r = proj.scale();              // current radius in pixels
+    return Math.hypot(px - cx, py - cy) <= r;
+  }
+
+  // Converts a mouse event's client coords to SVG-space coords
+  function clientToSVG(clientX, clientY) {
+    const rect = svgRef.current.getBoundingClientRect();
+    return [
+      (clientX - rect.left) * (W / rect.width),
+      (clientY - rect.top)  * (H / rect.height),
+    ];
+  }
+
+  //  Visibility check 
+
+  // Returns true if a lon/lat point is on the visible hemisphere of the globe
   function isVisible(lon, lat) {
-    if (projTypeRef.current !== 'globe') return true;
     const proj = projRef.current; if (!proj) return false;
     const r   = proj.rotate();
     const rot = [-r[0] * Math.PI / 180, -r[1] * Math.PI / 180];
     const pt  = [lon   * Math.PI / 180,  lat  * Math.PI / 180];
+    // Spherical dot product > 0 means the point faces the viewer
     const dot = Math.sin(rot[1]) * Math.sin(pt[1])
               + Math.cos(rot[1]) * Math.cos(pt[1]) * Math.cos(pt[0] - rot[0]);
     return dot > 0;
   }
 
-  // ── Full redraw (called every animation frame and after drag/zoom) ────────
+  //  Full redraw 
+
+  // Re-renders all SVG elements after any projection change (rotation, pan, zoom)
   function redrawAll() {
     const svg = d3.select(svgRef.current);
     const pg  = pathGenRef.current;
     if (!pg) return;
-    const isGlobe = projTypeRef.current === 'globe';
-
-    svg.select('#globe-sphere') .attr('d', pg({ type: 'Sphere' })).attr('display', isGlobe ? null : 'none');
+    svg.select('#globe-sphere') .attr('d', pg({ type: 'Sphere' }));
     svg.select('#graticule-path').attr('d', pg(d3.geoGraticule()()));
-    svg.select('#globe-shine')  .attr('d', pg({ type: 'Sphere' })).attr('display', isGlobe ? null : 'none');
-    svg.select('#globe-outline').attr('d', pg({ type: 'Sphere' })).attr('display', isGlobe ? null : 'none');
-    // background rect always covers full SVG
-    svg.select('#map-bg').attr('display', isGlobe ? 'none' : null);
+    svg.select('#globe-shine')  .attr('d', pg({ type: 'Sphere' }));
+    svg.select('#globe-outline').attr('d', pg({ type: 'Sphere' }));
 
-    if (!isGlobe) {
-      // Flat map: redraw the single country layer and overlays.
-      svg.select('#countries-g').selectAll('path').attr('d', pg);
-      svg.select('#overlays-g').selectAll('.overlay-group').each(function () {
-        const g = d3.select(this);
-        if (g.classed('flow-arc-g')) return;
-        const lon    = +g.attr('data-lon'), lat = +g.attr('data-lat');
-        const coords = projRef.current([lon, lat]);
-        g.attr('opacity', 1);
-        if (coords) g.attr('transform', `translate(${coords[0]},${coords[1]})`);
-      });
-    } else {
-      // Globe mode — single countries-g
-      svg.select('#countries-g').selectAll('path').attr('d', pg);
+    svg.select('#countries-g').selectAll('path').attr('d', pg);
 
-      // Reproject flow arcs
+      // Reproject flow arc points so the animation loop picks up updated screen coords
       if (flowStateRef.current) {
         const cx0 = W / 2, cy0 = H / 2;
         flowStateRef.current.arcData.forEach(d => {
@@ -115,6 +127,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
             const raw = projRef.current([p.glon, p.glat]);
             if (!raw) { p.pt = null; return; }
             p.basePt = raw.slice();
+            // Re-apply radial lift so arcs always bow outward from the canvas centre
             const dx = raw[0] - cx0, dy = raw[1] - cy0;
             const len = Math.hypot(dx, dy) || 1;
             const lift = d.maxLift * Math.sin(p.t * Math.PI);
@@ -123,7 +136,7 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         });
       }
 
-      // Reproject non-flow overlays
+      // Reproject non-flow overlays (e.g. city dots)
       svg.select('#overlays-g').selectAll('.overlay-group').each(function () {
         const g = d3.select(this);
         if (g.classed('flow-arc-g')) return;
@@ -132,10 +145,11 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
         g.attr('opacity', isVisible(lon, lat) ? 1 : 0);
         if (coords) g.attr('transform', `translate(${coords[0]},${coords[1]})`);
       });
-    }
   }
 
-  // ── Tooltip helpers ───────────────────────────────────────────────────────
+  //  Tooltip helpers 
+
+  // Positions and populates the tooltip; clamps X so it doesn't overflow the SVG edge
   function showTT(c, event) {
     const rect = svgRef.current.getBoundingClientRect();
     setTooltip({
@@ -146,51 +160,12 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       rows: buildTooltipRows(c, modeRef.current, COLORS),
     });
   }
+  // Hides tooltip without clearing content to avoid flicker on mouseleave
   function hideTT() { setTooltip(t => ({ ...t, visible: false })); }
 
-  function getFlatMinScale() {
-    const p = d3.geoNaturalEarth1().scale(1).translate([0, 0]);
-    const [[x0, y0], [x1, y1]] = d3.geoPath(p).bounds({ type: 'Sphere' });
-    return Math.min(W / (x1 - x0), H / (y1 - y0)) * 0.88;
-  }
+  // Mode renderer 
 
-  function clampFlatProjection(proj) {
-    if (!proj) return;
-
-    const minScale = getFlatMinScale();
-    if (proj.scale() < minScale) proj.scale(minScale);
-
-    const path = d3.geoPath(proj);
-    const [[x0, y0], [x1, y1]] = path.bounds({ type: 'Sphere' });
-    const width = x1 - x0;
-    const height = y1 - y0;
-
-    let dx = 0;
-    let dy = 0;
-
-    if (width <= W) {
-      dx = W / 2 - (x0 + x1) / 2;
-    } else if (x0 > 0) {
-      dx = -x0;
-    } else if (x1 < W) {
-      dx = W - x1;
-    }
-
-    if (height <= H) {
-      dy = H / 2 - (y0 + y1) / 2;
-    } else if (y0 > 0) {
-      dy = -y0;
-    } else if (y1 < H) {
-      dy = H - y1;
-    }
-
-    if (dx || dy) {
-      const [tx, ty] = proj.translate();
-      proj.translate([tx + dx, ty + dy]);
-    }
-  }
-
-  // ── Run a mode renderer ───────────────────────────────────────────────────
+  // Invokes the renderer for the given mode, passing a shared context, then updates the legend
   const runMode = useCallback((md, cdata, mx) => {
     if (!svgRef.current || !projRef.current) return;
     const svg       = d3.select(svgRef.current);
@@ -199,8 +174,8 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
 
     const countriesG = svg.select('#countries-g');
 
-    // Cancel flow animation when leaving flows mode
-    if (md !== 'flows' && flowRafRef.current) {
+    // Cancel the flow animation when leaving choropleth_flows mode
+    if (md !== 'choropleth_flows' && flowRafRef.current) {
       cancelAnimationFrame(flowRafRef.current);
       flowRafRef.current  = null;
       flowStateRef.current = null;
@@ -213,32 +188,29 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       isVisible, stopAutoRotate,
       showTT, hideTT,
       flowRafRef, flowStateRef, modeRef,
-      C, FISH_COLORS, OS_COLORS, BROWSER_COLORS,
+      C, FISH_COLORS,
       CENTROIDS, UTRECHT, W, H,
     };
 
-    const legendData = (MODE_RENDERERS[md] || MODE_RENDERERS.choropleth)(ctx);
+    const legendData = (MODE_RENDERERS[md] || MODE_RENDERERS.choropleth_flows)(ctx);
     setLegend(legendData);
 
     redrawAll();
   }, [stopAutoRotate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Init SVG (once, when topoFeatures arrive) ─────────────────────────────
+  //  SVG initialisation (runs once when topoFeatures arrive) 
+
   useEffect(() => {
     if (!svgRef.current || !topoFeatures.length || initialized.current) return;
     initialized.current = true;
 
-    const proj = d3.geoOrthographic()
-      .scale(R).translate([W / 2, H / 2]).clipAngle(90).rotate([0, -20, 0]);
-    projRef.current    = proj;
-    pathGenRef.current = d3.geoPath(proj);
+    const svg = d3.select(svgRef.current).attr('width', '100%'); // viewBox is set in JSX, don't override it
 
-    const svg = d3.select(svgRef.current).attr('viewBox', `0 0 ${W} ${H}`).attr('width', '100%');
-
+    // Inject SVG defs: ocean gradient, specular shine, drop-shadow filter
     svg.select('defs').html(`
       <radialGradient id="oceanGrad" cx="38%" cy="35%" r="65%">
-        <stop offset="0%"   stop-color="#C2E4F5"/>
-        <stop offset="100%" stop-color="#6BAED6"/>
+        <stop offset="0%"   stop-color="#1eacb0"/><!-- --color-teal -->
+        <stop offset="100%" stop-color="#0a6b6e"/><!-- darkened teal -->
       </radialGradient>
       <radialGradient id="globeShine" cx="35%" cy="30%" r="60%">
         <stop offset="0%"   stop-color="white" stop-opacity="0.18"/>
@@ -249,6 +221,13 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       </filter>
     `);
 
+    // Globe init
+    const proj = d3.geoOrthographic()
+      .scale(INIT_R).translate([W / 2, H / 2]).clipAngle(90).rotate([-5, -52, 0]);
+    projRef.current    = proj;
+    pathGenRef.current = d3.geoPath(proj);
+
+    // Ocean sphere rendered behind graticule and countries
     svg.insert('path', '#graticule-g')
       .attr('id', 'globe-sphere')
       .attr('d', pathGenRef.current({ type: 'Sphere' }))
@@ -273,26 +252,28 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       })
       .on('mouseleave', function (event, d) {
         hideTT();
-        // Restore fill via current mode renderer logic
         const c = countryData[d.id];
         if (!c) { d3.select(this).attr('fill', C.land); return; }
-        // Re-run fill for this single element
         runMode(modeRef.current, countryData, maxEvents);
       });
 
+    // Specular highlight on top of countries, below tooltips
     svg.append('path').attr('id', 'globe-shine')
       .attr('d', pathGenRef.current({ type: 'Sphere' }))
       .attr('fill', 'url(#globeShine)').attr('pointer-events', 'none');
+    // Thin ring around the globe edge
     svg.append('path').attr('id', 'globe-outline')
       .attr('d', pathGenRef.current({ type: 'Sphere' }))
       .attr('fill', 'none').attr('stroke', 'rgba(27,67,50,0.2)').attr('stroke-width', 1).attr('pointer-events', 'none');
 
-    // ── Drag: globe=rotate, flat=pan ───────────────────────────────────────
+
+    // Drag: rotate the globe
     svg.on('mousedown', function (event) {
+      const [sx, sy] = clientToSVG(event.clientX, event.clientY);
+      if (!isOnGlobe(sx, sy)) return; // ignore clicks outside the globe
       draggingRef.current = true;
       dragStartRef.current = [event.clientX, event.clientY];
-      if (projTypeRef.current === 'globe') rotateStartRef.current = projRef.current.rotate().slice();
-      else panStartRef.current = projRef.current.translate().slice();
+      rotateStartRef.current = projRef.current.rotate().slice();
       stopAutoRotate();
       event.preventDefault();
     })
@@ -300,23 +281,21 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       if (!draggingRef.current) return;
       const dx = event.clientX - dragStartRef.current[0];
       const dy = event.clientY - dragStartRef.current[1];
-      if (projTypeRef.current === 'globe') {
-        projRef.current.rotate([rotateStartRef.current[0] + dx * 0.3, rotateStartRef.current[1] - dy * 0.3, rotateStartRef.current[2]]);
-      } else {
-        projRef.current.translate([panStartRef.current[0] + dx, panStartRef.current[1] + dy]);
-        clampFlatProjection(projRef.current);
-      }
+      // 0.3 deg/px feels natural without being over-sensitive
+      projRef.current.rotate([rotateStartRef.current[0] + dx * 0.3, rotateStartRef.current[1] - dy * 0.3, rotateStartRef.current[2]]);
       redrawAll();
     })
     .on('mouseup',    () => { draggingRef.current = false; })
     .on('mouseleave', () => { draggingRef.current = false; });
 
+    //  Touch drag (mirrors mouse drag logic for mobile) 
     svg.on('touchstart', function (event) {
       const t = event.touches[0];
+      const [sx, sy] = clientToSVG(t.clientX, t.clientY);
+      if (!isOnGlobe(sx, sy)) return; // ignore touches outside the globe
       draggingRef.current  = true;
       dragStartRef.current = [t.clientX, t.clientY];
-      if (projTypeRef.current === 'globe') rotateStartRef.current = projRef.current.rotate().slice();
-      else panStartRef.current = projRef.current.translate().slice();
+      rotateStartRef.current = projRef.current.rotate().slice();
       stopAutoRotate();
     }, { passive: true })
     .on('touchmove', function (event) {
@@ -324,39 +303,26 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
       const t  = event.touches[0];
       const dx = t.clientX - dragStartRef.current[0];
       const dy = t.clientY - dragStartRef.current[1];
-      if (projTypeRef.current === 'globe') {
-        projRef.current.rotate([rotateStartRef.current[0] + dx * 0.35, rotateStartRef.current[1] - dy * 0.35, rotateStartRef.current[2]]);
-      } else {
-        projRef.current.translate([panStartRef.current[0] + dx, panStartRef.current[1] + dy]);
-        clampFlatProjection(projRef.current);
-      }
+      projRef.current.rotate([rotateStartRef.current[0] + dx * 0.35, rotateStartRef.current[1] - dy * 0.35, rotateStartRef.current[2]]);
       redrawAll();
     }, { passive: true })
     .on('touchend', () => { draggingRef.current = false; });
 
-    // ── Scroll: globe=scale, flat=zoom-to-cursor ───────────────────────────
+    //  Scroll: globe = scale, flat = zoom toward cursor 
     svg.on('wheel', function (event) {
+      const [sx, sy] = clientToSVG(event.clientX, event.clientY);
+      if (!isOnGlobe(sx, sy)) return; // ignore scroll outside the globe
       event.preventDefault();
       stopAutoRotate();
       const p = projRef.current;
-      if (projTypeRef.current === 'globe') {
-        const delta = event.deltaY > 0 ? -20 : 20;
-        p.scale(Math.max(150, Math.min(800, p.scale() + delta)));
-      } else {
-        const rect   = svgRef.current.getBoundingClientRect();
-        const mx     = (event.clientX - rect.left) * (W / rect.width);
-        const my     = (event.clientY - rect.top)  * (H / rect.height);
-        const factor = event.deltaY > 0 ? 0.91 : 1.1;
-        const newS   = Math.max(getFlatMinScale(), Math.min(1200, p.scale() * factor));
-        const [tx, ty] = p.translate();
-        p.translate([mx + (tx - mx) * (newS / p.scale()), my + (ty - my) * (newS / p.scale())]).scale(newS);
-        clampFlatProjection(p);
-      }
+      const delta = event.deltaY > 0 ? -20 : 20;
+      p.scale(Math.max(150, Math.min(1600, p.scale() + delta)));
       redrawAll();
     }, { passive: false });
 
-    // ── Auto-rotation loop ─────────────────────────────────────────────────
+    //  Auto-rotation loop 
     let lastTs = null;
+    // Advances the globe 0.012 deg per ms when auto-rotate is active
     function frame(ts) {
       if (autoRotateRef.current && !draggingRef.current) {
         if (lastTs !== null) {
@@ -374,94 +340,23 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     runMode(modeRef.current, countryData, maxEvents);
   }, [topoFeatures]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Re-render when data changes ───────────────────────────────────────────
+  // Re-runs the current mode renderer whenever countryData or maxEvents changes (period switch)
   useEffect(() => {
     if (!initialized.current || !topoFeatures.length) return;
     runMode(modeRef.current, countryData, maxEvents);
   }, [countryData, maxEvents, runMode]);
 
-  // ── Cleanup ───────────────────────────────────────────────────────────────
+  // Cancel both animation loops on unmount to prevent memory leaks
   useEffect(() => () => {
     cancelAnimationFrame(rafRef.current);
     cancelAnimationFrame(flowRafRef.current);
   }, []);
 
-  // ── Switch projection ─────────────────────────────────────────────────────
-  function switchProjType(pt) {
-    if (!initialized.current) return;
-    projTypeRef.current = pt;
-    setProjType(pt);
+  // Mode tab change
 
-    const svg = d3.select(svgRef.current);
+  
 
-    if (pt === 'globe') {
-      autoRotateRef.current = true;
-      const p = d3.geoOrthographic().scale(R).translate([W / 2, H / 2]).clipAngle(90).rotate([0, -20, 0]);
-      projRef.current    = p;
-      pathGenRef.current = d3.geoPath(p);
-
-      // Remove tile groups, restore single countries-g
-      svg.selectAll('.tile-g').remove();
-      svg.selectAll('.graticule-tile').remove();
-      let cg = svg.select('#countries-g');
-      if (cg.empty()) cg = svg.insert('g', '#overlays-g').attr('id', 'countries-g');
-      cg.selectAll('path')
-        .data(topoFeatures).join('path')
-        .attr('class', 'map-country')
-        .attr('d', pathGenRef.current)
-        .attr('stroke', C.stroke).attr('stroke-width', 0.5).attr('fill', C.land)
-        .on('mouseover', function (event, d) {
-          const c = countryData[d.id];
-          if (c) { stopAutoRotate(); showTT(c, event); }
-          const current = d3.select(this).attr('fill') || C.land;
-          try { d3.select(this).attr('fill', d3.color(current).darker(0.5).toString()); } catch (e) {}
-        })
-        .on('mouseleave', function () {
-          hideTT();
-          runMode(modeRef.current, countryData, maxEvents);
-        });
-
-    } else {
-      autoRotateRef.current = false;
-      clearTimeout(rotateTimerRef.current);
-
-      // Fit NaturalEarth to viewBox
-      const p = d3.geoNaturalEarth1().scale(1).translate([0, 0]);
-      const [[x0, y0], [x1, y1]] = d3.geoPath(p).bounds({ type: 'Sphere' });
-      const scale = Math.min(W / (x1 - x0), H / (y1 - y0)) * 0.88;
-      p.scale(scale).translate([W / 2, H / 2]);
-      clampFlatProjection(p);
-      projRef.current    = p;
-      pathGenRef.current = d3.geoPath(p);
-
-      // Remove any leftover tiled layers from a previous version.
-      svg.selectAll('.tile-g').remove();
-      svg.selectAll('.graticule-tile').remove();
-
-      let cg = svg.select('#countries-g');
-      if (cg.empty()) cg = svg.insert('g', '#overlays-g').attr('id', 'countries-g');
-      cg.selectAll('path')
-        .data(topoFeatures).join('path')
-        .attr('class', 'map-country')
-        .attr('d', pathGenRef.current)
-        .attr('stroke', C.stroke).attr('stroke-width', 0.5).attr('fill', C.land)
-        .on('mouseover', function (event, d) {
-          const c = countryData[d.id];
-          if (c) showTT(c, event);
-          const current = d3.select(this).attr('fill') || C.land;
-          try { d3.select(this).attr('fill', d3.color(current).darker(0.5).toString()); } catch (e) {}
-        })
-        .on('mouseleave', function () {
-          hideTT();
-          runMode(modeRef.current, countryData, maxEvents);
-        });
-    }
-
-    runMode(modeRef.current, countryData, maxEvents);
-    redrawAll();
-  }
-
-  // ── Mode tab change ───────────────────────────────────────────────────────
+  // Updates both React state (active tab highlight) and the ref (D3 callbacks read the ref)
   function handleModeChange(md) {
     setMode(md);
     modeRef.current = md;
@@ -469,40 +364,44 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
     runMode(md, countryData, maxEvents);
   }
 
-  // ── Reset ─────────────────────────────────────────────────────────────────
-  function handleReset() {
-    stopAutoRotate();
-    if (!projRef.current) return;
-    if (projTypeRef.current === 'globe') {
-      projRef.current.scale(R).rotate([0, -20, 0]);
-      autoRotateRef.current = true;
-    } else {
-      const p = d3.geoNaturalEarth1().scale(1).translate([0, 0]);
-      const [[x0, y0], [x1, y1]] = d3.geoPath(p).bounds({ type: 'Sphere' });
-      const scale = Math.min(W / (x1 - x0), H / (y1 - y0)) * 0.92;
-      projRef.current.scale(scale).translate([W / 2, H / 2]);
-      clampFlatProjection(projRef.current);
-    }
-    redrawAll();
-  }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  //  Render 
   return (
     <div className="map-panel">
 
-      {/* Tab bar — full width across both columns */}
+      {/* Globe SVG  positioned right, overflows intentionally */}
+      <div className="map-globe-col">
+        <svg
+          ref={svgRef}
+          id="map-svg"
+          viewBox={`${-W * 0.10} 0 ${W} ${H}`}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs />
+          <g id="graticule-g" />
+          <g id="countries-g" />
+          <g id="overlays-g" />
+        </svg>
+        <MapTooltip tooltip={tooltip} />
+      </div>
+
+      {/* Country cards  floating top-left */}
+      <div className="map-overlay-left">
+        <CountryList
+          countryData={countryData}
+          onFlyTo={(lon, lat) => {
+            if (onRotateTo?.current) onRotateTo.current(lon, lat);
+          }}
+        />
+      </div>
+
+      {/* Legend  floating bottom-left */}
+      <div className="map-overlay-legend">
+        <MapLegend legend={legend} />
+      </div>
+
+      {/* Mode tabs  floating bottom-right */}
       <div className="map-tabs">
-        <div className="proj-toggle">
-          <button className={`proj-btn${projType === 'globe' ? ' active' : ''}`} onClick={() => switchProjType('globe')} title="Wereldbol">
-            🌍 Bol
-          </button>
-          <button className={`proj-btn${projType === 'map' ? ' active' : ''}`} onClick={() => switchProjType('map')} title="Platte kaart">
-            🗺️ Kaart
-          </button>
-        </div>
-
-        <div className="map-tabs-divider" />
-
         {MAP_MODES.map(m => (
           <button
             key={m.key}
@@ -512,50 +411,9 @@ export default function GlobeMap({ countryData, maxEvents, topoFeatures, onRotat
             {m.label}
           </button>
         ))}
-
-        <button className="map-tab map-tab--reset" onClick={handleReset}>⊙ Reset</button>
       </div>
 
-      {/* Two-column body */}
-      <div className="map-body">
-
-        {/* Left: globe SVG */}
-        <div className="map-globe-col">
-          <svg
-            ref={svgRef}
-            id="map-svg"
-            viewBox={`0 0 ${W} ${H}`}
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <defs />
-            {/* bg extends far left/right to cover tiled world copies */}
-            <rect id="map-bg" x="-5000" y="-500" width="12000" height={H + 1000} fill="#c2e8f5" display="none" />
-            <g id="graticule-g" />
-            <g id="countries-g" />
-            <g id="overlays-g" />
-          </svg>
-
-          <MapTooltip tooltip={tooltip} />
-          <MapLegend  legend={legend}   />
-        </div>
-
-        {/* Right: country list */}
-        <div className="map-country-col">
-          <div className="map-country-col__header">
-            <span className="map-country-col__title">Per land</span>
-            <span className="map-country-col__sub">🐟 vissen gespot</span>
-          </div>
-          <CountryList
-            countryData={countryData}
-            onFlyTo={(lon, lat) => {
-              if (onRotateTo?.current) onRotateTo.current(lon, lat);
-            }}
-          />
-        </div>
-
-      </div>
-
-      {/* Loading overlay */}
+      {/* Loading overlay  toggled via CSS by the parent when data is loading */}
       <div id="loading-overlay" className="loading-overlay hidden">
         <div className="loading-inner">
           <div className="loading-fish">🐟</div>

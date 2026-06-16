@@ -13,33 +13,45 @@ function CheckIcon() {
   )
 }
 
-// Toggle-switch knop met de naam van de vis.
+// Toggle-switch met de naam van de vis. Een <label> rond een (visueel
+// verborgen) echte checkbox: native toetsenbordbediening en de naam wordt
+// automatisch de toegankelijke naam van de checkbox.
 function FishPill({ name, isChecked, onToggle }) {
   return (
-    <button
-      className={`embla__slide__pill${isChecked ? ' embla__slide__pill--checked' : ''}`}
-      role="checkbox"
-      aria-checked={isChecked}
-      onClick={onToggle}
-    >
+    <label className={`embla__slide__pill${isChecked ? ' embla__slide__pill--checked' : ''}`}>
+      <input
+        type="checkbox"
+        className="embla__slide__checkbox"
+        checked={isChecked}
+        onChange={onToggle}
+      />
       <span className="embla__slide__knob" aria-hidden="true">
         <CheckIcon />
       </span>
       <span className="embla__slide__name">{name}</span>
-    </button>
+    </label>
   )
 }
 
-// Eén slide: de visafbeelding met de toggle-knop eronder.
-export default function FishSlide({ fish, isChecked, onToggle }) {
+// Eén slide: de klikbare visafbeelding met de toggle-knop eronder.
+export default function FishSlide({ fish, isChecked, onToggle, onOpen }) {
   return (
     <div className="embla__slide">
-      <img
-        className="embla__slide__img"
-        src={fish.img}
-        alt={fish.name}
-        draggable="false"
-      />
+      {/* De afbeelding zit in een <button>: zo is het openen van de dialog
+          met toetsenbord (Tab + Enter/Space) bereikbaar en kondigt een
+          screenreader een echte actie aan i.p.v. alleen een plaatje. */}
+      <button
+        className="embla__slide__img-btn"
+        onClick={onOpen}
+        aria-label={`Meer over de ${fish.name}`}
+      >
+        <img
+          className="embla__slide__img"
+          src={fish.img}
+          alt={fish.name}
+          draggable="false"
+        />
+      </button>
       <FishPill name={fish.name} isChecked={isChecked} onToggle={onToggle} />
     </div>
   )

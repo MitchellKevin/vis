@@ -1,3 +1,12 @@
+/* ============================================================================
+ * Julius — Belritme-pagina
+ * ----------------------------------------------------------------------------
+ * Donkergroene pagina (zoals Mitchell) met de huisstijl-omlijsting van Joost:
+ * een page-header met eyebrow + grote h1 (met paars accent) + subtitel, de
+ * gecentreerde Clock als content, en een Visdeurbel-footer. Alle kleuren via
+ * de semantische tokens uit visdeurbel-tokens.css — geen losse hex-waarden.
+ * ========================================================================== */
+
 @import url('visdeurbel-tokens.css');
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -11,10 +20,113 @@ body.julius-page {
   flex-direction: column;
 }
 
+/* ── Page header ──────────────────────────────────────────────────────────── */
+
+.julius-header {
+  max-width: var(--layout-max-width);
+  width: 100%;
+  margin-inline: auto;
+  padding: var(--space-11) var(--layout-gutter) var(--space-9);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-7);
+}
+
+.julius-header__inner {
+  max-width: 640px;
+}
+
+.julius-header__eyebrow {
+  font: var(--text-nav-caps);
+  color: var(--color-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-3);
+}
+
+.julius-header h1 {
+  font: var(--text-h1);
+  color: var(--text-on-inverse);
+  margin-bottom: var(--space-4);
+}
+
+.julius-header h1 em {
+  font-style: italic;
+  color: var(--color-purple);
+}
+
+.julius-header__sub {
+  font: var(--text-p1);
+  color: color-mix(in srgb, var(--color-off-white) 75%, transparent);
+  margin: 0;
+}
+
+.julius-header__deco {
+  font-size: 2.4rem;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
+/* ── Content ──────────────────────────────────────────────────────────────── */
+
 .julius-main {
   flex: 1;
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+
+.julius-footer {
+  margin-top: var(--space-11);
+  padding: var(--space-11) var(--space-6) var(--space-6);
+  border-top: 1px solid color-mix(in srgb, var(--color-off-white) 14%, transparent);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.julius-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-nav);
+  color: var(--text-on-inverse);
+  margin-bottom: var(--space-2);
+}
+
+.julius-footer__logo {
+  font-size: 1.4rem;
+}
+
+.julius-footer__tagline {
+  font: var(--text-subnav);
+  color: color-mix(in srgb, var(--color-off-white) 65%, transparent);
+  margin: 0;
+}
+
+.julius-footer__copy {
+  font: var(--text-p2);
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-off-white) 40%, transparent);
+  margin: 0;
+}
+
+/* ── Responsief ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .julius-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-5);
+    padding: var(--space-8) var(--layout-gutter) var(--space-7);
+  }
+  .julius-header h1 { font: var(--text-h1-m); }
+  .julius-header__sub { font: var(--text-p1-m); }
+  .julius-header__deco { font-size: 1.8rem; }
 }
