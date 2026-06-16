@@ -1,28 +1,28 @@
-import { useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import GlobeMap from '../components/world-map/GlobeMap.jsx';
-import { useStylesheet } from '../hooks/useStylesheet.js';
-import useJoostData from '../components/world-map/useJoostData.js';
-import DayScroll from '../components/timeline/day-scroll.jsx';
-import FishSprite from '../components/mitchell-components/FishSprite.jsx';
-import NetChapter from '../components/mitchell-components/NetChapter.jsx';
-import DataSwitch from '../components/mitchell-components/DataSwitch.jsx';
-import Aquarium from '../components/mitchell-components/Aquarium.jsx';
-import DataCarousel from '../components/mitchell-components/DataCarousel.jsx';
-import SectionWave from '../components/mitchell-components/SectionWave.jsx';
-import LanguagesChapter from '../components/mitchell-components/LanguagesChapter.jsx';
-import RadarChapter from '../components/mitchell-components/RadarChapter.jsx';
-import { initMitchell } from '../scripts/mitchell.js';
-
+import { useRef, useEffect } from "react";
+import GlobeMap from "../components/world-map/GlobeMap.jsx";
+import { useStylesheet } from "../hooks/useStylesheet.js";
+import useJoostData from "../components/world-map/useJoostData.js";
+import DayScroll from "../components/timeline/day-scroll.jsx";
+import Clock from "../components/clock/Clock.jsx";
+import FishSprite from "../components/mitchell-components/FishSprite.jsx";
+import NetChapter from "../components/mitchell-components/NetChapter.jsx";
+import DataSwitch from "../components/mitchell-components/DataSwitch.jsx";
+import Aquarium from "../components/mitchell-components/Aquarium.jsx";
+import DataCarousel from "../components/mitchell-components/DataCarousel.jsx";
+import SectionWave from "../components/mitchell-components/SectionWave.jsx";
+import LanguagesChapter from "../components/mitchell-components/LanguagesChapter.jsx";
+import RadarChapter from "../components/mitchell-components/RadarChapter.jsx";
+import { initMitchell } from "../scripts/mitchell.js";
 
 export default function Home() {
-  useStylesheet('/styles/index.css');
-  useStylesheet('/styles/timeline.css');
-  useStylesheet('/styles/joost.css');
-  useStylesheet('/styles/mitchell.css');
-  useStylesheet('/styles/mitchell-week1.css');
-  useStylesheet('/styles/mitchell-carousel.css');
-  useStylesheet('/styles/mitchell-sections.css');
+  useStylesheet("/styles/index.css");
+  useStylesheet("/styles/timeline.css");
+  useStylesheet("/styles/joost.css");
+  useStylesheet("/styles/mitchell.css");
+  useStylesheet("/styles/mitchell-week1.css");
+  useStylesheet("/styles/mitchell-carousel.css");
+  useStylesheet("/styles/mitchell-sections.css");
+  useStylesheet("/styles/clock.css");
 
   const flyToRef = useRef(null);
 
@@ -52,37 +52,12 @@ export default function Home() {
             meesterproef.
           </p>
         </section>
-        <section>
-          <div className="grid">
-            <Link className="card" to="/julius">
-              <span className="card__label">Julius</span>
-              <h2 className="card__title">Visualisatie Julius</h2>
-              <p className="card__desc">
-                Persoonlijk visualisatieproject van Julius.
-              </p>
-              <span className="card__link">Bekijken →</span>
-            </Link>
-            <Link className="card" to="/mitchell">
-              <span className="card__label">Mitchell</span>
-              <h2 className="card__title">Visualisatie Mitchell</h2>
-              <p className="card__desc">
-                Persoonlijk visualisatieproject van Mitchell.
-              </p>
-              <span className="card__link">Bekijken →</span>
-            </Link>
-            <a className="card" href="#timeline">
-              <h2 className="card__title">Timeline Visualisatie</h2>
-              <p className="card__desc">
-                Visualisaties van hoeveel vissen op welk tijdstip van de dag te
-                zien zijn.
-              </p>
-              <span className="card__link">Bekijken ↓</span>
-            </a>
-          </div>
-        </section>
       </main>
 
-      <SectionWave top="var(--color-off-white)" bottom="var(--color-gold-light)" />
+      <SectionWave
+        top="var(--color-off-white)"
+        bottom="var(--color-gold-light)"
+      />
 
       {loading ? (
         <div className="map-panel map-panel--loading">
@@ -100,16 +75,33 @@ export default function Home() {
         />
       )}
 
-      <SectionWave top="var(--color-gold-light)" bottom="var(--color-off-white)" />
+      <SectionWave
+        top="var(--color-gold-light)"
+        bottom="var(--color-off-white)"
+      />
 
       <DayScroll />
 
-      <SectionWave top="var(--color-off-white)" bottom="var(--color-gold-light)" />
+      <Clock />
+
+      <SectionWave
+        top="var(--color-off-white)"
+        bottom="var(--color-gold-light)"
+      />
 
       <FishSprite />
       <DataSwitch />
-      <div className="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
-      <main id="mitchell-main" aria-label="Datavisualisatie over de Visdeurbel, door Mitchell" style={{ paddingBlock: 0, maxWidth: 'none' }}>
+      <div
+        className="fish-tooltip"
+        id="fishTooltip"
+        role="status"
+        aria-live="polite"
+      ></div>
+      <main
+        id="mitchell-main"
+        aria-label="Datavisualisatie over de Visdeurbel, door Mitchell"
+        style={{ paddingBlock: 0, maxWidth: "none" }}
+      >
         <DataCarousel />
         <SectionWave
           top="var(--color-gold-light)"
@@ -133,7 +125,10 @@ export default function Home() {
         <NetChapter />
       </main>
 
-      <SectionWave top="var(--color-gold-light)" bottom="var(--color-green-dark)" />
+      <SectionWave
+        top="var(--color-gold-light)"
+        bottom="var(--color-green-dark)"
+      />
 
       <footer>
         <div className="footer__inner">

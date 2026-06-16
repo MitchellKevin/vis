@@ -10,7 +10,7 @@
 .clock {
   --clock-hairline: rgb(1 70 60 / 0.2);
 
-  background: white;
+  background: var(--bg-page);
   max-width: var(--layout-max-width);
   margin-inline: auto;
   padding: var(--space-10) var(--layout-gutter) var(--space-11);
