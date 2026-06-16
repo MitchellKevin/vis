@@ -20,6 +20,24 @@ import SectionWave from "../components/mitchell-components/SectionWave.jsx";
 import LanguagesChapter from "../components/mitchell-components/LanguagesChapter.jsx";
 import RadarChapter from "../components/mitchell-components/RadarChapter.jsx";
 import { initMitchell } from "../scripts/mitchell.js";
+import { useRef, useEffect, useState } from 'react';
+import GlobeMap from '../components/world-map/GlobeMap.jsx';
+import { useStylesheet } from '../hooks/useStylesheet.js';
+import useJoostData from '../components/world-map/useJoostData.js';
+
+// Timeline
+import DayScroll from '../components/timeline/day-scroll.jsx';
+
+// Mitchell components
+import FishSprite from '../components/mitchell-components/FishSprite.jsx';
+import NetChapter from '../components/mitchell-components/NetChapter.jsx';
+import DataSwitch from '../components/mitchell-components/DataSwitch.jsx';
+import Aquarium from '../components/mitchell-components/Aquarium.jsx';
+import DataCarousel from '../components/mitchell-components/DataCarousel.jsx';
+import SectionWave from '../components/mitchell-components/SectionWave.jsx';
+import LanguagesChapter from '../components/mitchell-components/LanguagesChapter.jsx';
+import RadarChapter from '../components/mitchell-components/RadarChapter.jsx';
+import { initMitchell } from '../scripts/mitchell.js';
 
 function AccessibilityMenu() {
   const [open, setOpen] = useState(false);
@@ -109,7 +127,6 @@ export default function Home() {
 
   return (
     <>
-      <Nav />
       <header>
         <span className="logo">Visdeurbel</span>
       </header>
@@ -188,6 +205,32 @@ export default function Home() {
         aria-label="Datavisualisatie over de Visdeurbel, door Mitchell"
         style={{ paddingBlock: 0, maxWidth: "none" }}
       >
+        {/* Globe map — outside <main> so index.css max-width doesn't constrain it */}
+        {loading ? (
+          <div className="map-panel map-panel--loading">
+            <div className="loading-inner">
+              <div className="loading-fish">🐟</div>
+              <div className="loading-text">Data laden…</div>
+            </div>
+          </div>
+        ) : (
+          <GlobeMap
+            countryData={countryData}
+            maxEvents={maxEvents}
+            topoFeatures={topoFeatures}
+            onRotateTo={flyToRef}
+          />
+        )}
+
+        <DayScroll />
+
+        <FishSprite />
+        <DataSwitch />
+        <AccessibilityMenu />
+      </main>
+
+      <div className="fish-tooltip" id="fishTooltip" role="status" aria-live="polite"></div>
+      <main id="mitchell-main" aria-label="Datavisualisatie over de Visdeurbel, door Mitchell" style={{ paddingBlock: 0, maxWidth: 'none' }}>
         <p className="sr-only">
           Dit is een scrollende datavisualisatie over de Visdeurbel. De
           grafieken zijn visueel; bij elke sectie staat de uitleg en staan de
