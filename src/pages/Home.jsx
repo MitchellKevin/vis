@@ -61,36 +61,6 @@ export default function Home() {
         bottom="var(--color-gold-light)"
       />
 
-      {loading ? (
-        <div className="map-panel map-panel--loading">
-          <div className="loading-inner">
-            <div className="loading-fish">🐟</div>
-            <div className="loading-text">Data laden…</div>
-          </div>
-        </div>
-      ) : (
-        <GlobeMap
-          countryData={countryData}
-          maxEvents={maxEvents}
-          topoFeatures={topoFeatures}
-          onRotateTo={flyToRef}
-        />
-      )}
-
-      <SectionWave
-        top="var(--color-gold-light)"
-        bottom="var(--color-off-white)"
-      />
-
-      <DayScroll />
-
-      <Clock />
-
-      <SectionWave
-        top="var(--color-off-white)"
-        bottom="var(--color-gold-light)"
-      />
-
       <FishSprite />
       <DataSwitch />
       <div
@@ -126,6 +96,36 @@ export default function Home() {
         />
         <NetChapter />
       </main>
+
+      <SectionWave
+        top="var(--color-gold-light)"
+        bottom="var(--color-off-white)"
+      />
+
+      <DayScroll />
+
+      <Clock />
+
+      <SectionWave
+        top="var(--color-off-white)"
+        bottom="var(--color-gold-light)"
+      />
+
+      {loading ? (
+        <div className="map-panel map-panel--loading">
+          <div className="loading-inner">
+            <div className="loading-fish">🐟</div>
+            <div className="loading-text">Data laden…</div>
+          </div>
+        </div>
+      ) : (
+        <GlobeMap
+          countryData={countryData}
+          maxEvents={maxEvents}
+          topoFeatures={topoFeatures}
+          onRotateTo={flyToRef}
+        />
+      )}
 
       <SectionWave
         top="var(--color-gold-light)"
