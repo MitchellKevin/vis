@@ -9,10 +9,10 @@ import { initSwimFish } from './mitchell/swimFish.js';
 import { initHero      } from './mitchell/charts/legacy/hero.js';
 import { initRing      } from './mitchell/charts/legacy/ring.js';
 import { initWorld     } from './mitchell/charts/legacy/world.js';
-import { initLanguages } from './mitchell/charts/languages.js';
-import { initRadar     } from './mitchell/charts/radar.js';
-import { initAquarium  } from './mitchell/charts/aquarium.js';
-import { initNet       } from './mitchell/charts/net.js';
+import { initLanguages } from '../components/mitchell-components/LanguagesChapter.jsx';
+import { initRadar     } from '../components/mitchell-components/RadarChapter.jsx';
+import { initAquarium  } from '../components/mitchell-components/Aquarium.jsx';
+import { initNet       } from '../components/mitchell-components/NetChapter.jsx';
 
 export function initMitchell() {
   const { cleanups, rafs } = lifecycle;
@@ -59,7 +59,7 @@ export function initMitchell() {
     $$('.chapter').forEach(c => { delete c.dataset.inited; });
     STAGES.forEach(sel => {
       const s = $(sel);
-      if (s) s.querySelectorAll('svg, canvas, .aquarium-counter, .aquarium-rip').forEach(n => n.remove());
+      if (s) s.querySelectorAll('svg:not([data-static]), canvas, .aquarium-counter, .aquarium-rip').forEach(n => n.remove());
     });
     const rd = $('#radarDetail'); if (rd) rd.classList.remove('visible');
   }
