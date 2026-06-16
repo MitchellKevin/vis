@@ -5,28 +5,39 @@ import { state, lifecycle, raf } from '../../scripts/mitchell/state.js';
 
 const spriteCache = {};
 const imageCache = {};
+// ??= : only creates the Image if the URL is not yet cached (nullish assignment)
 const loadImage = url => imageCache[url] ??= Object.assign(new Image(), { src: url });
 
+// Builds one offscreen canvas per species+colour combination and stores it in spriteCache.
+// Each pixel is converted to greyscale (luminance) then multiplied by the species colour
+// blended towards white (whiteMix) — this preserves the texture detail of the PNG.
+// Made with Claude
 function buildSprite(naam, color, pixelRatio) {
   const key = naam + color;
   if (spriteCache[key]) return spriteCache[key];
   const img = loadImage(fishImagePath(naam));
+  // Return null if the image hasn't loaded yet; tick() will retry next frame.
   if (!img.complete || !img.naturalWidth) return null;
   const spriteWidth = 64, spriteHeight = 64 * (img.naturalHeight / img.naturalWidth || 0.45);
   const spriteCanvas = document.createElement('canvas');
+  // Scale the canvas by pixelRatio so sprites stay sharp on HiDPI screens.
   spriteCanvas.width = spriteWidth * pixelRatio; spriteCanvas.height = spriteHeight * pixelRatio;
   const spriteContext = spriteCanvas.getContext('2d');
+  // setTransform scales all draw calls so we can keep thinking in logical pixels.
   spriteContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   spriteContext.drawImage(img, 0, 0, spriteWidth, spriteHeight);
   const whiteMix = 0.4, brightnessLift = 1.12;
   const [red, green, blue] = hexToRgb01(color);
+  // Blend the species colour towards white so the tint looks lighter.
   const tintR = red + (1 - red) * whiteMix;
   const tintG = green + (1 - green) * whiteMix;
   const tintB = blue + (1 - blue) * whiteMix;
+  // getImageData returns a flat Uint8ClampedArray: [r,g,b,a, r,g,b,a, …] per pixel.
   const imageData = spriteContext.getImageData(0, 0, spriteCanvas.width, spriteCanvas.height);
   const pixels = imageData.data;
   for (let i = 0; i < pixels.length; i += 4) {
-    if (pixels[i + 3] === 0) continue;
+    if (pixels[i + 3] === 0) continue; // skip transparent pixels
+    // BT.601 luminance formula: convert to greyscale before applying the colour.
     const luminance = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
     pixels[i]     = Math.min(255, luminance * tintR * brightnessLift);
     pixels[i + 1] = Math.min(255, luminance * tintG * brightnessLift);
@@ -36,16 +47,21 @@ function buildSprite(naam, color, pixelRatio) {
   return spriteCache[key] = spriteCanvas;
 }
 
+// Builds a flat list of fish objects. Each species gets a number of fish
+// proportional to its share of the total (max 80 fish).
 function createFishes(visData, total) {
   const FISH_COUNT = 80, SIZE_SCALE = 0.85;
   return visData.flatMap(species => {
+    // Math.round gives a whole number; Math.max(1, …) ensures every species has at least one fish.
     const fishCountForSpecies = Math.max(1, Math.round((species.count / total) * FISH_COUNT));
     return Array.from({ length: fishCountForSpecies }, () => ({
       x: Math.random() * 100, y: Math.random() * 100,
       velocityX: (Math.random() - 0.5) * 0.4, velocityY: (Math.random() - 0.5) * 0.2,
       color: species.color, naam: species.naam,
+      // Math.cbrt (cube root) of weight so heavier species don't dominate visually.
       size: Math.cbrt(species.weight) * SIZE_SCALE,
       lengthCm: Math.round((species.lengte || 30) * (0.82 + Math.random() * 0.36)),
+      // Random start phase so fish don't all wiggle in sync.
       wigglePhase: Math.random() * Math.PI * 2, visible: true,
     }));
   });
@@ -65,18 +81,24 @@ function setupFilterChips(filtersEl, visData, fishes) {
   });
 }
 
+// Scare effect: a click pushes nearby fish away based on their distance to the click point.
 function setupClickScare(canvas, stage, fishes) {
   const SCARE_RADIUS = 35, SCARE_PUSH_X = 2.5, SCARE_PUSH_Y = 1.6;
   canvas.addEventListener('click', event => {
     const rect = canvas.getBoundingClientRect();
+    // Convert pixel coordinates to percentage space (0–100) used by fish positions.
     const clickX = (event.clientX - rect.left) / rect.width * 100;
     const clickY = (event.clientY - rect.top) / rect.height * 100;
     fishes.forEach(fish => {
       const deltaX = fish.x - clickX, deltaY = fish.y - clickY;
+      // Math.sqrt(dx²+dy²) = Euclidean distance in percentage units.
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       if (distance >= SCARE_RADIUS) return;
+      // Strength decreases linearly to 0 at the edge of the scare radius.
       const strength = (SCARE_RADIUS - distance) / SCARE_RADIUS;
+      // Math.max(0.1, …) prevents division by zero if a fish is exactly on the click point.
       const safeDistance = Math.max(0.1, distance);
+      // (delta / distance) = unit vector from click to fish; multiplied gives the impulse.
       fish.velocityX += (deltaX / safeDistance) * strength * SCARE_PUSH_X;
       fish.velocityY += (deltaY / safeDistance) * strength * SCARE_PUSH_Y;
     });
@@ -84,6 +106,7 @@ function setupClickScare(canvas, stage, fishes) {
     ripple.style.left = (event.clientX - rect.left) + 'px';
     ripple.style.top = (event.clientY - rect.top) + 'px';
     stage.appendChild(ripple);
+    // Remove the ripple element after the CSS animation (950 ms) finishes.
     setTimeout(() => ripple.remove(), 950);
   });
 }
@@ -150,11 +173,15 @@ export function initAquarium() {
   setupClickScare(canvas, stage, fishes);
   setupHoverTooltip(canvas, fishes);
 
+  // CENTER_PULL gently pulls fish towards the centre so they don't stay at the edges.
+  // WANDER adds random noise to velocity to keep movement unpredictable.
+  // FRICTION < 1 slows fish down each frame so they don't accelerate indefinitely.
   const CENTER_PULL = 0.00006, WANDER = 0.01, FRICTION = 0.992, DRAW_ALPHA = 0.92;
   let running = false, frameId = 0;
-  
+
   function tick() {
     context.clearRect(0, 0, stageWidth, stageHeight);
+    // Radial gradient from centre outward for a subtle depth glow.
     const gradient = context.createRadialGradient(stageWidth / 2, stageHeight / 2, 30, stageWidth / 2, stageHeight / 2, Math.max(stageWidth, stageHeight));
     gradient.addColorStop(0, 'rgba(30,172,176,0.10)');
     gradient.addColorStop(1, 'rgba(30,172,176,0)');
@@ -162,23 +189,30 @@ export function initAquarium() {
     context.fillRect(0, 0, stageWidth, stageHeight);
     fishes.forEach(fish => {
       fish.x += fish.velocityX;
+      // Math.sin(wigglePhase) simulates the undulating vertical movement of a swimming fish.
       fish.y += fish.velocityY + Math.sin(fish.wigglePhase) * 0.04;
       fish.wigglePhase += 0.08;
+      // Update velocity: centre pull + noise, then dampen with FRICTION.
       fish.velocityX = (fish.velocityX + (50 - fish.x) * CENTER_PULL + (Math.random() - 0.5) * WANDER) * FRICTION;
       fish.velocityY = (fish.velocityY + (50 - fish.y) * CENTER_PULL + (Math.random() - 0.5) * WANDER * 0.6) * FRICTION;
+      // Wrap-around: a fish leaving the left edge reappears on the right (and vice versa).
       if (fish.x < -5) fish.x = 105; if (fish.x > 105) fish.x = -5;
       if (fish.y < -5) fish.y = 105; if (fish.y > 105) fish.y = -5;
       if (!fish.visible) return;
       const sprite = buildSprite(fish.naam, fish.color, pixelRatio);
       if (!sprite) return;
+      // Divide by pixelRatio to convert from physical pixels back to logical pixels.
       const drawWidth = sprite.width / pixelRatio * fish.size;
       const drawHeight = sprite.height / pixelRatio * fish.size;
+      // Math.atan2 gives the angle (in radians) of the velocity vector → the direction the fish faces.
       const angle = Math.atan2(fish.velocityY, fish.velocityX);
+      // If the angle > 90° the fish moves left; flip = -1 mirrors it vertically (scales upright).
       const flip = Math.abs(angle) > Math.PI / 2 ? -1 : 1;
       context.save();
+      // Move the canvas origin to the fish position so rotation pivots around its centre.
       context.translate((fish.x / 100) * stageWidth, (fish.y / 100) * stageHeight);
       context.rotate(angle * (flip < 0 ? -1 : 1));
-      context.scale(1, flip);
+      context.scale(1, flip); // mirrors the fish vertically when swimming left
       context.globalAlpha = DRAW_ALPHA;
       context.drawImage(sprite, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
       context.restore();

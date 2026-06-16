@@ -14,11 +14,14 @@ const SETTLE_TICKS = 220;
 const STAGE_WIDTH = 900, STAGE_HEIGHT = 540;
 const CENTER_X = STAGE_WIDTH / 2, CENTER_Y = STAGE_HEIGHT / 2;
 
+// Builds the list of word objects used by the force simulation.
 function buildWords(languagesData) {
   const topLanguages = (languagesData || []).slice(0, MAX_LANGUAGES);
   if (!topLanguages.length) return [];
 
   const maxVisitors = d3.max(topLanguages, lang => lang.n);
+  // Square-root scale: large languages grow more slowly than linear,
+  // keeping small languages readable alongside dominant ones.
   const fontSizeScale = d3.scaleSqrt().domain([0, maxVisitors]).range([FONT_SIZE_MIN, FONT_SIZE_MAX]);
   const palette = [COLORS.green, COLORS.greenMid, COLORS.teal, COLORS.pink, COLORS.goldDeep];
 
@@ -27,8 +30,11 @@ function buildWords(languagesData) {
     const fontSize = fontSizeScale(lang.n);
     return {
       code: lang.code, visitors: lang.n, greeting, name, fontSize,
+      // i % palette.length cycles the colour palette over all languages.
       color: palette[i % palette.length],
+      // radius = collision radius for d3.forceCollide: based on text width × font size.
       radius: Math.max(greeting.length * fontSize * 0.3, fontSize * 0.62) + 6,
+      // Random starting position around the centre; the force simulation resolves overlaps.
       x: CENTER_X + (Math.random() - 0.5) * 260,
       y: CENTER_Y + (Math.random() - 0.5) * 160,
     };
@@ -85,6 +91,10 @@ export function initLanguages() {
   const wordGroups = drawWords(svg, words);
   attachTooltip(wordGroups, totalVisitors);
 
+  // D3 force simulation: forces pull words to the centre and push them apart.
+  // forceX/Y: attract each word towards (CENTER_X, CENTER_Y) with a soft spring.
+  // forceManyBody (negative): electrostatic repulsion so words don't cluster together.
+  // forceCollide: prevents physical overlap based on the computed radius per word.
   const simulation = d3.forceSimulation(words)
     .force('x', d3.forceX(CENTER_X).strength(PULL_TO_CENTER_X))
     .force('y', d3.forceY(CENTER_Y).strength(PULL_TO_CENTER_Y))
@@ -93,6 +103,8 @@ export function initLanguages() {
     .on('tick', () => positionWords(wordGroups));
 
   if (reduceMotion()) {
+    // With prefers-reduced-motion: skip the animation and compute the layout immediately.
+    // simulation.tick() runs one iteration; SETTLE_TICKS iterations gives a stable layout.
     simulation.stop();
     for (let i = 0; i < SETTLE_TICKS; i++) simulation.tick();
     positionWords(wordGroups);

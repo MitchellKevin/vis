@@ -15,8 +15,12 @@ const PLACE_ATTEMPTS = 60;
 const SCRUB_MS = 650;
 const SWEEP_PERIOD = 10; // seconds — must match CSS animation duration
 
+// Converts polar coordinates (angle in radians, radius) to SVG Cartesian coordinates.
 const polarToPoint = (angle, r) => [CENTER_X + Math.cos(angle) * r, CENTER_Y + Math.sin(angle) * r];
+// End point of the sweep sector: -π/4 = 315°, so the sector spans a quarter from right to top.
 const [SWEEP_END_X, SWEEP_END_Y] = polarToPoint(-Math.PI / 4, RADIUS);
+// Square-root scale: larger counts move towards the centre more slowly than a linear scale,
+// keeping small species visible alongside dominant ones.
 const makeDistanceScale = (maxCount) =>
   d3.scaleSqrt().domain([0, maxCount]).range([OUTER_DISTANCE, INNER_DISTANCE]).clamp(true);
 
@@ -28,7 +32,7 @@ export function initRadar() {
   const placementScale = makeDistanceScale(maxCount);
 
   const pings = placePings(visData, placementScale);
-  const timeBuckets = buildTimeBuckets(visData, weekHours, weekDayLabels, weekDays, currentPeriod);
+  const timePeriods = buildTimePeriods(visData, weekHours, weekDayLabels, weekDays, currentPeriod);
   const totalObservations = pings.reduce((sum, p) => sum + p.total, 0);
 
   const detailPanel = $('#radarDetail');
@@ -38,18 +42,18 @@ export function initRadar() {
 
   const sliderLabel = $('#radarSliderLabel');
   const slider = $('#radarSlider');
-  slider.max = String(timeBuckets.labels.length);
+  slider.max = String(timePeriods.labels.length);
   slider.value = '0';
-  slider.setAttribute('aria-label', `Tijdslider — sleep om door de ${timeBuckets.noun} te scrubben`);
+  slider.setAttribute('aria-label', `Tijdslider — sleep om door de ${timePeriods.noun} te scrubben`);
   cleanups.push(() => { slider.value = '0'; });
 
   function applyTime(i) {
     const whole = i === 0;
     sliderLabel.textContent = whole
-      ? `Hele ${timeBuckets.noun} · ${formatNumber(totalObservations)} waarnemingen`
-      : `${timeBuckets.labels[i - 1]}${timeBuckets.subs[i - 1] ? ' · ' + timeBuckets.subs[i - 1] : ''}`;
+      ? `Hele ${timePeriods.noun} · ${formatNumber(totalObservations)} waarnemingen`
+      : `${timePeriods.labels[i - 1]}${timePeriods.subs[i - 1] ? ' · ' + timePeriods.subs[i - 1] : ''}`;
 
-    const counts = pings.map(p => whole ? p.total : (timeBuckets.perSpecies.get(p.speciesIndex)?.[i - 1] ?? 0));
+    const counts = pings.map(p => whole ? p.total : (timePeriods.perSpecies.get(p.speciesIndex)?.[i - 1] ?? 0));
     const scale = makeDistanceScale(Math.max(...counts, 1));
 
     pings.forEach((ping, idx) => {
@@ -70,7 +74,7 @@ export function initRadar() {
   const summaryEl = $('#radarSummary');
   if (summaryEl) {
     const top = visData.slice().sort((a, b) => (b.count || 0) - (a.count || 0))[0];
-    const perLabel = timeBuckets.noun === 'jaar' ? 'maand' : timeBuckets.noun === 'maand' ? 'week' : 'dag';
+    const perLabel = timePeriods.noun === 'jaar' ? 'maand' : timePeriods.noun === 'maand' ? 'week' : 'dag';
     if (top) summaryEl.textContent = `De radar detecteert ${visData.length} vissoorten. Meest gesignaleerd: ${top.naam} (${formatNumber(top.count)} waarnemingen). Sleep de slider om per ${perLabel} te kijken.`;
   }
 
@@ -82,26 +86,37 @@ export function initRadar() {
   cleanups.push(() => visObs.disconnect());
 }
 
+// Finds a position on the radar for each species so pings don't overlap.
+// Strategy: try up to PLACE_ATTEMPTS random angles and pick the spot with
+// the largest minimum distance to already-placed pings (best-of-N).
 function placePings(visData, scale) {
+  // Fixed seed so the layout is identical on every render (reproducible).
   const seed = mulberry32(42);
   const pings = [];
   visData.forEach((species, speciesIndex) => {
+    // Small random offset per species so the ring doesn't look too rigid.
     const jitter = (seed() - 0.5) * JITTER_RANGE;
     const distance = species.count > 0 ? scale(species.count) + jitter : ABSENT_DISTANCE;
     let bestSpot = null, bestGap = -Infinity;
     for (let attempt = 0; attempt < PLACE_ATTEMPTS; attempt++) {
+      // seed() * 2π = random angle distributed over the full circle.
       const angle = seed() * Math.PI * 2;
       const [x, y] = polarToPoint(angle, distance);
+      // Math.hypot = Euclidean distance; reduce finds the nearest already-placed ping.
       const nearest = pings.reduce((min, p) => Math.min(min, Math.hypot(p.x - x, p.y - y)), Infinity);
-      if (nearest >= MIN_GAP) { bestSpot = { angle, x, y }; break; }
-      if (nearest > bestGap) { bestGap = nearest; bestSpot = { angle, x, y }; }
+      if (nearest >= MIN_GAP) { bestSpot = { angle, x, y }; break; } // enough space found
+      if (nearest > bestGap) { bestGap = nearest; bestSpot = { angle, x, y }; } // remember best option
     }
     pings.push({ ...species, ...bestSpot, speciesIndex, jitter, total: species.count || 0, current: species.count || 0, selected: false });
   });
   return pings;
 }
 
+// Made with Claude
 function drawPing(ping, pings, pingsGroup, detailPanel, svg) {
+  // Compute a negative animation-delay so the CSS sweep animation appears in sync
+  // with the ping's angle: pings at the start of the sweep get a smaller delay.
+  // Formula: -(SWEEP_PERIOD × (1 - angle / 2π)) → ping at angle 0 = maximum delay.
   const glowDelay = `${-(SWEEP_PERIOD * (1 - ping.angle / (Math.PI * 2))).toFixed(2)}s`;
 
   const pingGroup = pingsGroup.append('g')
@@ -148,56 +163,83 @@ function drawPing(ping, pings, pingsGroup, detailPanel, svg) {
 }
 
 
-function buildTimeBuckets(visData, weekHours, weekDayLabels, weekDays, currentPeriod) {
+// Builds the time periods for the slider: groups days into weeks or months
+// and distributes each species' observation count proportionally across those periods.
+function buildTimePeriods(visData, weekHours, weekDayLabels, weekDays, currentPeriod) {
+  // weekHours is a flat array of 24 values per day; derive how many days there are.
   const dayCount = weekDayLabels.length || Math.max(1, Math.floor((weekHours.length || 0) / 24));
+
+  // Sum the hourly values per day (day d = indices d*24 through d*24+23).
   const dayTotals = Array.from({ length: dayCount }, (_, day) => {
     let sum = 0;
     for (let h = 0; h < 24; h++) sum += weekHours[day * 24 + h] || 0;
     return sum;
   });
 
+  // Group days into periods (day / week / month) depending on the active period.
   const groups = buildGroups(currentPeriod, dayCount, weekDayLabels, weekDays);
+
+  // Calculate the weight of each period: its share of the total hourly volume.
+  // This determines how observations are distributed proportionally across periods.
   const weights = (() => {
     const totals = groups.map(g => g.days.reduce((s, d) => s + (dayTotals[d] || 0), 0));
-    const sum = totals.reduce((s, v) => s + v, 0) || 1;
-    return totals.map(v => v / sum);
+    const sum = totals.reduce((s, v) => s + v, 0) || 1; // || 1 prevents division by zero
+    return totals.map(v => v / sum); // normalise to fractions that sum to 1
   })();
 
+  // Distribute each species' total across the periods; each species gets its own seed
+  // so the noise differs per species but remains reproducible.
   const perSpecies = new Map();
   visData.forEach((species, idx) => {
-    perSpecies.set(idx, distributeOverBuckets(species.count || 0, weights, mulberry32(1000 + idx * 7)));
+    perSpecies.set(idx, distributeOverPeriods(species.count || 0, weights, mulberry32(1000 + idx * 7)));
   });
 
   const noun = currentPeriod === 'week' ? 'week' : currentPeriod === 'jaar' ? 'jaar' : 'maand';
   return { labels: groups.map(g => g.label), subs: groups.map(g => g.sub), perSpecies, noun };
 }
 
+// Returns an array of periods, each with { label, sub, days[] }.
+// days[] contains the day indices that belong to that period.
 function buildGroups(period, dayCount, weekDayLabels, weekDays) {
   if (period === 'week') {
+    // One period per day; label = the day name from weekDayLabels.
     return Array.from({ length: dayCount }, (_, d) => ({ label: weekDayLabels[d] || `Dag ${d + 1}`, sub: '', days: [d] }));
   }
   if (period === 'jaar') {
+    // Group by calendar month using a Map with key "year-month".
     const byMonth = new Map();
     for (let d = 0; d < dayCount; d++) {
       const date = new Date(weekDays[d]);
-      const valid = !Number.isNaN(date.getTime());
+      const valid = !Number.isNaN(date.getTime()); // weekDays[d] may be missing or invalid
+      // Key: "2025-5" for June 2025 (getUTCMonth() is 0-based).
+      // Fallback: "m0", "m1", … based on day index divided by 30.
       const key = valid ? `${date.getUTCFullYear()}-${date.getUTCMonth()}` : `m${Math.floor(d / 30)}`;
       if (!byMonth.has(key)) byMonth.set(key, { label: valid ? MONTH_LONG_NL[date.getUTCMonth()] : `Maand ${byMonth.size + 1}`, sub: '', days: [] });
       byMonth.get(key).days.push(d);
     }
-    return [...byMonth.values()];
+    return [...byMonth.values()]; // spread iterator into array
   }
+  // Default (month): groups of 7 days per week.
+  // Math.ceil(dayCount / 7) = number of full weeks plus any partial final week.
   return Array.from({ length: Math.ceil(dayCount / 7) }, (_, w) => {
-    const start = w * 7, end = Math.min(start + 6, dayCount - 1);
+    const start = w * 7, end = Math.min(start + 6, dayCount - 1); // last week may be shorter
     return { label: `Week ${w + 1}`, sub: `${weekDayLabels[start] || ''}–${weekDayLabels[end] || ''}`, days: Array.from({ length: end - start + 1 }, (_, i) => start + i) };
   });
 }
 
-function distributeOverBuckets(total, weights, seed) {
+// Distributes `total` observations proportionally across periods according to `weights`,
+// with random noise so the result doesn't look artificial.
+// Uses the "largest remainder" correction to fix rounding errors:
+// the sum of rounded values must equal `total` exactly.
+function distributeOverPeriods(total, weights, seed) {
+  // Add noise to each weight (0.5 + seed() = range 0.5–1.5) for a natural distribution.
   const raw = weights.map(w => Math.max(0.0001, w * (0.5 + seed())));
   const rawSum = raw.reduce((s, x) => s + x, 0);
+  // First estimate: proportions multiplied by total, rounded to whole numbers.
   const rounded = raw.map(x => Math.round((x / rawSum) * total));
+  // diff = the error introduced by rounding (can be positive or negative).
   let diff = total - rounded.reduce((s, x) => s + x, 0);
+  // Sort periods by rounding error size (largest remainder first) to spread the correction fairly.
   const order = rounded.map((_, i) => i).sort((a, b) => (raw[b] / rawSum * total - rounded[b]) - (raw[a] / rawSum * total - rounded[a]));
   for (let k = 0; diff !== 0; k++) {
     const i = order[k % order.length];
