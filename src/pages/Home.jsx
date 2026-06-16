@@ -12,6 +12,7 @@ import DataCarousel from "../components/mitchell-components/DataCarousel.jsx";
 import SectionWave from "../components/mitchell-components/SectionWave.jsx";
 import LanguagesChapter from "../components/mitchell-components/LanguagesChapter.jsx";
 import RadarChapter from "../components/mitchell-components/RadarChapter.jsx";
+import Header from "../components/header/Header.jsx"
 import Footer from "../components/footer/Footer.jsx";
 import { initMitchell } from "../scripts/mitchell.js";
 
@@ -24,6 +25,7 @@ export default function Home() {
   useStylesheet("/styles/mitchell-carousel.css");
   useStylesheet("/styles/mitchell-sections.css");
   useStylesheet("/styles/clock.css");
+  useStylesheet("/styles/header.css")
   useStylesheet("/styles/footer.css");
 
   const flyToRef = useRef(null);
@@ -43,7 +45,7 @@ export default function Home() {
   return (
     <>
       <header>
-        <span className="logo">Visdeurbel</span>
+        <Header />
       </header>
 
       <main>

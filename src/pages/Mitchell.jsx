@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import Nav from '../components/Nav.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
 import FishSprite from '../components/mitchell-components/FishSprite.jsx';
 import NetChapter from '../components/mitchell-components/NetChapter.jsx';

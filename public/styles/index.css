@@ -19,7 +19,6 @@ body {
 
 header {
   width: 100%;
-  padding: var(--space-6) var(--space-6) 0;
   display: flex;
   justify-content: space-between;
   align-items: center;

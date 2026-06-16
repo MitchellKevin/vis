@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import Nav from '../components/Nav.jsx';
 import Clock from '../components/clock/Clock.jsx';
 import { useStylesheet } from '../hooks/useStylesheet.js';
 
