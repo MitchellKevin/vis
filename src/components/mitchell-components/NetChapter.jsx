@@ -114,12 +114,12 @@ export function initNet() {
 
 export default function NetChapter() {
   return (
-    <section id="ch-net" className="chapter" aria-label="Het net">
+  <section id="ch-net" className="chapter" aria-label="Luchtbelletjes">
       <div className="chapter-inner chapter-split chapter-split--reverse">
         <div className="chapter-text">
-          <p className="eyebrow reveal">Het net</p>
-          <h2 className="reveal">Als we ze allemaal in één net zouden vangen…</h2>
-          <p className="lede reveal">…wie zou er dan het zwaarst uitkomen? Een handvol meervallen weegt op tegen een hele school blankvoorns.</p>
+          <p className="eyebrow reveal">Luchtbelletjes</p>
+          <h2 className="reveal">Elke soort, een eigen bel.</h2>
+          <p className="lede reveal">Hoe groter de bel, hoe meer er van die soort voorbijkwam. Een handvol meervallen weegt op tegen een hele school blankvoorns.</p>
           <div className="net-controls-wrap">
             <span className="net-controls-label">Bekijk op</span>
             <div className="net-toggle" role="tablist" aria-label="Verdeling op">
