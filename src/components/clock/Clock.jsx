@@ -9,24 +9,9 @@ const CLOCK_CENTER = 220; // center of the clock drawing (x and y)
 const HUB_RADIUS = 72; // the dark circle in the center
 const HAND_MAX_LENGTH = 128; // the variable hand length; longest = HUB_RADIUS + 8 + 128 = 136 px
 
-const COLOR_QUIET = [192, 168, 255]; // --color-purple (#c0a8ff) — quiet
-const COLOR_MID = [255, 128, 185]; //   --color-pink   (#ff80b9) — mid
-const COLOR_BUSY = [240, 175, 0]; //    --color-gold   (#f0af00) — busy
-
 const TIMELINE_WIDTH = 1040; // width of the timeline drawing
 const TIMELINE_HEIGHT = 400; // height of the timeline drawing
 const TIMELINE_AXIS_Y = 340; // y position of the time axis
-
-// Maps busyness (0–1) to a color across three stops: below 0.5 blends from
-// quiet to mid, above 0.5 from mid to busy.
-function colorForBusyness(busyness) {
-  const [from, to, t] =
-    busyness < 0.5
-      ? [COLOR_QUIET, COLOR_MID, busyness / 0.5]
-      : [COLOR_MID, COLOR_BUSY, (busyness - 0.5) / 0.5];
-  const channel = (i) => Math.round(from[i] + (to[i] - from[i]) * t);
-  return `rgb(${channel(0)} ${channel(1)} ${channel(2)})`;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: Data — counting notifications and preparing them for the drawing
@@ -186,8 +171,8 @@ function TimelineFish({
   onHover,
   onLeave,
 }) {
-  const size = 44 + (count / max) * 46; // 44–90 px
-  const x = minuteToX(block * 10 + 5);
+  const size = 62 + (count / max) * 66; // 62–128 px
+  const x = minuteToX(block * 10 + 5); // midden van elk blok van 10 minuten (05, 15, 25…)
   const y = TIMELINE_AXIS_Y - 150;
   const from = timeAsText(hour, block * 10);
   const to = timeAsText(hour, block * 10 + 10);
@@ -405,15 +390,14 @@ export default function Clock() {
   // MARK: Render
 
   return (
-    <section className="clock" data-theme="dark" aria-labelledby="clock-title">
+    <section className="clock" aria-labelledby="clock-title">
       <header className="clock__head">
         <h2 id="clock-title">Het ritme van de bel</h2>
         {hours && (
           <p className="clock__sub">
-            Wanneer drukt men op de visdeurbel? Elke wijzer is een uur van de
-            dag, gemiddeld over {period?.label ?? "de periode"}. Hoe langer en
-            goudener de wijzer, hoe drukker. Beweeg over een uur voor de
-            cijfers, of klik erop voor de tijdlijn van dat uur.
+            Elke wijzer is een uur van de dag, gemiddeld over{" "}
+            {period?.label ?? "de periode"}. Hoe langer en goudener, hoe
+            drukker. Klik op één wijzer voor de tijdlijn van dat uur.
           </p>
         )}
       </header>
@@ -452,7 +436,6 @@ export default function Clock() {
                     y1={start.y}
                     x2={end.x}
                     y2={end.y}
-                    stroke={colorForBusyness(hour.busyness)}
                     tabIndex={0}
                     role="button"
                     aria-label={`${hourAsText(hour.hour)} uur: gemiddeld ${Math.round(
@@ -526,37 +509,25 @@ export default function Clock() {
           )}
         </div>
 
-        {/* MARK: Insights + table */}
+        {/* MARK: Datatabel (visueel verborgen, alleen voor screenreaders) */}
         {hours && (
-          <aside className="clock__insights">
-            <p className="clock__insight">
-              Het wordt het drukst rond{" "}
-              <strong>{hourAsText(busiest.hour)}</strong> — dan gaat de bel
-              gemiddeld <strong>{Math.round(busiest.value)}×</strong> per uur.
-            </p>
-            <p className="clock__insight">
-              Om <strong>{hourAsText(quietest.hour)}</strong> is het het
-              rustigst, met zo'n <strong>{Math.round(quietest.value)}×</strong>{" "}
-              per uur.
-            </p>
-            <table className="clock__sr-only">
-              <caption>Gemiddeld aantal meldingen per uur van de dag</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Uur</th>
-                  <th scope="col">Gemiddeld aantal meldingen</th>
+          <table className="clock__sr-only">
+            <caption>Gemiddeld aantal meldingen per uur van de dag</caption>
+            <thead>
+              <tr>
+                <th scope="col">Uur</th>
+                <th scope="col">Gemiddeld aantal meldingen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {hours.map((hour) => (
+                <tr key={hour.hour}>
+                  <th scope="row">{hourAsText(hour.hour)}</th>
+                  <td>{Math.round(hour.value)}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {hours.map((hour) => (
-                  <tr key={hour.hour}>
-                    <th scope="row">{hourAsText(hour.hour)}</th>
-                    <td>{Math.round(hour.value)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </aside>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </section>
