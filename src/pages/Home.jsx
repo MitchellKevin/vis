@@ -12,6 +12,7 @@ import DataCarousel from "../components/mitchell-components/DataCarousel.jsx";
 import SectionWave from "../components/mitchell-components/SectionWave.jsx";
 import LanguagesChapter from "../components/mitchell-components/LanguagesChapter.jsx";
 import RadarChapter from "../components/mitchell-components/RadarChapter.jsx";
+import Footer from "../components/footer/Footer.jsx";
 import { initMitchell } from "../scripts/mitchell.js";
 
 export default function Home() {
@@ -23,6 +24,7 @@ export default function Home() {
   useStylesheet("/styles/mitchell-carousel.css");
   useStylesheet("/styles/mitchell-sections.css");
   useStylesheet("/styles/clock.css");
+  useStylesheet("/styles/footer.css");
 
   const flyToRef = useRef(null);
 
@@ -127,14 +129,10 @@ export default function Home() {
 
       <SectionWave
         top="var(--color-gold-light)"
-        bottom="var(--color-green-dark)"
+        bottom="var(--color-purple)"
       />
 
-      <footer>
-        <div className="footer__inner">
-          <p>Visdeurbel — Meesterproef Minor Web 2026</p>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }
