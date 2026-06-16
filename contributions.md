@@ -9,7 +9,7 @@ This page brings together every visualization chapter built for the Visdeurbel m
 **Folder:** `components/world-map/`
 **Files:** `GlobeMap.jsx`, `useJoostData.js`, `utils.js`, `constants.js`, `mapModes.js`, `MapLegend.jsx`, `MapTooltip.jsx`, `CountryList.jsx`
 
-This is the rotating globe near the bottom of the page, and according to Joost's own logs it's also the module that absorbed the most hours — roughly **37 to 51 hours** across five weeks, by his own estimates.
+This is the rotating globe near the bottom of the page, and according to Joost's own logs it's also the module that absorbed the most hours — roughly **60 to 70 hours** across five weeks, by his own estimates.
 
 ### Week 1–2 — eerste versie (vanilla HTML/CSS/JS + D3)
 
