@@ -1,5 +1,4 @@
 import { useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
 import GlobeMap from "../components/world-map/GlobeMap.jsx";
 import { useStylesheet } from "../hooks/useStylesheet.js";
 import useJoostData from "../components/world-map/useJoostData.js";
@@ -52,34 +51,6 @@ export default function Home() {
             Overzicht van alle visualisatieprojecten voor de Visdeurbel
             meesterproef.
           </p>
-        </section>
-        <section>
-          <div className="grid">
-            <Link className="card" to="/julius">
-              <span className="card__label">Julius</span>
-              <h2 className="card__title">Visualisatie Julius</h2>
-              <p className="card__desc">
-                Persoonlijk visualisatieproject van Julius.
-              </p>
-              <span className="card__link">Bekijken →</span>
-            </Link>
-            <Link className="card" to="/mitchell">
-              <span className="card__label">Mitchell</span>
-              <h2 className="card__title">Visualisatie Mitchell</h2>
-              <p className="card__desc">
-                Persoonlijk visualisatieproject van Mitchell.
-              </p>
-              <span className="card__link">Bekijken →</span>
-            </Link>
-            <a className="card" href="#timeline">
-              <h2 className="card__title">Timeline Visualisatie</h2>
-              <p className="card__desc">
-                Visualisaties van hoeveel vissen op welk tijdstip van de dag te
-                zien zijn.
-              </p>
-              <span className="card__link">Bekijken ↓</span>
-            </a>
-          </div>
         </section>
       </main>
 
