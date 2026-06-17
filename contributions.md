@@ -99,12 +99,26 @@ Looking back, the one-pager format made a traditional nav bar unnecessary, but N
 
 ---
 
-## Julius — Klok
+## Julius — Carousel, Vijver, Klok & Styleguide
 
-**Folder:** `components/clock/`
+**Folder (carousel):** `components/carousel/`
+**Files:** `EmblaCarousel.jsx`, `CarouselControls.jsx`, `FishSlide.jsx`, `dialog.jsx`, `fish.js`
+
+**Folder (vijver):** `components/pond/`
+**Files:** `Pond.jsx`
+
+**Folder (klok):** `components/clock/`
 **Files:** `Clock.jsx`
 
+**Styleguide:** `STYLEGUIDE.md`, `public/styles/visdeurbel-tokens.css`
+
 `Clock.jsx` is "Het ritme van de bel": a 24-hour analog-style clock where every hour gets its own hand, and hand length encodes how busy that hour is on average — the longest hand marks the busiest hour. Clicking a single hour opens a secondary timeline that splits it into six 10-minute blocks, each represented by a fish whose size grows with how many notifications landed in that block, drawn from a pool of fish images weighted by how often each species was actually reported. Both views read out fully to screen readers through dynamic ARIA labels and a parallel hidden data table.
+
+`EmblaCarousel.jsx` is the scrollable fact-card slider built on Embla Carousel, with custom navigation controls (`CarouselControls.jsx`), fish-themed slides (`FishSlide.jsx`), and a dialog component (`dialog.jsx`) for expanded detail views. `fish.js` holds the fish data powering the slides.
+
+`Pond.jsx` is the living pond animation: a canvas-based ripple simulation that plays back a week of Visdeurbel activity in real time, with each notification triggering a ripple on the water surface.
+
+The styleguide (`STYLEGUIDE.md` + `visdeurbel-tokens.css`) is the shared design source-of-truth for the entire project — extracted from the Figma file, it defines all colour tokens, typography, spacing, and component guidelines that every team member's module follows.
 
 
 ---
