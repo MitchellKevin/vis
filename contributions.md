@@ -70,7 +70,13 @@ A few of the more memorable ones from his notes: the 288 MB file simply couldn't
 
 ### Wat Mitchell leerde
 
-Heavy aggregation belongs in a Python build step, not the browser; `node_modules` is platform-specific and should never be copied between machines; D3's radial generators always draw around the origin, so centring is the developer's job; fragile joins between two different ID systems are worth avoiding by just keeping your own lookup table; anything that starts an animation loop or observer needs an equally deliberate way to stop it; and letting every chapter simply read the length of its input arrays meant the exact same code worked for both 9-day and 31-day datasets without any branching.
+**Folder** 'components/mitchell-componenten/' & 'src/scripts/'
+
+Ik ben verantwoordelijk geweest van alle code nu huidig in legacy folders voor zowel de javascript als voor legacy componenten.
+
+Voor het eind resultaat ben ik verantwoordelijk geweest voor de carousel met algemene data feiten, het aquarium visualisatie, sonar visualisatie, talenwolk visualisatie en luchtbelletjes/(was net) visualisatie die in de components/mitchell-componenten staan deze zijn gemaakt met d3. Verder ben ik nog veranwoordelijk geweest voor de gsap animatie barry de vis die mee scrolt over de pagina en waves voor elke component voor soepele overgang. Als laatste de toegankelijkheid van de hiervoor benoemde componenten.
+
+Verdere zaken was de eigenaar van de repo, eindpresentatie maken en organiseren van de platformen voor onze communicatie.
 
 ---
 
