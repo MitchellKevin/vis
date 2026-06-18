@@ -94,10 +94,16 @@ export function buildTooltipRows(c, mode, colors) {
 
   // Fish mode: top-5 species with counts and percentages
   if (mode === 'fish') {
-    const entries = Object.entries(c.fish).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    if (!entries.length) return [base, row('Vis', 'Geen data')];
+    // Drop unknown/overig entries entirely so they never appear in the list
+    const known = Object.entries(c.fish)
+      .filter(([name]) => !UNKNOWN_VALS.includes(name))
+      .sort((a, b) => b[1] - a[1]);
+    if (!known.length) return [base, row('Vis', 'Geen data')];
+    // Percentages are relative to the total of the KNOWN species only
+    const knownTotal = known.reduce((sum, [, count]) => sum + count, 0);
+    const entries = known.slice(0, 5);
     return [base, ...entries.map(([name, count]) =>
-      row(`🐟 ${name}`, n(count) + pct(count, c.uploaded || c.events), FISH_COLORS[name] || '#c0a8ff'),  // --color-purple fallback
+      row(`🐟 ${name}`, n(count) + pct(count, knownTotal), FISH_COLORS[name] || '#c0a8ff'),  // --color-purple fallback
     )];
   }
 
@@ -128,7 +134,10 @@ export function buildTooltipRows(c, mode, colors) {
     ];
   }
 
-  return [base];
+  // Default mode (choropleth + flows): visits + top-3 cities
+  const rows = [base];
+  if (c.topCities) rows.push(row('Top steden', c.topCities));
+  return rows;
 }
 
 // ── Country fill colour for the current mode ──────────────────────────────────
