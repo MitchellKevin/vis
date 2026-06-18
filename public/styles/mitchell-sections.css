@@ -85,6 +85,9 @@
 .mitchell-page #ch-world .world-stat strong,
 .mitchell-page #ch-languages .chapter-stat strong { color: var(--color-green-dark); }
 
+/* Talenwolk: eyebrow in goud i.p.v. teal */
+.mitchell-page #ch-languages .eyebrow { color: var(--color-green-dark); }
+
 /* losse off-white tekstjes terug naar donker */
 .mitchell-page .world-top,
 .mitchell-page .net-info,

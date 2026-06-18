@@ -3,10 +3,10 @@ import { $, $$, formatNumber, reduceMotion } from '../../scripts/mitchell/utils.
 import { ensureTintFilter, fishImagePath } from '../../scripts/mitchell/fishImage.js';
 import { state } from '../../scripts/mitchell/state.js';
 
-const STAGE_WIDTH = 900, STAGE_HEIGHT = 680;
+const STAGE_WIDTH = 1000, STAGE_HEIGHT = 1000;
 const BUBBLE_PADDING = 8;
 const FALL_FROM_OFFSET = 200;
-const FISH_SIZE_FACTOR = 1.4, FISH_SIZE_MAX = 96;
+const FISH_SIZE_FACTOR = 1.4, FISH_SIZE_MAX = 308;
 const LABEL_MIN_RADIUS = 28;
 
 const valueForStat = {
@@ -29,7 +29,7 @@ export function initNet() {
   const { visData } = state;
   const infoEl = $('#netInfo');
   const svg = d3.select($('#netStage')).append('svg').attr('viewBox', `0 0 ${STAGE_WIDTH} ${STAGE_HEIGHT}`);
-  const bubbleLayer = svg.append('g').attr('transform', 'translate(20, 80)');
+  const bubbleLayer = svg.append('g').attr('transform', 'translate(20, 20)');
   const defs = svg.append('defs');
   let currentStat = 'biomass';
 
@@ -72,10 +72,21 @@ export function initNet() {
     // d3.pack calculates the radius and position of each circle so they don't overlap.
     // .hierarchy() builds a tree structure; .sum() sets the value per leaf for the packer.
     // .leaves() returns only the leaf nodes (the actual species, without the root).
-    const packedBubbles = d3.pack().size([STAGE_WIDTH - 40, STAGE_HEIGHT - 100]).padding(BUBBLE_PADDING)
+    const packedBubbles = d3.pack().size([STAGE_WIDTH - 40, STAGE_HEIGHT - 40]).padding(BUBBLE_PADDING)
       (d3.hierarchy({ children: visData.map(s => ({ ...s, value: valueForStat[stat](s) })) }).sum(s => s.value)).leaves();
     // motionScale = 0 with prefers-reduced-motion: multiply by duration to disable animations.
     const motionScale = reduceMotion() ? 0 : 1;
+    // d3.pack centres its *enclosing circle*, not the visible bubbles, so the
+    // cluster can drift to one side with uneven margins. Fit + centre the whole
+    // layer on the bubbles' real bounding box so it fills the stage and sits
+    // dead-centre regardless of how the circles were packed.
+    const minX = d3.min(packedBubbles, b => b.x - b.r), maxX = d3.max(packedBubbles, b => b.x + b.r);
+    const minY = d3.min(packedBubbles, b => b.y - b.r), maxY = d3.max(packedBubbles, b => b.y + b.r);
+    const fit = Math.min((STAGE_WIDTH - 40) / (maxX - minX), (STAGE_HEIGHT - 40) / (maxY - minY));
+    const centreX = STAGE_WIDTH / 2 - ((minX + maxX) / 2) * fit;
+    const centreY = STAGE_HEIGHT / 2 - ((minY + maxY) / 2) * fit;
+    bubbleLayer.transition().duration(800 * motionScale)
+      .attr('transform', `translate(${centreX}, ${centreY}) scale(${fit})`);
     // D3 key function (b => b.data.naam) ensures existing bubbles are reused on a stat switch.
     const existing = bubbleLayer.selectAll('.net-bubble').data(packedBubbles, b => b.data.naam);
     // Exiting bubbles shrink to scale(0) before being removed from the DOM.

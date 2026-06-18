@@ -121,6 +121,12 @@ body.mitchell-page {
 .chapter-split > .chapter-viz .net-stage { width: 100%; margin: 0; }
 .chapter-split > .chapter-viz .net-info { margin: var(--space-4) auto 0; }
 
+/* Luchtbelletjes: ruimere tussenruimte tussen visualisatie en tekst.
+   Alleen boven de stack-breakpoint; daaronder staan ze al onder elkaar. */
+@media (min-width: 901px) {
+  #ch-net .chapter-inner.chapter-split { gap: clamp(var(--space-8), 7vw, 85px); }
+}
+
 /* Knoppen/chips in de tekstkolom links uitlijnen */
 .chapter-split > .chapter-text .aquarium-filters { justify-content: flex-start; margin: var(--space-5) 0 0; max-width: none; }
 .chapter-split > .chapter-text .aquarium-tip { text-align: left; margin: var(--space-4) 0 0; }
@@ -517,7 +523,7 @@ body.mitchell-page {
 .net-toggle-btn.active { background: var(--color-purple); color: var(--color-green-dark); }
 .net-toggle-btn:focus-visible { outline: 2px solid var(--color-purple); outline-offset: 2px; }
 
-.net-stage { width: min(94vw, 900px); aspect-ratio: 900 / 680; margin: var(--space-5) auto 0; }
+.net-stage { width: min(94vw, 1100px); aspect-ratio: 1 / 1; margin: var(--space-5) auto 0; }
 .net-stage svg { width: 100%; height: 100%; }
 .net-stage {
   background-image:
