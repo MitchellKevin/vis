@@ -4,6 +4,7 @@
   --fish-img-size: 50px;
   --bar-height: 30px;
   --triangle-height: 30px;
+  --sticky-container-grid-width: 100px;
 }
 
 /* https://a11yproject.com */
@@ -30,7 +31,8 @@
     max-height: var(--scroll-container-height);
     border-radius: var(--radius-card);
 
-    overflow-x: hidden; /* overflow clip does not work here. Bugs for certain devices with horizontal scroll bar */
+    overflow-x: hidden;
+    /* overflow clip does not work here. Bugs for certain devices with horizontal scroll bar */
     overflow-y: auto;
     scroll-snap-type: y mandatory;
     scroll-timeline: --scroll-container-timeline;
@@ -41,14 +43,20 @@
       height: var(--scroll-container-height);
       position: sticky;
       margin-bottom: calc(var(--scroll-container-height) * -1);
+      display: grid;
+      grid-template-columns: var(--sticky-container-grid-width) 1fr var(--sticky-container-grid-width);
       z-index: 3;
+      container-type: inline-size;
 
       .water-visual {
         position: absolute;
+        grid-column: 1/-1;
+        grid-row: 1;
         bottom: 0;
         width: 100%;
-        height: calc(var(--scroll-container-height) / 1.5);
-        background: var(--color-teal); /* color needs to be manually changed in ::before background-image svg path */
+        height: calc(var(--scroll-container-height)* 0.65);
+        background: var(--color-teal);
+        /* color needs to be manually changed in ::before background-image svg path */
         opacity: 0.7;
         pointer-events: none;
         z-index: 2;
@@ -70,12 +78,75 @@
         }
       }
 
+      .canal-wall {
+        position: relative;
+        grid-column: 1;
+        grid-row: 1;
+        align-self: end;
+        width: 100%;
+        height: calc(var(--scroll-container-height)*0.7);
+        z-index: 1;
+        
+        &::before{ /* underwater wall (gradient into water) */
+          position: absolute;
+          width: 100%;
+          background: rgb(88 79 76);
+          content: "";
+          height: 100%;
+          background-image: url(/images/canal-wall.jpg); /* https://pixabay.com/nl/photos/stenen-muur-textuur-bakstenen-770264/ */
+          background-size: var(--sticky-container-grid-width);
+          mask-image: linear-gradient(
+            to right,
+            black 0%,
+            black 70%,
+            transparent 100%
+          );
+          background-blend-mode: overlay;
+        }
+
+        &::after{ /* above water wall (gradient into underwater wall) */
+          position: absolute;
+          width: 100%;
+          background: rgb(88 79 76);
+          content: "";
+          height: calc(var(--scroll-container-height)*0.1);
+          background-image: url(/images/canal-wall.jpg); /* https://pixabay.com/nl/photos/stenen-muur-textuur-bakstenen-770264/ */
+          background-size: var(--sticky-container-grid-width);
+          mask-image: linear-gradient(
+            to bottom,
+            black 0%,
+            black 50%,
+            transparent 100%
+          );
+          background-blend-mode: overlay;
+          border-radius: 0 5px 0 0;
+        }
+        &:nth-child(5){
+          grid-column: 3;
+          transform: scaleX(-1);
+          img{
+            position: absolute;
+            right: 0;
+            width: 100%;
+            height: calc(var(--scroll-container-height)*0.3);
+            top: calc(var(--scroll-container-height)*-0.22);
+            transform: scaleX(-1);
+            object-fit: contain;
+            object-position: right;
+          }
+        }
+        @container (width < 400px){
+            display: none;
+        }
+      }
+
       .moon,
       .sun {
         position: absolute;
         bottom: calc(var(--scroll-container-height)*-2);
         left: 50%;
-        transform: translate(-50%, calc(var(--scroll-container-height)*-3 + 5rem)); /* translateY before rotate so it animates from origin point */
+        transform: translate(-50%, calc(var(--scroll-container-height)*-3 + 5rem));
+        /* translateY before rotate so it animates from origin point */
         width: calc(var(--scroll-container-height)/10);
         aspect-ratio: 1;
         border-radius: 50%;
@@ -115,6 +186,8 @@
       }
 
       .canal-bottom {
+        grid-column: 1/-1;
+        grid-row: 1;
         width: 100%;
         height: 100%;
         display: grid;
@@ -124,14 +197,15 @@
           position: absolute;
           max-width: clamp(4rem, 50%, 15rem);
           bottom: 0;
-          right: 0;
-          margin-inline: 2em;
+          justify-self: center;
+          margin-inline: 3em;
         }
 
         .canal-bag {
-          display: none; /* gets display when motion:no-preference */
+          display: none;
+          /* gets display when motion:no-preference */
           position: absolute;
-          max-width: clamp(1rem, 8%, 5rem);
+          max-width: clamp(1rem, 8%, 3rem);
           bottom: 1rem;
           animation: floating-bag 30s linear infinite;
         }
@@ -172,6 +246,7 @@
       z-index: 4;
 
       tr {
+        position: relative;
         scroll-snap-align: center;
         scroll-snap-stop: always;
 
@@ -179,6 +254,8 @@
         gap: calc(var(--spacing)/2);
         align-items: center;
         min-height: var(--scroll-container-height);
+
+        container-type: inline-size;
 
         p {
           margin: 0;
@@ -234,6 +311,11 @@
 
           p:nth-of-type(3) {
             font: var(--text-p2);
+          }
+          @container (width < 400px){
+            bottom: 0;
+            margin-bottom: var(--spacing);
+            margin-right: 0;
           }
         }
       }
@@ -342,7 +424,7 @@
     }
   }
 
-  .canal-bag{
+  .canal-bag {
     display: block !important;
   }
 
@@ -368,7 +450,8 @@
       left: -100%;
       transform: translateY(0) rotate(65deg);
     }
-    100%{
+
+    100% {
       left: -100%;
     }
   }
