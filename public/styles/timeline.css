@@ -93,7 +93,7 @@
           background: rgb(88 79 76);
           content: "";
           height: 100%;
-          background-image: url(/images/canal-wall.jpg); /* https://pixabay.com/nl/photos/stenen-muur-textuur-bakstenen-770264/ */
+          background-image: url(../images/canal-wall.jpg); /* https://pixabay.com/nl/photos/stenen-muur-textuur-bakstenen-770264/ */
           background-size: var(--sticky-container-grid-width);
           mask-image: linear-gradient(
             to right,
@@ -110,7 +110,7 @@
           background: rgb(88 79 76);
           content: "";
           height: calc(var(--scroll-container-height)*0.1);
-          background-image: url(/images/canal-wall.jpg); /* https://pixabay.com/nl/photos/stenen-muur-textuur-bakstenen-770264/ */
+          background-image: url(../images/canal-wall.jpg); /* https://pixabay.com/nl/photos/stenen-muur-textuur-bakstenen-770264/ */
           background-size: var(--sticky-container-grid-width);
           mask-image: linear-gradient(
             to bottom,
