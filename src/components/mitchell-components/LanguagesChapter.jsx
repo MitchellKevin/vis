@@ -5,13 +5,13 @@ import { showTooltip, hideTooltip } from '../../scripts/mitchell/tooltip.js';
 import { state, lifecycle } from '../../scripts/mitchell/state.js';
 
 const MAX_LANGUAGES = 24;
-const FONT_SIZE_MIN = 15, FONT_SIZE_MAX = 70;
+const FONT_SIZE_MIN = 20, FONT_SIZE_MAX = 100;
 const PULL_TO_CENTER_X = 0.04;
 const PULL_TO_CENTER_Y = 0.06;
 const REPEL_STRENGTH = -4;
 const SETTLE_TICKS = 220;
 
-const STAGE_WIDTH = 900, STAGE_HEIGHT = 540;
+const STAGE_WIDTH = 900, STAGE_HEIGHT = 860;
 const CENTER_X = STAGE_WIDTH / 2, CENTER_Y = STAGE_HEIGHT / 2;
 
 // Builds the list of word objects used by the force simulation.
@@ -35,8 +35,8 @@ function buildWords(languagesData) {
       // radius = collision radius for d3.forceCollide: based on text width × font size.
       radius: Math.max(greeting.length * fontSize * 0.3, fontSize * 0.62) + 6,
       // Random starting position around the centre; the force simulation resolves overlaps.
-      x: CENTER_X + (Math.random() - 0.5) * 260,
-      y: CENTER_Y + (Math.random() - 0.5) * 160,
+      x: CENTER_X + (Math.random() - 0.5) * 340,
+      y: CENTER_Y + (Math.random() - 0.5) * 240,
     };
   });
 }
