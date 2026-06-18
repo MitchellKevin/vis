@@ -132,6 +132,21 @@
   font-family: var(--font-display);
 }
 
+/* Streepjes rond de rand van de wijzerplaat, één per uur. */
+.clock__rim-tick {
+  stroke: var(--color-green-dark);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+/* De vier uurcijfers rond de wijzerplaat (boven/rechts/onder/links). */
+.clock__numeral {
+  fill: var(--color-green-dark);
+  font: var(--text-h3);
+  font-family: var(--font-display);
+}
+
 /* ── Tijdlijn van één uur (na klik op een wijzer) ──────────────────────────── */
 
 .clock__timeline {
@@ -148,6 +163,7 @@
   justify-content: center;
   gap: var(--space-3);
   min-height: 44px;
+  margin-top: var(--space-6);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-button);

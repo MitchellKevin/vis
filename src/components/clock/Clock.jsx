@@ -7,7 +7,7 @@ import { fish } from "../carousel/fish";
 
 const CLOCK_CENTER = 220; // center of the clock drawing (x and y)
 const HUB_RADIUS = 72; // the dark circle in the center
-const HAND_MAX_LENGTH = 128; // the variable hand length; longest = HUB_RADIUS + 8 + 128 = 136 px
+const HAND_MAX_LENGTH = 72; // the variable hand length; longest = HUB_RADIUS + 8 + 72 = 152 px
 
 const TIMELINE_WIDTH = 1040; // width of the timeline drawing
 const TIMELINE_HEIGHT = 400; // height of the timeline drawing
@@ -18,6 +18,8 @@ const TIMELINE_AXIS_Y = 340; // y position of the time axis
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Look up the image that belongs to a fish species (from the carousel list).
+// Object.fromEntries() bouwt een object uit een lijst [sleutel, waarde]-paren.
+// Bron: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/fromEntries
 const fishByName = Object.fromEntries(fish.map((f) => [f.name, f]));
 
 // Sums all numbers in a list.
@@ -93,6 +95,11 @@ function buildFishPool(species) {
 // Converts an hour (0–24) and a distance from the center to an x/y point on
 // the clock. Hour 0 is at the top and hours run clockwise.
 // Hour may be a decimal (for a "current time" hand).
+//
+// Punt op een cirkel: x = cx + r·cos θ, y = cy + r·sin θ. De −π/2 draait uur 0
+// van rechts naar boven; cos/sin rekenen in radialen (vandaar 2·π).
+// Bronnen: https://math.libretexts.org/Bookshelves/Precalculus/Book:_Precalculus__An_Investigation_of_Functions_(Lippman_and_Rasmussen)/05:_Trigonometric_Functions_of_Angles/5.03:_Points_on_Circles_Using_Sine_and_Cosine
+//          https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/cos
 function pointOnClock(hour, distance) {
   const angle = (hour / 24) * 2 * Math.PI - Math.PI / 2;
   return {
@@ -232,10 +239,6 @@ function HourTimeline({
 
   return (
     <div className="clock__timeline">
-      <button type="button" className="clock__back" onClick={onBack}>
-        ← Terug naar de klok
-      </button>
-
       <h3 className="clock__timeline-title">
         Tussen {hourAsText(hour)} en {hourAsText(nextHour)}
       </h3>
@@ -330,6 +333,10 @@ function HourTimeline({
           </p>
         </>
       )}
+
+      <button type="button" className="clock__back" onClick={onBack}>
+        ← Terug naar de klok
+      </button>
     </div>
   );
 }
@@ -348,11 +355,17 @@ export default function Clock() {
   const [selectedHour, setSelectedHour] = useState(null);
   const [hoveredBlock, setHoveredBlock] = useState(null);
 
-  // Fetch data once when the clock mounts.
+  // Fetch data once when the clock mounts (lege deps-array [] = alleen na mount).
+  // Bron: https://react.dev/reference/react/useEffect
   useEffect(() => {
     // cancelled prevents setState being called after the component has unmounted
-    // (React would otherwise warn about a memory leak).
+    // (React would otherwise warn about a memory leak). Dit is het "ignore"-patroon
+    // tegen race-condities: de cleanup zet de vlag op true, zodat een laat
+    // binnenkomend fetch-antwoord genegeerd wordt.
+    // Bron: https://react.dev/learn/synchronizing-with-effects
     let cancelled = false;
+    // fetch() geeft een Promise; response.json() geeft er óók een.
+    // Bron: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
     fetch("/json/vis-data.json")
       .then((response) => response.json())
       .then((json) => {
@@ -418,6 +431,11 @@ export default function Clock() {
                 busiest.value,
               )} meldingen per uur, rustigst om ${hourAsText(quietest.hour)}.`}
             >
+              {/* role="img" + aria-label laten een schermlezer de hele tekening als
+                  één beeld voorlezen, i.p.v. elke losse <line>/<text>-knoop. viewBox
+                  maakt de tekening schaalbaar.
+                  Bronnen: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/img_role
+                           https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/viewBox */}
               {/* The 24 hands, one per hour */}
               {hours.map((hour) => {
                 const start = pointOnClock(hour.hour, HUB_RADIUS);
@@ -426,6 +444,10 @@ export default function Clock() {
                   handTipDistance(hour.busyness),
                 );
                 const isActive = activeHour?.hour === hour.hour;
+                // Een <line> is van zichzelf geen knop: role="button" + tabIndex={0}
+                // maken hem focusbaar, en de onKeyDown hieronder voegt Enter/Spatie-
+                // activatie toe die een echte <button> automatisch zou hebben.
+                // Bron: https://www.w3.org/WAI/ARIA/apg/patterns/button/
                 return (
                   <line
                     key={hour.hour}
@@ -455,6 +477,46 @@ export default function Clock() {
                       }
                     }}
                   />
+                );
+              })}
+
+              {/* De streepjes en de uurcijfers hieronder zijn gemaakt door Claude. */}
+
+              {/* Tick marks around the rim, one short radial line per hour.
+                  The four cardinal hours (0/6/12/18) are skipped: the hour
+                  number stands there instead, so a tick would collide with it. */}
+              {Array.from({ length: 24 }, (_, hour) => {
+                if (hour % 6 === 0) return null;
+                const inner = pointOnClock(hour, handTipDistance(1) + 8);
+                const outer = pointOnClock(hour, handTipDistance(1) + 14);
+                return (
+                  <line
+                    key={`tick-${hour}`}
+                    className="clock__rim-tick"
+                    x1={inner.x}
+                    y1={inner.y}
+                    x2={outer.x}
+                    y2={outer.y}
+                  />
+                );
+              })}
+
+              {/* Four hour numbers around the dial (top/right/bottom/left)
+                  so the drawing reads more like a clock. Hour 0 is at the top
+                  and hours run clockwise, so right = 6, bottom = 12, left = 18. */}
+              {[0, 6, 12, 18].map((hour) => {
+                const point = pointOnClock(hour, handTipDistance(1) + 64);
+                return (
+                  <text
+                    key={`numeral-${hour}`}
+                    className="clock__numeral"
+                    x={point.x}
+                    y={point.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                  >
+                    {hourAsText(hour)}
+                  </text>
                 );
               })}
 
@@ -509,7 +571,9 @@ export default function Clock() {
           )}
         </div>
 
-        {/* MARK: Datatabel (visueel verborgen, alleen voor screenreaders) */}
+        {/* MARK: Datatabel (visueel verborgen, alleen voor screenreaders).
+            Tekstalternatief voor de SVG: dezelfde getallen als de wijzers.
+            Bron: https://webaim.org/techniques/css/invisiblecontent/ */}
         {hours && (
           <table className="clock__sr-only">
             <caption>Gemiddeld aantal meldingen per uur van de dag</caption>
